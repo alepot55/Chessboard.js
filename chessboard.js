@@ -104,7 +104,7 @@ class Chessboard {
 
         this.buildSquares();
 
-        this.updatePieces();
+        this.putPieces();
     }
 
     buildSquares() { // Crea una cella della Chessboard
@@ -135,11 +135,7 @@ class Chessboard {
 
     // Pieces
 
-    translatePiece(piece, from, to) {
-
-    }
-
-    updatePieces() {
+    putPieces() {
 
         let partita = this.config.fog && !this.terminata ? this.partitaVisualizzata : this.partita;
 
@@ -596,14 +592,14 @@ class Chessboard {
         return this.config.color === 'w';
     }
 
-    updatePosition(change_color = false) {
+    updatePosition(change_color = false) { 
         this.terminata = false;
-        this.updatePieces();
         if (change_color) {
             this.removeSquares();
             this.buildSquares();
         }
         if (this.config.fog) this.fogHiddenSquares();
+        this.putPieces();
         if (this.statoPartita() !== null) this.termina();
     }
 
@@ -647,7 +643,7 @@ class Chessboard {
 
     getSquareCoord(coord, orientation = this.config.color) {
         // Returns the coordinates of the cell
-        if (isWhiteOriented()) return [8 - parseInt(coord[1]), coord.charCodeAt(0) - 97];
+        if (this.isWhiteOriented()) return [8 - parseInt(coord[1]), coord.charCodeAt(0) - 97];
         return [parseInt(coord[1]) - 1, 8 - (coord.charCodeAt(0) - 97)];
     }
 
@@ -713,7 +709,7 @@ class Chessboard {
     }
 
 
-    getSquareID(row, col) {
+    getSquareID(row, col) { 
         row = parseInt(row);
         col = parseInt(col);
         if (this.isWhiteOriented()) {

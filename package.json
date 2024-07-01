@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "chess.js": "^1.0.0-beta.8"
+  },
+  "name": "chessboard",
+  "version": "1.0.0",
+  "main": "chessboard.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

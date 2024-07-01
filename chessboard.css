@@ -1,0 +1,102 @@
+:root {
+    --dimensioneScacchieraAltezza: 600px;
+    --dimensioneScacchieraLarghezza: calc(var(--dimensioneScacchieraAltezza) * 0.98);
+    
+    --dimensioneCellaAltezza: calc(var(--dimensioneScacchieraAltezza) / 8);
+    --dimensioneCellaLarghezza: calc(var(--dimensioneScacchieraLarghezza) / 8);
+
+    --dimensionePezzoLarghezza: calc(var(--dimensioneCellaLarghezza) * 0.9);
+    --dimensionePezzoAltezza: calc(var(--dimensioneCellaAltezza) * 0.9);
+}
+
+.tavola {
+    width: var(--dimensioneTavolaLarghezza);
+    height: var(--dimensioneTavolaAltezza);
+    min-width: var(--dimensioneTavolaLarghezza);
+    border: var(--dimensioneBordo) solid var(--primario);
+    background-color: var(--primario);
+    border-radius: 10px;
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+}
+
+.board {
+    display: grid;
+    grid-template: repeat(8, 1fr) / repeat(8, 1fr);
+    width: var(--dimensioneScacchieraLarghezza);
+    height: var(--dimensioneScacchieraAltezza);
+}
+
+.square {
+    width: var(--dimensioneCellaLarghezza);
+    height: var(--dimensioneCellaAltezza);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.piece {
+    position: absolute;
+    z-index: 1;
+    width: var(--dimensionePezzoLarghezza);
+    height: var(--dimensionePezzoAltezza);
+}
+
+.simple {
+    filter: hue-rotate(calc((var(--colore) - 220) * 1deg));
+}
+
+.hint {
+    background: #ababaa;
+    width: calc(var(--dimensioneCellaLarghezza) / 3.5);
+    height: calc(var(--dimensioneCellaAltezza) / 3.5);
+    position: absolute;
+    z-index: 0;
+    border-radius: 50%;
+    opacity: 0.8;
+}
+
+.catchable {
+    width: calc(var(--dimensioneCellaLarghezza) * 0.9);
+    height: calc(var(--dimensioneCellaAltezza) * 0.9);
+}
+
+.coperturaCella {
+    position: absolute;
+    width: var(--dimensioneCellaLarghezza);
+    height: var(--dimensioneCellaAltezza);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.blackSquare {
+    background: #b58863;
+}
+
+.whiteSquare {
+    background: #f0d9b5;
+}
+
+.selectedSquare {
+    background: #ababaa;
+}
+
+.blackSquareFog {
+    background: #2b2b2a;
+}
+
+.whiteSquareFog {
+    background: #5e5e5d;
+}
+
+.movedSquareBlack {
+    background: #ababaa;
+}
+
+.movedSquareWhite {
+    background: #ababaa;
+}
+

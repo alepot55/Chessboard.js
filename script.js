@@ -1,28 +1,32 @@
-// Chessboard(id_div, posizione, orientamento, temaPezzi = 'simple', colore = 220, onMossa, suggerimenti = true, annebbia = false)
+// constructor(
+//     id_div,
+//     position = DEFAULT_POSITION_WHITE,
+//     color = 'w',
+//     onMossa = () => true,
+//     hints = true,
+//     fog = false,
+//     path = 'default_pieces',
+//     animation = 500,
+//     free = true
+// ) 
 
-// class ChessboardConfig {
+let fen = 'r1k4r/p2nb1p1/2b4p/1p1n1p2/2PP4/3Q1NB1/1p3PPP/R5K1 b - - 0 19'
 
-//     constructor() {
-//         this.id_div = 'chessboard';
-//         this.position = DEFAULT_POSITION_WHITE;
-//         this.color = true;
-//         this.config.onMossa = () => true;
-//         this.hints = true;
-//         this.fog = false;
-//         this.path = 'default_pieces';
-//     }
-
-let fen='r1k4r/p2nb1p1/2b4p/1p1n1p2/2PP4/3Q1NB1/1p3PPP/R5K1 b - - 0 19'
-
-var config = new ChessboardConfig('board', 'start', 'w', onMossa, true, false)
+var config = new ChessboardConfig({
+    id_div: 'board', 
+    position: 'start', 
+    color: 'w', 
+    onMossa: onMossa, 
+    hints: true, 
+    fog: false, 
+    free: false});
 
 var board = config.build()
 
 function onMossa(mossa) {
     console.log(mossa);
     board.move(mossa);
-    board.ribalta();
 }
 
-board.setPosition(fen, 'b');
+board.setPosition(DEFAULT_POSITION_WHITE, 'b');
 

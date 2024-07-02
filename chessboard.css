@@ -1,6 +1,6 @@
 :root {
     --dimensioneScacchieraAltezza: 600px;
-    --dimensioneScacchieraLarghezza: calc(var(--dimensioneScacchieraAltezza) * 0.98);
+    --dimensioneScacchieraLarghezza: 600px;
     
     --dimensioneCellaAltezza: calc(var(--dimensioneScacchieraAltezza) / 8);
     --dimensioneCellaLarghezza: calc(var(--dimensioneScacchieraLarghezza) / 8);

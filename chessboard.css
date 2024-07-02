@@ -26,6 +26,7 @@
     grid-template: repeat(8, 1fr) / repeat(8, 1fr);
     width: var(--dimensioneScacchieraLarghezza);
     height: var(--dimensioneScacchieraAltezza);
+    border: 1px solid black;
 }
 
 .square {
@@ -62,16 +63,6 @@
     height: calc(var(--dimensioneCellaAltezza) * 0.9);
 }
 
-.coperturaCella {
-    position: absolute;
-    width: var(--dimensioneCellaLarghezza);
-    height: var(--dimensioneCellaAltezza);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-}
-
 .blackSquare {
     background: #b58863;
 }
@@ -100,3 +91,13 @@
     background: #ababaa;
 }
 
+.choice {
+    background: white;
+    z-index: 2;
+}
+
+.cover {
+    background: black;
+    opacity: 0.5;
+    z-index: 2;
+}

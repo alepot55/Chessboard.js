@@ -76,19 +76,10 @@ class Chessboard {
 
         this.config = config;
 
-        // Inizializza la setPosition della Chessboard e l'orientamento
-        let turno = config.position.split(' ')[1];
-        this.config.color = config.color ? turno : turno === 'w' ? 'b' : 'w';
-        this.partita = Chess(config.position);
+        this.game = Chess(config.position);
 
         this.terminata = false;
-
-        // Inizializza le variabili della Chessboard
-        this.casellaCliccata = null;
-        this.celle = {};
-        this.pezzi = {};
-        this.pieces = {};
-        this.mosseIndietro = [];
+        this.promoting = false;
 
         // Crea la tavola e la Chessboard
         this.buildBoard();
@@ -97,19 +88,23 @@ class Chessboard {
 
     // Build
 
-    buildBoard() {  // Crea la Chessboard con le caselle
+    buildBoard() {
 
         this.board = document.getElementById(this.config.id_div);
         this.board.className = "board";
 
         this.buildSquares();
-
-        this.putPieces();
     }
 
-    buildSquares() { // Crea una cella della Chessboard
+    buildSquares() {
 
         this.squares = {};
+        this.casellaCliccata = null;
+        this.celle = {};
+        this.pezzi = {};
+        this.pieces = {};
+        this.mosseIndietro = [];
+
 
         for (let row = 0; row < 8; row++) {
 
@@ -135,122 +130,90 @@ class Chessboard {
 
     // Pieces
 
-    putPieces() {
+    containsPiece(square) {
+        return this.game.get(square) !== null;
+    }
 
-        let partita = this.config.fog && !this.terminata ? this.partitaVisualizzata : this.partita;
+    translatePiece(piece, from, to) {
+    }
 
-        // Per ogni casella
+    removePiece(square) {
+
+        if (!this.containsPiece(square)) return null;
+
+        this.celle[square].removeChild(this.pezzi[square]['img']);
+        let piece = this.pezzi[square]['piece'];
+
+        this.pezzi[square] = null;
+        this.pieces[(piece, square)] = null;
+
+        return piece;
+    }
+
+    putPiece(square, piece) {
+        let img = document.createElement("img");
+        img.className = "piece";
+
+        let percorso = this.config.path + '/' + piece + '.svg';
+        img.src = percorso;
+
+        if (piece[1] === this.config.color) {
+            let board = this;
+            img.addEventListener('dragstart', () => {
+                board.onClick(square);
+            });
+        }
+
+        this.pezzi[square] = { 'img': img, 'piece': piece };
+        this.pieces[(piece, square)] = { 'img': img };
+        this.celle[square].appendChild(img);
+    }
+
+    updatePieces() {
+
+        let partita = this.config.fog && !this.terminata ? this.gameVisualizzata : this.game;
+
         for (let square in this.celle) {
 
-            let pieceNew = partita.get(square);
+            let pieceNew = partita.get(square) ? partita.get(square)['type'] + partita.get(square)['color'] : null;
 
             let pieceOld = this.pezzi[square] ? this.pezzi[square]['piece'] : null;
 
-            if (pieceNew === null && pieceOld === null) continue;
+            if (pieceNew === null && pieceOld !== null) {
 
-            else if (pieceNew === null && pieceOld !== null) {
-                let possibleDest = this.getLegalMoves(square).map(m => m['to']);
-                for (let dest in possibleDest) {
-                    if (!this.playerPiece(dest) && partita.get(square) === pieceOld) {
-                        this.translatePiece(pieceOld, square, dest);
-                        break;
-                    }
-                }
+                this.removePiece(square);
+
             }
 
             else if (pieceNew !== null && pieceOld === null) {
-                pieceNew = pieceNew['type'] + pieceNew['color'];
-                let possibleSrc = this.getLegalMoves(square).map(m => m['from']);
-                let cond = true;
-                for (let src in possibleSrc) {
-                    if (this.playerPiece(src) && partita.get(src) === null) {
-                        cond = false;
-                    }
-                }
-                if (cond) {
-                    let img = document.createElement("img");
-                    img.className = "piece";
 
-                    let percorso = this.config.path + '/' + pieceNew + '.svg';
-                    img.src = percorso;
+                this.putPiece(square, pieceNew);
 
-                    if (pieceNew[1] === this.config.color) {
-                        let board = this;
-                        img.addEventListener('dragstart', () => {
-                            board.onClick(square);
-                        });
-                    }
+            }
 
-                    // Aggiungi il piece alla square
-                    this.pezzi[square] = { 'img': img, 'piece': pieceNew };
-                    this.pieces[(pieceNew, square)] = { 'img': img };
-                    console.log(this.celle[square]);
-                    this.celle[square].appendChild(img);
-                    let row = this.getSquareCoord(square)[0];
-                    let col = this.getSquareCoord(square)[1];
-                    this.squares[row][col].appendChild(img);
+            else if (pieceNew !== null && pieceOld !== null) {
 
+                if (pieceNew !== pieceOld) {
+                    this.removePiece(square);
+                    this.putPiece(square, pieceNew);
                 }
             }
 
-            // else if (pieceNew !== null && pieceOld !== null) {
-            //     if (pieceNew['type'] !== pieceOld['type'] || pieceNew['color'] !== pieceOld['color']) {
-            //         this.celle[square].removeChild(this.pezzi[square]['img']);
-            //         delete this.pezzi[square];
-            //         delete this.pieces[(pieceOld, square)];
-            //         this.pieces[(pieceNew, square)] = { 'img': this.pezzi[square]['img'] };
-            //         this.pezzi[square] = { 'img': this.pezzi[square]['img'], 'piece': pieceNew }
-            //         this.celle[square].appendChild(this.pezzi[square]['img']);
-            //     }
-            // }
-
-
-
-
-            // if (piece !== null) {
-            //     // Crea un nuovo elemento img per il piece
-            //     piece = piece['type'] + piece['color'];
-
-            //     // se la coppia pezzo casella non è in pieces
-            //     // se 
-
-            //     let img = document.createElement("img");
-            //     img.className = "piece";
-
-            //     let percorso = this.config.path + '/' + piece + '.svg';
-            //     img.src = percorso;
-
-            //     if (piece[1] === this.config.color) {
-            //         let board = this;
-            //         img.addEventListener('dragstart', () => {
-            //             board.onClick(square);
-            //         });
-            //     }
-
-            //     // Aggiungi il piece alla square
-            //     this.pezzi[square] = { 'img': img, 'piece': piece };
-            //     this.pieces[(piece, square)] = { 'img': img }
-            //     this.celle[square].appendChild(img);
-            // }
         }
     }
 
     removePieces() {
         for (let casella in this.celle) {
-            let cella = this.celle[casella];
-            while (cella.firstChild) {
-                cella.removeChild(cella.firstChild);
-            }
+            this.removePiece(casella);
         }
-        this.pezzi = {};
     }
 
     opponentPiece(square) {
-        return this.partita.get(square) !== null && this.partita.get(square)['color'] !== this.config.color;
+        return this.game.get(square) !== null && this.game.get(square)['color'] !== this.config.color;
     }
 
     playerPiece(square) {
-        return this.partita.get(square) !== null && this.partita.get(square)['color'] === this.config.color;
+        return this.game.get(square) !== null && this.game.get(square)['color'] === this.config.color;
     }
 
     // Listeners
@@ -259,7 +222,8 @@ class Chessboard {
         if (this.mosseIndietro.length > 0) return;
         for (let casella in this.celle) {
             let cella = this.celle[casella];
-            cella.addEventListener("mouseover", () => this.onOver(casella));
+            cella.addEventListener("mouseover", () => this.hintMoves(casella));
+            cella.addEventListener("mouseout", () => this.dehintMoves(casella));
             cella.addEventListener("click", () => this.onClick(casella));
             cella.addEventListener('dragover', function (event) {
                 event.preventDefault(); // Permette il drop
@@ -277,14 +241,26 @@ class Chessboard {
 
         if (!this.playerTurn() || this.terminata) return;
 
-        if (this.casellaCliccata) this.deselectSquare(this.casellaCliccata);
-        this.dehintMoves(this.casellaCliccata);
+        console.log(this.casellaCliccata, casella);
+
+        let from = this.casellaCliccata;
+        this.casellaCliccata = null;
+
+        if (this.promoting) {
+            this.depromoteAllSquares();
+            this.removeAllCovers();
+            this.promoting = false;
+        }
+
+        if (from) {
+            this.deselectSquare(from);
+            this.dehintMoves(from);
+        }
 
         // Se ci sono caselle selezionate e non possiedo la casella cliccata
-        if (this.casellaCliccata !== null) {
+        if (from !== null && !this.playerPiece(casella)) {
 
-            let mossa = this.casellaCliccata + casella;
-            this.casellaCliccata = null;
+            let mossa = from + casella;
 
             if (!this.legalMove(mossa)) return;
             if (this.promozione(mossa)) return;
@@ -295,18 +271,10 @@ class Chessboard {
         } else if (this.playerPiece(casella)) {
 
             this.selectSquare(casella);
-            this.casellaCliccata = casella;
             this.hintMoves(casella);
+            this.casellaCliccata = casella;
 
-        } else {
-            this.casellaCliccata = null;
-        }
-    }
-
-    onOver(casella) {
-        if (this.casellaCliccata !== null || !this.playerTurn()) return;
-        this.dehintAllSquares();
-        this.hintMoves(casella);
+        } 
     }
 
     // Hint
@@ -314,7 +282,7 @@ class Chessboard {
     hintSquare(square) {
 
         // Se i suggerimenti sono attivi e la square è vuota
-        if (this.config.hint) {
+        if (this.config.hint && this.casellaCliccata === null) {
 
             // Crea un nuovo elemento div per il cerchio
             square = this.celle[square];
@@ -330,28 +298,26 @@ class Chessboard {
     }
 
     hintMoves(square) {
-        let mosse = this.partita.moves({ square: square, verbose: true });
+        let mosse = this.game.moves({ square: square, verbose: true });
         for (let mossa of mosse) {
             this.hintSquare(mossa['to']);
         }
     }
 
     dehintMoves(square) {
-        let mosse = this.partita.moves({ square: square, verbose: true });
+        let mosse = this.game.moves({ square: square, verbose: true });
         for (let mossa of mosse) {
             this.dehintSquare(mossa['to']);
         }
     }
 
     dehintSquare(square) {
-        if (this.config.hint) {
+        if (this.config.hint && this.casellaCliccata === null) {
             let cella = this.celle[square];
             let figli = cella.childNodes;
 
-            // Itera all'indietro attraverso la lista dei figli
             for (let i = figli.length - 1; i >= 0; i--) {
-                // Se il figlio è un 'div', rimuovilo
-                if (figli[i].nodeName === 'DIV') {
+                if (figli[i].className.includes('hint')) {
                     cella.removeChild(figli[i]);
                 }
             }
@@ -389,8 +355,8 @@ class Chessboard {
         // Se c'è solo un re, non annebbiare le caselle perché la partita è terminata
         let k = 0;
         for (let casella in this.celle) {
-            if (this.partita.get(casella) === null) continue;
-            else if ('k' === this.partita.get(casella)['type']) k = k + 1;
+            if (this.game.get(casella) === null) continue;
+            else if ('k' === this.game.get(casella)['type']) k = k + 1;
         }
         if (k === 1) {
             this.termina();
@@ -398,7 +364,7 @@ class Chessboard {
         }
 
         // Imposta la position della partita visualizzata
-        let position = this.partita.fen();
+        let position = this.game.fen();
 
         // Rimuove lo scacco
         position = position.replace('+', '');
@@ -412,14 +378,14 @@ class Chessboard {
         }
 
         // Imposta la position della partita visualizzata
-        this.partitaVisualizzata = Chess(position);
+        this.gameVisualizzata = Chess(position);
 
         // Rimuove i pezzi dalle caselle non accessibili e salva le caselle occupate
         let caselleAccessibili = this.mossePossibili().map(m => m['to']);
         let caselleOccupate = []
         for (let casella in this.celle) {
-            if (!caselleAccessibili.includes(casella) && !this.playerPiece(casella) && this.partita.get(casella) !== null) {
-                this.partitaVisualizzata.remove(casella);
+            if (!caselleAccessibili.includes(casella) && !this.playerPiece(casella) && this.game.get(casella) !== null) {
+                this.gameVisualizzata.remove(casella);
                 caselleOccupate.push(casella);
             }
         }
@@ -468,7 +434,7 @@ class Chessboard {
     }
 
     legalMove(mossa) { // Restituisce true se la mossa è legale
-        let partita = this.config.fog ? this.partitaVisualizzata : this.partita;
+        let partita = this.config.fog ? this.gameVisualizzata : this.game;
         let mosseLegali = partita.moves({ square: mossa.slice(0, 2), verbose: true }).map(m => m['from'] + m['to']);
         if (this.config.fog) return !this.celleAnnebbiate.includes(mossa.slice(2, 4)) && mosseLegali.includes(mossa);
         return mosseLegali.includes(mossa);
@@ -477,7 +443,7 @@ class Chessboard {
     getLegalMoves(casella = null) { // Restituisce le mosse possibili
 
         // Se la modalità nebbia è attiva, restituisci le mosse possibili dalla partita visualizzata
-        let partita = this.config.fog ? this.partitaVisualizzata : this.partita;
+        let partita = this.config.fog ? this.gameVisualizzata : this.game;
 
         // Restituisci le mosse possibili per la casella specificata o per la partita
         if (casella === null) {
@@ -494,7 +460,7 @@ class Chessboard {
         this.deselectAllSquares();
 
         // Esegue la mossa 
-        let res = this.partita.move({ from: mossa.slice(0, 2), to: mossa.slice(2, 4), promotion: mossa.length === 5 && "rbqn".includes(mossa[4]) ? mossa[4] : undefined });
+        let res = this.game.move({ from: mossa.slice(0, 2), to: mossa.slice(2, 4), promotion: mossa.length === 5 && "rbqn".includes(mossa[4]) ? mossa[4] : undefined });
 
         // Se la mossa non è stata eseguita in nebbia
         if (res == null && this.config.fog) {
@@ -502,25 +468,25 @@ class Chessboard {
             // Rimuove i pezzi del giocatore avversario 
             let pezziRimossi = {};
             for (let casella in this.celle) {
-                if (this.partita.get(casella) !== null && this.partita.get(casella)['color'] !== this.partita.turn() && this.partita.get(casella)['type'] !== 'k') {
-                    pezziRimossi[casella] = this.partita.remove(casella);
+                if (this.game.get(casella) !== null && this.game.get(casella)['color'] !== this.game.turn() && this.game.get(casella)['type'] !== 'k') {
+                    pezziRimossi[casella] = this.game.remove(casella);
                 }
             }
 
             // Esegue la mossa nella partita visualizzata e nella partita
-            this.partita.move({ from: mossa.slice(0, 2), to: mossa.slice(2, 4), promotion: mossa.length === 5 ? mossa[4] : undefined });
-            this.partitaVisualizzata.move({ from: mossa.slice(0, 2), to: mossa.slice(2, 4), promotion: mossa.length === 5 ? mossa[4] : undefined });
+            this.game.move({ from: mossa.slice(0, 2), to: mossa.slice(2, 4), promotion: mossa.length === 5 ? mossa[4] : undefined });
+            this.gameVisualizzata.move({ from: mossa.slice(0, 2), to: mossa.slice(2, 4), promotion: mossa.length === 5 ? mossa[4] : undefined });
 
             // Ripristina i pezzi rimossi
             for (let casella in pezziRimossi) {
-                this.partita.put(pezziRimossi[casella], casella);
+                this.game.put(pezziRimossi[casella], casella);
             }
 
             // updatePosition la position della partita
-            let nuovaFen = this.partita.fen().split(' ')[0];
-            nuovaFen = [nuovaFen].concat(this.partitaVisualizzata.fen().split(' ').slice(1));
+            let nuovaFen = this.game.fen().split(' ')[0];
+            nuovaFen = [nuovaFen].concat(this.gameVisualizzata.fen().split(' ').slice(1));
             nuovaFen = nuovaFen.join(' ');
-            this.partita = Chess(nuovaFen);
+            this.game = Chess(nuovaFen);
         }
 
         // updatePosition la Chessboard
@@ -539,22 +505,22 @@ class Chessboard {
 
         // Se la modalità nebbia è attiva
         if (this.config.fog) {
-            if (this.partita.fen() === '') return null;
+            if (this.game.fen() === '') return null;
 
             // Se c'è solo un re, restituisci il vincitore
             let kb = false;
             let kw = false;
             for (let casella in this.celle) {
-                if (this.partita.get(casella) === null) continue;
-                else if ('kb' === this.partita.get(casella)['type'] + this.partita.get(casella)['color']) kb = true;
-                else if ('kw' === this.partita.get(casella)['type'] + this.partita.get(casella)['color']) kw = true;
+                if (this.game.get(casella) === null) continue;
+                else if ('kb' === this.game.get(casella)['type'] + this.game.get(casella)['color']) kb = true;
+                else if ('kw' === this.game.get(casella)['type'] + this.game.get(casella)['color']) kw = true;
             }
             if (!kb) return 'w';
             if (!kw) return 'b';
-        } else if (this.partita.game_over()) {
+        } else if (this.game.game_over()) {
 
             // Se la partita è terminata, restituisci il vincitore
-            if (this.partita.in_checkmate()) return this.partita.turn() === 'w' ? 'b' : 'w';
+            if (this.game.in_checkmate()) return this.game.turn() === 'w' ? 'b' : 'w';
             return 'p';
         }
         return null;
@@ -566,21 +532,28 @@ class Chessboard {
 
     // Position
 
+    chageFenTurn(fen, color) {
+        let parts = fen.split(' ');
+        parts[1] = color;
+        return parts.join(' ');
+
+    }
+
     setPosition(position, color = null) {
         if (color === null) color = position.split(' ')[1];
         let change_color = this.config.color !== color;
         this.config.setColor(color);
-        this.partita = Chess(position);
+        this.game = Chess(position);
         this.updatePosition(change_color);
     }
 
-    ribalta() { // Ribalta la Chessboard e cambia l'color
-        this.config.setColor(this.config.color === 'w' ? 'b' : 'w');
-        this.updatePosition(true);
+    ribalta() {
+        let position = this.game.fen();
+        this.setPosition(position, this.config.color === 'w' ? 'b' : 'w');
     }
 
     playerTurn() { // Restituisce true se è il turno del giocatore
-        return this.config.color === this.partita.turn();
+        return this.config.color === this.game.turn();
     }
 
     isWhiteSquare(square) {
@@ -592,29 +565,29 @@ class Chessboard {
         return this.config.color === 'w';
     }
 
-    updatePosition(change_color = false) { 
+    updatePosition(change_color = false) {
         this.terminata = false;
         if (change_color) {
             this.removeSquares();
             this.buildSquares();
         }
+        this.updatePieces();
         if (this.config.fog) this.fogHiddenSquares();
-        this.putPieces();
         if (this.statoPartita() !== null) this.termina();
     }
-
 
     // Game replay
 
     backward() {
-        let mossa = this.partita.undo();
+        let mossa = this.game.undo();
         if (mossa !== null) {
             this.mosseIndietro.push(mossa);
             this.updatePosition();
-            if (this.partita.undo()) this.avanti();
+            if (this.game.undo()) this.avanti();
         } else {
             this.updatePosition();
         }
+        return mossa;
     }
 
     forward() {
@@ -631,20 +604,22 @@ class Chessboard {
     }
 
     firstPosition() {
-        let mossa = this.partita.undo();
+        let mossa = this.game.undo();
         while (mossa !== null) {
             this.mosseIndietro.push(mossa);
-            mossa = this.partita.undo();
+            mossa = this.game.undo();
         }
         this.updatePosition();
     }
 
     // Other
 
-    getSquareCoord(coord, orientation = this.config.color) {
-        // Returns the coordinates of the cell
-        if (this.isWhiteOriented()) return [8 - parseInt(coord[1]), coord.charCodeAt(0) - 97];
-        return [parseInt(coord[1]) - 1, 8 - (coord.charCodeAt(0) - 97)];
+    getSquareCoord(coord) {
+        let letters = 'abcdefgh';
+        if (this.isWhiteOriented()) {
+            return [8 - parseInt(coord[1]), letters.indexOf(coord[0])];
+        }
+        return [parseInt(coord[1]) - 1, 7 - letters.indexOf(coord[0])];
     }
 
     resetSquare(square) {
@@ -652,64 +627,90 @@ class Chessboard {
         elem.className = 'square ' + (this.isWhiteSquare(square) ? 'whiteSquare' : 'blackSquare');
     }
 
+    // Promotion
 
-    promozione(mossa) { // Restituisce true se la mossa è una promozione
-        let aCasella = mossa.slice(2, 4);
-        let daCasella = mossa.slice(0, 2);
+    coverSquare(square) {
+        let cover = document.createElement("div");
+        cover.className = "square cover";
+        this.celle[square].appendChild(cover);
+    }
 
-        // Se la mossa è una promozione e il pezzo è un pedone e la casella di arrivo è l'ultima riga
-        let pezzo = this.partita.get(daCasella);
-        if (pezzo['type'] === 'p' && ((aCasella[1] === '1' || aCasella[1] === '8'))) {
-
-            // Per ogni cella
-            for (let casella in this.celle) {
-
-                // Crea un nuovo elemento div per la copertura della cella
-                let coperturaCella = document.createElement("div");
-                coperturaCella.className = "coperturaCella";
-
-                // Aggiungi la copertura della cella alla casella
-                this.celle[casella].appendChild(coperturaCella);
-
-                let righePromozione = this.config.color === 'w' ? ['8', '7', '6', '5'] : ['1', '2', '3', '4'];
-
-                // Se la casella è nel riquadro della scelta del pezzo
-                if (casella[0] === aCasella[0] && righePromozione.includes(casella[1])) {
-
-                    // Imposta lo stile della copertura della cella e posizionala dava la casella
-                    coperturaCella.style.backgroundColor = this.colori['selezione'][(this.getCellCoord(casella)[0] + this.getCellCoord(casella)[1]) % 2 === 1 ? 'scuro' : 'chiaro'];
-
-                    // Crea un nuovo elemento img per il pezzo 
-                    let temaPezzi = this.temaPezzi === 'dama' ? 'simple' : this.temaPezzi;
-                    let img = document.createElement("img");
-                    img.className = "pezzo";
-
-                    // Imposta il tipo del pezzo e il percorso dell'immagine
-                    let pezzi = ['q', 'r', 'b', 'n'];
-                    let tipo = pezzi[righePromozione.indexOf(casella[1])];
-                    let percorso = 'assets/pedine/' + temaPezzi + '/' + tipo + this.config.color + '.svg';
-
-                    // Aggiungi l'immagine alla copertura della cella e aggiungi un listener per la promozione
-                    img.src = percorso;
-                    img.addEventListener("click", () => {
-                        let mossa = daCasella + aCasella + tipo;
-                        if (this.config.onMossa(mossa)) this.move(mossa);
-                    });
-                    coperturaCella.appendChild(img);
-                } else {
-
-                    // Imposta lo stile della copertura della cella per oscurare le caselle non selezionate
-                    coperturaCella.style.backgroundColor = this.colori['nebbia'][(this.getCellCoord(casella)[0] + this.getCellCoord(casella)[1]) % 2 === 1 ? 'scuro' : 'chiaro'];
-                }
+    removeCover(square) {
+        let elem = this.celle[square];
+        let figli = elem.childNodes;
+        
+        for (let i = figli.length - 1; i >= 0; i--) {
+            if (figli[i].className.includes('cover')) {
+                elem.removeChild(figli[i]);
             }
-            return true;
-        } else {
-            return false;
         }
     }
 
+    removeAllCovers() {
+        for (let casella in this.celle) {
+            this.removeCover(casella);
+        }
+    }
 
-    getSquareID(row, col) { 
+    promoteSquare(square, piece) {
+        let choice = document.createElement("div");
+        choice.className = "square choice";
+
+        let img = document.createElement("img");
+        img.className = "piece";
+        img.src = this.config.path + '/' + piece + '.svg';
+        choice.appendChild(img);
+
+        choice.addEventListener('click', () => {
+            this.move(this.casellaCliccata + square + piece);
+        });
+        this.celle[square].appendChild(choice);
+    }
+
+    depromoteSquare(square) {
+        let elem = this.celle[square];
+        let figli = elem.childNodes;
+
+        for (let i = figli.length - 1; i >= 0; i--) {
+            if (figli[i].className.includes('choice')) {
+                elem.removeChild(figli[i]);
+            }
+        }
+    }
+
+    depromoteAllSquares() {
+        for (let casella in this.celle) {
+            this.depromoteSquare(casella);
+        }
+    }
+
+    promozione(mossa) {   
+        let to = mossa.slice(2, 4);
+        let from = mossa.slice(0, 2);
+        let pezzo = this.game.get(from);
+        let [row, col] = this.getSquareCoord(to);
+        let choices = ['q', 'r', 'b', 'n']
+
+        if (pezzo['type'] !== 'p' || !(row === 0 || row === 7)) return false;
+
+        for (let casella in this.celle) {
+            let [rowCurr, colCurr] = this.getSquareCoord(casella);
+
+            if (col === colCurr && Math.abs(row - rowCurr) <= 3) {
+                this.promoteSquare(casella,  choices[Math.abs(row - rowCurr)] + this.config.color);
+            } else {
+                this.coverSquare(casella);
+            }
+        }
+
+        this.casellaCliccata = from;
+        this.promoting = true;
+
+        return true;
+    }
+
+
+    getSquareID(row, col) {
         row = parseInt(row);
         col = parseInt(col);
         if (this.isWhiteOriented()) {

@@ -8,10 +8,9 @@ class ChessboardConfig {
         this.position = settings.position || DEFAULT_POSITION_WHITE;
         this.color = settings.color || 'w';
         this.onMossa = settings.onMossa || (() => true);
-        this.hint = settings.hints || true;
-        this.fog = settings.fog || false;
+        this.hint = settings.hint;
         this.path = settings.path || 'default_pieces';
-        this.animation = settings.animation || 500;
+        this.animation = settings.animation || 100;
         this.free = settings.free || true;
     }
 
@@ -41,11 +40,6 @@ class ChessboardConfig {
         return this;
     }
 
-    setFog(fog) {
-        this.fog = fog;
-        return this;
-    }
-
     setPath(path) {
         this.config.path = path;
         return this;
@@ -72,10 +66,8 @@ class Chessboard {
 
         this.game = Chess(config.position);
 
-        this.terminata = false;
         this.promoting = false;
 
-        // Crea la tavola e la Chessboard
         this.buildBoard();
         this.updatePosition();
     }
@@ -135,44 +127,46 @@ class Chessboard {
     }
 
     translatePiece(from, to, recall = false, duration = this.config.animation) {
-
         let h = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dimensioneScacchieraAltezza'));
         let w = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dimensioneScacchieraLarghezza'));
-
-        let frequency = 10;
+    
         let squareWidth = w / 8;
         let squareHeigth = h / 8;
-
+    
         let piece = this.pezzi[from]['piece'];
         let elem = this.pieces[(piece, from)]['img'];
         let [rowFrom, colFrom] = this.getSquareCoord(from);
         let [rowTo, colTo] = this.getSquareCoord(to);
         let redo = recall
-
+    
         let x = squareWidth * (colTo - colFrom);
         let y = squareHeigth * (rowTo - rowFrom);
-
-        let id = setInterval(translate, frequency);
-
-        let iter = duration / frequency;
-        let dx = x / iter;
-        let dy = y / iter;
+    
+        let startTime;
         let board = this;
-
-        function translate() {
-            if (iter === 0) {
-                clearInterval(id);
-                elem.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+    
+        function translate(currentTime) {
+            if (!startTime) {
+                startTime = currentTime;
+            }
+            let timeElapsed = currentTime - startTime;
+            let progress = Math.min(timeElapsed / duration, 1);
+    
+            elem.style.transform = 'translate(' + (x * progress) + 'px, ' + (y * progress) + 'px)';
+    
+            if (progress < 1) {
+                requestAnimationFrame(translate);
+            } else {
                 board.removePiece(from);
                 board.removePiece(to);
                 board.putPiece(to, board.containsPiece(to));
                 if (redo) board.updatePieces();
-            } else {
-                iter--;
-                elem.style.transform = 'translate(' + (dx * (duration / frequency - iter)) + 'px, ' + (dy * (duration / frequency - iter)) + 'px)';
             }
         }
+    
+        requestAnimationFrame(translate);
     }
+    
 
     removePiece(square) {
 
@@ -207,9 +201,7 @@ class Chessboard {
 
     updatePieces() {
 
-        console.log(this.lastMove());
-
-        let partita = this.config.fog && !this.terminata ? this.gameVisualizzata : this.game;
+        let partita = this.game;
 
         for (let square in this.celle) {
 
@@ -217,6 +209,8 @@ class Chessboard {
             let pieceOld = this.pezzi[square] ? this.pezzi[square]['piece'] : null;
 
             if (pieceNew !== null && pieceOld !== pieceNew) {
+
+                console.log(pieceNew, pieceOld, square);
 
                 for (let from in this.pezzi) {
                     let coming = this.pezzi[from] ? this.pezzi[from]['piece'] : null;
@@ -234,19 +228,21 @@ class Chessboard {
                             recastling = true;
                         }
 
-                        this.translatePiece(from, square, recastling);
-
-                        return;
+                        this.translatePiece(from, square, true);
                     }
                 }
 
                 // check for promotion
                 let lastMove = this.lastMove();
                 if (lastMove && lastMove['promotion'] && lastMove['to'] === square) {
-                    return this.translatePiece(lastMove['from'], square);
+                    this.translatePiece(lastMove['from'], square);
+                    return this.updatePieces();
                 }
 
+                this.removePiece(square);
                 this.putPiece(square, pieceNew);
+
+                return this.updatePieces();
             }
         }
     }
@@ -292,8 +288,6 @@ class Chessboard {
 
     onClick(casella) {
 
-        if (this.terminata) return;
-
         let from = this.casellaCliccata;
         this.casellaCliccata = null;
 
@@ -336,16 +330,12 @@ class Chessboard {
 
         if (this.config.hint && this.casellaCliccata === null) {
 
-            // Crea un nuovo elemento div per il cerchio
-            square = this.celle[square];
             let hint = document.createElement("div");
-
-            // Imposta lo stile del hint
             hint.className = "hint";
-            if (this.colorPiece(square.id) && this.colorPiece(square.id) !== this.turn()) hint.className += " catchable";
+            
+            if (this.colorPiece(square) && this.colorPiece(square) !== this.turn()) hint.className += " catchable";
 
-            // Aggiunge il hint alla square
-            square.appendChild(hint);
+            this.celle[square].appendChild(hint);
         }
     }
 
@@ -382,89 +372,18 @@ class Chessboard {
         }
     }
 
-    // Fog
-
-    fogSquare(square) {
-        let elem = this.celle[square];
-        if (this.isWhiteSquare(square)) elem.className += ' whiteSquareFog';
-        else elem.className += ' blackSquareFog';
-    }
-
-    defogSquare(square) {
-        let elem = this.celle[square];
-        if (this.isWhiteSquare(square)) elem.className.replace(' whiteSquareFog', '');
-        else elem.className = elem.className.replace(' blackSquareFog', '');
-    }
-
-    defogAllSquares() {
-        for (let casella in this.celle) {
-            this.defogSquare(casella);
-        }
-    }
-
-    fogHiddenSquares() {
-
-        // Se c'è solo un re, non annebbiare le caselle perché la partita è terminata
-        let k = 0;
-        for (let casella in this.celle) {
-            if (this.game.get(casella) === null) continue;
-            else if ('k' === this.game.get(casella)['type']) k = k + 1;
-        }
-        if (k === 1) {
-            this.termina();
-            return;
-        }
-
-        // Imposta la position della partita visualizzata
-        let position = this.game.fen();
-
-        // Rimuove lo scacco
-        position = position.replace('+', '');
-
-        // Cambia il turno
-        if (position.split(' ')[1] !== this.config.color) {
-            let parti = position.split(' ');
-            parti[1] = this.config.color;
-            parti[3] = '-';
-            position = parti.join(' ');
-        }
-
-        // Imposta la position della partita visualizzata
-        this.gameVisualizzata = Chess(position);
-
-        // Rimuove i pezzi dalle caselle non accessibili e salva le caselle occupate
-        let caselleAccessibili = this.mossePossibili().map(m => m['to']);
-        let caselleOccupate = []
-        for (let casella in this.celle) {
-            if (!caselleAccessibili.includes(casella) && !this.playerPiece(casella) && this.game.get(casella) !== null) {
-                this.gameVisualizzata.remove(casella);
-                caselleOccupate.push(casella);
-            }
-        }
-
-        // Colora le caselle accessibili e non accessibili e salva le caselle annebbiate
-        caselleAccessibili = this.mossePossibili().map(m => m['to']);
-        this.celleAnnebbiate = [];
-        for (let casella in this.celle) {
-            if ((!caselleAccessibili.includes(casella) && !this.playerPiece(casella)) || caselleOccupate.includes(casella)) {
-                this.fogSquare(casella);
-                this.celleAnnebbiate.push(casella);
-            } else {
-                this.defogSquare(casella);
-            }
-        }
-    }
-
     // Select
 
     selectSquare(square) {
         let elem = this.celle[square];
-        elem.className += ' selectedSquare';
+        if (this.isWhiteSquare(square)) elem.className += ' selectedSquareWhite';
+        else elem.className += ' selectedSquareBlack';
     }
 
     deselectSquare(square) {
         let elem = this.celle[square];
-        elem.className = elem.className.replace(' selectedSquare', '');
+        if (this.isWhiteSquare(square)) elem.className = elem.className.replace(' selectedSquareWhite', '');
+        else elem.className = elem.className.replace(' selectedSquareBlack', '');
     }
 
     deselectAllSquares() {
@@ -477,120 +396,67 @@ class Chessboard {
 
     movedSquare(square) {
         let elem = this.celle[square];
-        elem.className += ' movedSquare';
+        if (this.isWhiteSquare(square)) elem.className += ' movedSquareWhite';
+        else elem.className += ' movedSquareBlack';
     }
 
     unmovedSquare(square) {
         let elem = this.celle[square];
-        elem.className = elem.className.replace(' movedSquare', '');
+        if (this.isWhiteSquare(square)) elem.className = elem.className.replace(' movedSquareWhite', '');
+        else elem.className = elem.className.replace(' movedSquareBlack', '');
     }
 
-    legalMove(mossa) { // Restituisce true se la mossa è legale
+    unmoveAllSquares() {
+        for (let casella in this.celle) {
+            this.unmovedSquare(casella);
+        }
+    }
 
-        let from = mossa.slice(0, 2);
-        let to = mossa.slice(2, 4);
-        let promotion = mossa.length === 5 ? mossa[4] : null
+    legalMove(mossa) {
 
-        let legalMoves = this.getLegalMoves(from)
-
+        let legalMoves = this.getLegalMoves(mossa.slice(0, 2))
         for (let i in legalMoves) {
-            let legalMove = legalMoves[i];
-            if (legalMove['to'] === to && (!promotion || promotion === legalMove['promotion'])) return true;
+            if (legalMoves[i]['to'] === mossa.slice(2, 4) && (mossa.length === 4 || mossa[4] === legalMoves[i]['promotion'])) return true;
         }
 
         return false;
     }
 
     getLegalMoves(from = null, verb = true) {
-
-        let partita = this.config.fog ? this.gameVisualizzata : this.game;
-
-        if (from === null) return partita.moves({ verbose: verb });
-        return partita.moves({ square: from, verbose: verb });
-
+        if (from === null) return this.game.moves({ verbose: verb });
+        return this.game.moves({ square: from, verbose: verb });
     }
 
     move(mossa) {
 
-        if (this.rit) this.lastPosition();
+        this.unmoveAllSquares();
 
-        this.deselectAllSquares();
+        let move = this.game.move({
+            from: mossa.slice(0, 2),
+            to: mossa.slice(2, 4),
+            promotion: mossa.length === 5 ? mossa[4] : null
+        });
 
-        // Esegue la mossa 
-        let res = this.game.move({ from: mossa.slice(0, 2), to: mossa.slice(2, 4), promotion: mossa.length === 5 && "rbqn".includes(mossa[4]) ? mossa[4] : undefined });
+        this.history.push(move);
 
-        // Se la mossa non è stata eseguita in nebbia
-        if (res == null && this.config.fog) {
-
-            // Rimuove i pezzi del giocatore avversario 
-            let pezziRimossi = {};
-            for (let casella in this.celle) {
-                if (this.game.get(casella) !== null && this.game.get(casella)['color'] !== this.game.turn() && this.game.get(casella)['type'] !== 'k') {
-                    pezziRimossi[casella] = this.game.remove(casella);
-                }
-            }
-
-            // Esegue la mossa nella partita visualizzata e nella partita
-            this.game.move({ from: mossa.slice(0, 2), to: mossa.slice(2, 4), promotion: mossa.length === 5 ? mossa[4] : undefined });
-            this.gameVisualizzata.move({ from: mossa.slice(0, 2), to: mossa.slice(2, 4), promotion: mossa.length === 5 ? mossa[4] : undefined });
-
-            // Ripristina i pezzi rimossi
-            for (let casella in pezziRimossi) {
-                this.game.put(pezziRimossi[casella], casella);
-            }
-
-            // updatePosition la position della partita
-            let nuovaFen = this.game.fen().split(' ')[0];
-            nuovaFen = [nuovaFen].concat(this.gameVisualizzata.fen().split(' ').slice(1));
-            nuovaFen = nuovaFen.join(' ');
-            this.game = Chess(nuovaFen);
-        }
-
-        // updatePosition la Chessboard
         this.updatePosition();
 
-        // Se la partita non è terminata, evidenzia la mossa
-        if (!this.config.fog || this.terminata) {
-            this.movedSquare(mossa.slice(2, 4));
-            this.movedSquare(mossa.slice(0, 2));
-        }
+        this.movedSquare(mossa.slice(2, 4));
+        this.movedSquare(mossa.slice(0, 2));
     }
 
     lastMove() {
-        let moves = this.game.history({ verbose: true });
-        if (moves.length === 0) return null;
-        return moves[moves.length - 1];
+        return this.history[this.history.length - 1];
     }
 
     // State
 
-    statoPartita() { // Restituisce lo stato della partita
-
-        // Se la modalità nebbia è attiva
-        if (this.config.fog) {
-            if (this.game.fen() === '') return null;
-
-            // Se c'è solo un re, restituisci il vincitore
-            let kb = false;
-            let kw = false;
-            for (let casella in this.celle) {
-                if (this.game.get(casella) === null) continue;
-                else if ('kb' === this.game.get(casella)['type'] + this.game.get(casella)['color']) kb = true;
-                else if ('kw' === this.game.get(casella)['type'] + this.game.get(casella)['color']) kw = true;
-            }
-            if (!kb) return 'w';
-            if (!kw) return 'b';
-        } else if (this.game.game_over()) {
-
-            // Se la partita è terminata, restituisci il vincitore
+    isGameOver() {
+        if (this.game.game_over()) {
             if (this.game.in_checkmate()) return this.game.turn() === 'w' ? 'b' : 'w';
             return 'p';
         }
         return null;
-    }
-
-    termina() { // Termina la partita
-        this.terminata = true;
     }
 
     turn() {
@@ -607,14 +473,15 @@ class Chessboard {
     }
 
     setPosition(position, color = null) {
-        if (color === null) color = position.split(' ')[1];
+        this.history = [];
+        if (!color) color = position.split(' ')[1];
         let change_color = this.config.color !== color;
         this.config.setColor(color);
         this.game = Chess(position);
         this.updatePosition(change_color);
     }
 
-    ribalta() {
+    changeColor() {
         let position = this.game.fen();
         this.setPosition(position, this.config.color === 'w' ? 'b' : 'w');
     }
@@ -633,53 +500,14 @@ class Chessboard {
     }
 
     updatePosition(change_color = false) {
-        this.terminata = false;
         if (change_color) {
             this.removeSquares();
             this.buildSquares();
         }
         this.updatePieces();
-        if (this.config.fog) this.fogHiddenSquares();
-        if (this.statoPartita() !== null) this.termina();
     }
 
-    // Game replay
-
-    backward() {
-        let mossa = this.game.undo();
-        if (mossa !== null) {
-            this.mosseIndietro.push(mossa);
-            this.updatePosition();
-            if (this.game.undo()) this.avanti();
-        } else {
-            this.updatePosition();
-        }
-        return mossa;
-    }
-
-    forward() {
-        if (this.mosseIndietro.length === 0) return;
-        let mossa = this.mosseIndietro.pop();
-        mossa = mossa['from'] + mossa['to'] + (mossa['promotion'] ? mossa['promotion'] : '');
-        this.move(mossa, false);
-    }
-
-    lastPosition() {
-        while (this.mosseIndietro.length > 0) {
-            this.avanti();
-        }
-    }
-
-    firstPosition() {
-        let mossa = this.game.undo();
-        while (mossa !== null) {
-            this.mosseIndietro.push(mossa);
-            mossa = this.game.undo();
-        }
-        this.updatePosition();
-    }
-
-    // Other
+    // Squares
 
     getSquareCoord(coord) {
         let letters = 'abcdefgh';
@@ -693,6 +521,29 @@ class Chessboard {
         let elem = this.celle[square];
         elem.className = 'square ' + (this.isWhiteSquare(square) ? 'whiteSquare' : 'blackSquare');
     }
+
+    getSquareID(row, col) {
+        row = parseInt(row);
+        col = parseInt(col);
+        if (this.isWhiteOriented()) {
+            row = 8 - row;
+            col = col + 1;
+        } else {
+            row = row + 1;
+            col = 8 - col;
+        }
+        let letters = 'abcdefgh';
+        let letter = letters[col - 1];
+        return letter + row;
+    }
+
+    removeSquares() { // Rimuove le caselle dalla Chessboard
+        for (let casella in this.celle) {
+            this.board.removeChild(this.celle[casella]);
+        }
+        this.celle = {};
+    }
+
 
     // Promotion
 
@@ -780,27 +631,40 @@ class Chessboard {
         return true;
     }
 
+    // Game replay
 
-    getSquareID(row, col) {
-        row = parseInt(row);
-        col = parseInt(col);
-        if (this.isWhiteOriented()) {
-            row = 8 - row;
-            col = col + 1;
+    backward() {
+        let mossa = this.game.undo();
+        if (mossa !== null) {
+            this.mosseIndietro.push(mossa);
+            this.updatePosition();
+            if (this.game.undo()) this.avanti();
         } else {
-            row = row + 1;
-            col = 8 - col;
+            this.updatePosition();
         }
-        let letters = 'abcdefgh';
-        let letter = letters[col - 1];
-        return letter + row;
+        return mossa;
     }
 
-    removeSquares() { // Rimuove le caselle dalla Chessboard
-        for (let casella in this.celle) {
-            this.board.removeChild(this.celle[casella]);
+    forward() {
+        if (this.mosseIndietro.length === 0) return;
+        let mossa = this.mosseIndietro.pop();
+        mossa = mossa['from'] + mossa['to'] + (mossa['promotion'] ? mossa['promotion'] : '');
+        this.move(mossa, false);
+    }
+
+    lastPosition() {
+        while (this.mosseIndietro.length > 0) {
+            this.avanti();
         }
-        this.celle = {};
+    }
+
+    firstPosition() {
+        let mossa = this.game.undo();
+        while (mossa !== null) {
+            this.mosseIndietro.push(mossa);
+            mossa = this.game.undo();
+        }
+        this.updatePosition();
     }
 
 }

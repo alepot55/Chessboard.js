@@ -17,16 +17,16 @@ var config = new ChessboardConfig({
     position: 'start', 
     color: 'w', 
     onMossa: onMossa, 
-    hints: true, 
-    fog: false, 
-    free: false});
+    hint: true, 
+    free: false
+});
 
 var board = config.build()
 
 function onMossa(mossa) {
-    console.log(mossa);
     board.move(mossa);
 }
 
-board.setPosition(DEFAULT_POSITION_WHITE, 'b');
+board.setPosition(DEFAULT_POSITION_WHITE, 'w');
+setTimeout(() => board.setPosition(fen, 'w'), 2000);
 

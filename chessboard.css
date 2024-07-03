@@ -71,7 +71,11 @@
     background: #f0d9b5;
 }
 
-.selectedSquare {
+.selectedSquareWhite {
+    background: #ababaa;
+}
+
+.selectedSquareBlack {
     background: #ababaa;
 }
 
@@ -84,11 +88,11 @@
 }
 
 .movedSquareBlack {
-    background: #ababaa;
+    background: #e9e981;
 }
 
 .movedSquareWhite {
-    background: #ababaa;
+    background: #f1f1a0;
 }
 
 .choice {

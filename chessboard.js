@@ -1,5 +1,6 @@
 const DEFAULT_POSITION_WHITE = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 const DEFAULT_POSITION_BLACK = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1'
+const ANIMATION = 500;
 
 class ChessboardConfig {
 
@@ -10,7 +11,7 @@ class ChessboardConfig {
         this.onMossa = settings.onMossa || (() => true);
         this.hint = settings.hint;
         this.path = settings.path || 'default_pieces';
-        this.animation = settings.animation || 100;
+        this.animation = settings.animation || ANIMATION;
         this.free = settings.free || true;
     }
 
@@ -63,11 +64,13 @@ class Chessboard {
     constructor(config) {
 
         this.config = config;
-
+        this.pezzi = {};
+        this.pieces = {};
+        this.celle = {};
+        this.squares = {};
         this.game = Chess(config.position);
 
-        this.promoting = false;
-
+        this.initParams();
         this.buildBoard();
         this.updatePosition();
     }
@@ -114,6 +117,15 @@ class Chessboard {
         this.addListeners();
     }
 
+    initParams() {
+        this.promoting = false;
+        this.casellaCliccata = null;
+        this.history = [];
+        this.mosseIndietro = [];
+        this.casellaCliccata = null;
+    }
+
+
     // Pieces
 
     containsPiece(square) {
@@ -126,53 +138,96 @@ class Chessboard {
         return piece ? piece['color'] : null;
     }
 
-    translatePiece(from, to, recall = false, duration = this.config.animation) {
+    translatePiece(from, to, duration = this.config.animation) {
         let h = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dimensioneScacchieraAltezza'));
         let w = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dimensioneScacchieraLarghezza'));
-    
+
         let squareWidth = w / 8;
         let squareHeigth = h / 8;
-    
+
         let piece = this.pezzi[from]['piece'];
         let elem = this.pieces[(piece, from)]['img'];
         let [rowFrom, colFrom] = this.getSquareCoord(from);
         let [rowTo, colTo] = this.getSquareCoord(to);
-        let redo = recall
-    
+
         let x = squareWidth * (colTo - colFrom);
         let y = squareHeigth * (rowTo - rowFrom);
-    
+
         let startTime;
         let board = this;
-    
+
         function translate(currentTime) {
             if (!startTime) {
                 startTime = currentTime;
             }
             let timeElapsed = currentTime - startTime;
             let progress = Math.min(timeElapsed / duration, 1);
-    
+
             elem.style.transform = 'translate(' + (x * progress) + 'px, ' + (y * progress) + 'px)';
-    
+
             if (progress < 1) {
                 requestAnimationFrame(translate);
             } else {
                 board.removePiece(from);
                 board.removePiece(to);
-                board.putPiece(to, board.containsPiece(to));
-                if (redo) board.updatePieces();
+                board.putPiece(to, board.containsPiece(to), false);
+            }
+        }
+
+        requestAnimationFrame(translate);
+    }
+
+    fadeInPiece(square, duration = this.config.animation) {
+        let elem = this.pezzi[square]['img'];
+        
+        let startTime;
+    
+        function fadeIn(currentTime) {
+            if (!startTime) {
+                startTime = currentTime;
+            }
+            let timeElapsed = currentTime - startTime;
+            let progress = Math.min(timeElapsed / duration, 1);
+    
+            elem.style.opacity = progress; // l'opacità aumenta con il progresso dell'animazione
+    
+            if (progress < 1) {
+                requestAnimationFrame(fadeIn);
             }
         }
     
-        requestAnimationFrame(translate);
+        requestAnimationFrame(fadeIn);
+    }      
+    
+    fadeOutPiece(piece, img, duration = this.config.animation) {
+        let elem = this.pieces[piece]['img'];
+        
+        let startTime;
+    
+        function fadeOut(currentTime) {
+            if (!startTime) {
+                startTime = currentTime;
+            }
+            let timeElapsed = currentTime - startTime;
+            let progress = Math.min(timeElapsed / duration, 1);
+    
+            elem.style.opacity = 1 - progress; // l'opacità diminuisce con il progresso dell'animazione
+    
+            if (progress < 1) {
+                requestAnimationFrame(fadeOut);
+            }
+        }
+    
+        requestAnimationFrame(fadeOut);
+        this.celle[piece].removeChild(img);
     }
     
-
-    removePiece(square) {
+    
+    removePiece(square, fade = true) {
 
         if (!this.pezzi[square]) return null;
 
-        this.celle[square].removeChild(this.pezzi[square]['img']);
+        if (fade) this.fadeOutPiece(square, this.pezzi[square]['img']);
         let piece = this.pezzi[square]['piece'];
 
         this.pezzi[square] = null;
@@ -181,12 +236,16 @@ class Chessboard {
         return piece;
     }
 
-    putPiece(square, piece) {
+    putPiece(square, piece, fade = true) {
+
+        if (!piece) return;
+
         let img = document.createElement("img");
         img.className = "piece";
 
         let percorso = this.config.path + '/' + piece + '.svg';
         img.src = percorso;
+        img.style.opacity = fade ? 0 : 1;
 
         let board = this;
         img.addEventListener('dragstart', () => {
@@ -197,23 +256,33 @@ class Chessboard {
         this.pezzi[square] = { 'img': img, 'piece': piece };
         this.pieces[(piece, square)] = { 'img': img };
         this.celle[square].appendChild(img);
+
+        if (fade) this.fadeInPiece(square);
     }
 
     updatePieces() {
 
-        let partita = this.game;
+        let squares = []
 
         for (let square in this.celle) {
+            squares.push(square);
+        }
 
-            let pieceNew = partita.get(square) ? partita.get(square)['type'] + partita.get(square)['color'] : null;
+        let toRemove = [];
+
+        for (let square in squares) {
+
+            square = squares[square];
+
+            let pieceNew = this.containsPiece(square);
             let pieceOld = this.pezzi[square] ? this.pezzi[square]['piece'] : null;
 
-            if (pieceNew !== null && pieceOld !== pieceNew) {
-
-                console.log(pieceNew, pieceOld, square);
+            if (pieceNew && pieceOld !== pieceNew) {
 
                 for (let from in this.pezzi) {
+
                     let coming = this.pezzi[from] ? this.pezzi[from]['piece'] : null;
+
                     if (from !== square && coming === pieceNew && !this.isPiece(pieceNew, from)) {
 
                         // check for en passant
@@ -222,15 +291,31 @@ class Chessboard {
                             this.removePiece(square[0] + from[1]);
                         }
 
-                        // check for castling
-                        let recastling = false;
-                        if (lastMove && (lastMove['san'] === 'O-O' || lastMove['san'] === 'O-O-O') && (pieceNew[0] === 'k' || pieceNew[0] === 'r')) {
-                            recastling = true;
-                        }
-
-                        this.translatePiece(from, square, true);
+                        this.translatePiece(from, square);
+                        toRemove.push(square);
+                        toRemove.push(from);
+                        break;
                     }
                 }
+            }
+        }
+
+        // remove toRemove elements in squares
+        for (let square in toRemove) {
+            let index = squares.indexOf(toRemove[square]);
+            if (index > -1) squares.splice(index, 1);
+        }
+
+        toRemove = [];
+
+        for (let square in squares) {
+
+            square = squares[square];
+
+            let pieceNew = this.containsPiece(square);
+            let pieceOld = this.pezzi[square] ? this.pezzi[square]['piece'] : null;
+
+            if (pieceNew && pieceOld !== pieceNew) {
 
                 // check for promotion
                 let lastMove = this.lastMove();
@@ -239,10 +324,27 @@ class Chessboard {
                     return this.updatePieces();
                 }
 
+                console.log('replacing', square, pieceOld, pieceNew, pieceOld);
+
                 this.removePiece(square);
                 this.putPiece(square, pieceNew);
 
-                return this.updatePieces();
+                toRemove.push(square);
+            }
+        }
+
+        // remove toRemove elements in squares
+        for (let square in toRemove) {
+            let index = squares.indexOf(toRemove[square]);
+            if (index > -1) squares.splice(index, 1);
+        }
+
+        for (let square in squares) {
+            square = squares[square];
+            let pieceNew = this.containsPiece(square);
+            let pieceOld = this.pezzi[square] ? this.pezzi[square]['piece'] : null;
+            if (!pieceNew && pieceOld) {
+                this.removePiece(square);
             }
         }
     }
@@ -332,7 +434,7 @@ class Chessboard {
 
             let hint = document.createElement("div");
             hint.className = "hint";
-            
+
             if (this.colorPiece(square) && this.colorPiece(square) !== this.turn()) hint.className += " catchable";
 
             this.celle[square].appendChild(hint);
@@ -473,11 +575,14 @@ class Chessboard {
     }
 
     setPosition(position, color = null) {
-        this.history = [];
+        this.initParams();
+        this.dehintAllSquares();
+        this.deselectAllSquares();
+        this.unmoveAllSquares();
         if (!color) color = position.split(' ')[1];
         let change_color = this.config.color !== color;
         this.config.setColor(color);
-        this.game = Chess(position);
+        this.game = new Chess(position);
         this.updatePosition(change_color);
     }
 

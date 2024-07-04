@@ -9,18 +9,6 @@
     --dimensionePezzoAltezza: calc(var(--dimensioneCellaAltezza) * 0.9);
 }
 
-.tavola {
-    width: var(--dimensioneTavolaLarghezza);
-    height: var(--dimensioneTavolaAltezza);
-    min-width: var(--dimensioneTavolaLarghezza);
-    border: var(--dimensioneBordo) solid var(--primario);
-    background-color: var(--primario);
-    border-radius: 10px;
-    display: flex;
-    justify-content: flex-end;
-    position: relative;
-}
-
 .board {
     display: grid;
     grid-template: repeat(8, 1fr) / repeat(8, 1fr);
@@ -39,13 +27,13 @@
 
 .piece {
     position: absolute;
-    z-index: 1;
+    z-index: 10;
     width: var(--dimensionePezzoLarghezza);
     height: var(--dimensionePezzoAltezza);
 }
 
-.simple {
-    filter: hue-rotate(calc((var(--colore) - 220) * 1deg));
+.choicable {
+    z-index: 25;
 }
 
 .hint {
@@ -53,7 +41,7 @@
     width: calc(var(--dimensioneCellaLarghezza) / 3.5);
     height: calc(var(--dimensioneCellaAltezza) / 3.5);
     position: absolute;
-    z-index: 0;
+    z-index: 5;
     border-radius: 50%;
     opacity: 0.8;
 }
@@ -97,13 +85,13 @@
 
 .choice {
     background: white;
-    z-index: 2;
+    z-index: 20;
 }
 
 .cover {
     background: black;
     opacity: 0.5;
-    z-index: 2;
+    z-index: 20;
 }
 
 .highlighted {

@@ -1,6 +1,6 @@
 const DEFAULT_POSITION_WHITE = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 const DEFAULT_POSITION_BLACK = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1'
-const ANIMATION = 200;
+const ANIMATION = 300;
 
 class ChessboardConfig {
 
@@ -165,7 +165,10 @@ class Chessboard {
                 startTime = currentTime;
             }
             let timeElapsed = currentTime - startTime;
-            let progress = Math.min(timeElapsed / duration, 1);
+            let t = timeElapsed / duration;
+            // voglio una progress corrispondente a ease di css
+            let progress = Math.min(1/(1 + (t/(1-t))**(-3)), 1);
+            // let progress = Math.min(timeElapsed / duration, 1);
 
             elem.style.transform = 'translate(' + (x * progress) + 'px, ' + (y * progress) + 'px)';
 
@@ -192,8 +195,9 @@ class Chessboard {
                 startTime = currentTime;
             }
             let timeElapsed = currentTime - startTime;
-            let progress = Math.min(timeElapsed / duration, 1);
-
+            // let progress = Math.min(timeElapsed / duration, 1);
+            let t = timeElapsed / duration;
+            let progress = Math.min(1/(1 + (t/(1-t))**(-3)), 1);
             elem.style.opacity = progress; // l'opacità aumenta con il progresso dell'animazione
 
             if (progress < 1) {
@@ -214,8 +218,9 @@ class Chessboard {
                 startTime = currentTime;
             }
             let timeElapsed = currentTime - startTime;
-            let progress = Math.min(timeElapsed / duration, 1);
-
+            // let progress = Math.min(timeElapsed / duration, 1);
+            let t = timeElapsed / duration;
+            let progress = Math.min(1/(1 + (t/(1-t))**(-3)), 1);
             elem.style.opacity = 1 - progress; // l'opacità diminuisce con il progresso dell'animazione
 
             if (progress < 1) {
@@ -771,7 +776,7 @@ class Chessboard {
         choice.className = "square choice";
 
         let img = document.createElement("img");
-        img.className = "piece";
+        img.className = "piece choicable";
         img.src = this.config.path + '/' + piece + '.svg';
         choice.appendChild(img);
 
@@ -811,7 +816,7 @@ class Chessboard {
 
             if (col === colCurr && Math.abs(row - rowCurr) <= 3) {
 
-                let choice = this.promoteSquare(casella, choices[Math.abs(row - rowCurr)] + this.config.color);
+                let choice = this.promoteSquare(casella, choices[Math.abs(row - rowCurr)] + pezzo['color']);
                 choice.addEventListener('click', () => {
                     this.onClick(to + choices[Math.abs(row - rowCurr)]);
                 });

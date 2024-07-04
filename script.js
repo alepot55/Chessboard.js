@@ -24,7 +24,7 @@ var config = new ChessboardConfig({
 var board = config.build()
 
 function onMossa(mossa) {
-    board.move(mossa);
+    board.makeMove(mossa);
 }
 
 board.setPosition(DEFAULT_POSITION_WHITE, 'w');

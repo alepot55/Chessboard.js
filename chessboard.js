@@ -138,27 +138,9 @@ class Chessboard {
         return piece ? piece['color'] : null;
     }
 
-    translatePiece(piece, from, to, removeTo, prom, animate, duration = this.config.animation) {
-
-        if (!animate) duration = 0;
-
-        let h = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dimensioneScacchieraAltezza'));
-        let w = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dimensioneScacchieraLarghezza'));
-
-        let squareWidth = w / 8;
-        let squareHeigth = h / 8;
-
-        let elem = this.pieces[(piece, from)]['img'];
-        let [rowFrom, colFrom] = this.getSquareCoord(from);
-        let [rowTo, colTo] = this.getSquareCoord(to);
-
-        let x = squareWidth * (colTo - colFrom);
-        let y = squareHeigth * (rowTo - rowFrom);
+    translation(elem, startX, startY, endX, endY, duration) {
 
         let startTime;
-        let board = this;
-
-        if (removeTo && this.pezzi[to]) this.fadeOutPiece(to, this.pezzi[to]['img'], false);
 
         function translate(currentTime) {
             if (!startTime) {
@@ -166,22 +148,71 @@ class Chessboard {
             }
             let timeElapsed = currentTime - startTime;
             let t = timeElapsed / duration;
-            // voglio una progress corrispondente a ease di css
-            let progress = Math.min(1/(1 + (t/(1-t))**(-3)), 1);
-            // let progress = Math.min(timeElapsed / duration, 1);
+            let progress = Math.min(1 / (1 + (t / (1 - t)) ** (-3)), 1);
 
+            let x = startX + (endX - startX) * progress;
+            let y = startY + (endY - startY) * progress;
+
+            elem.style.left = x + 'px';
+            elem.style.top = y + 'px';
+
+            if (progress < 1) {
+                requestAnimationFrame(translate);
+            }
+        }
+
+        requestAnimationFrame(translate);
+
+    }
+
+    traslation(elem, startX, startY, endX, endY, prom, duration = this.config.duration, from = null, to = null) {
+
+        let piece = elem.src.split('/').pop().split('.')[0];
+        let x = endX - startX;
+        let y = endY - startY;
+        let startTime;
+        let board = this;
+
+        function translate(currentTime) {
+            if (!startTime) {
+                startTime = currentTime;
+            }
+
+            let timeElapsed = currentTime - startTime;
+            let t = timeElapsed / duration;
+            let progress = Math.min(1 / (1 + (t / (1 - t)) ** (-3)), 1);
             elem.style.transform = 'translate(' + (x * progress) + 'px, ' + (y * progress) + 'px)';
 
             if (progress < 1) {
                 requestAnimationFrame(translate);
             } else {
-                if (prom) board.removePiece(from, 'p' + piece[1], false);
-                else board.removePiece(from, piece, false);
-                board.putPiece(to, piece, false);
+                if (prom && from) board.removePiece(from, 'p' + piece[1], false);
+                else if (from) board.removePiece(from, piece, false);
+                if (to && board.containsPiece(to)) board.putPiece(to, board.containsPiece(to), false);
             }
         }
 
         requestAnimationFrame(translate);
+    }
+
+    translatePiece(piece, from, to, removeTo, prom, animate, duration = this.config.animation) {
+
+        if (!animate) {
+            this.removePiece(from, piece, false);
+            this.putPiece(to, piece, false);
+            return;
+        };
+
+        let startX = this.celle[from].getBoundingClientRect().left;
+        let startY = this.celle[from].getBoundingClientRect().top;
+        let endX = this.celle[to].getBoundingClientRect().left;
+        let endY = this.celle[to].getBoundingClientRect().top;
+
+        let elem = this.pieces[(piece, from)]['img'];
+
+        if (removeTo) this.removePiece(to);
+
+        return this.traslation(elem, startX, startY, endX, endY, prom, duration, from, to);
     }
 
     fadeInPiece(square, duration = this.config.animation) {
@@ -197,7 +228,7 @@ class Chessboard {
             let timeElapsed = currentTime - startTime;
             // let progress = Math.min(timeElapsed / duration, 1);
             let t = timeElapsed / duration;
-            let progress = Math.min(1/(1 + (t/(1-t))**(-3)), 1);
+            let progress = Math.min(1 / (1 + (t / (1 - t)) ** (-3)), 1);
             elem.style.opacity = progress; // l'opacità aumenta con il progresso dell'animazione
 
             if (progress < 1) {
@@ -212,6 +243,7 @@ class Chessboard {
         let elem = this.pieces[square]['img'];
 
         let startTime;
+        let board = this;
 
         function fadeOut(currentTime) {
             if (!startTime) {
@@ -220,16 +252,17 @@ class Chessboard {
             let timeElapsed = currentTime - startTime;
             // let progress = Math.min(timeElapsed / duration, 1);
             let t = timeElapsed / duration;
-            let progress = Math.min(1/(1 + (t/(1-t))**(-3)), 1);
+            let progress = Math.min(1 / (1 + (t / (1 - t)) ** (-3)), 1);
             elem.style.opacity = 1 - progress; // l'opacità diminuisce con il progresso dell'animazione
 
             if (progress < 1) {
                 requestAnimationFrame(fadeOut);
+            } else {
+                if (remove) board.celle[square].removeChild(img);
             }
         }
 
         requestAnimationFrame(fadeOut);
-        if (remove) this.celle[square].removeChild(img);
     }
 
     removePiece(square, piece, fade = true) {
@@ -250,100 +283,89 @@ class Chessboard {
     putPiece(square, piece, fade = true) {
 
         if (!piece) return;
-        if (this.containsPiece(square)) this.removePiece(square);
+        this.removePiece(square, null, false);
 
         let img = document.createElement("img");
         img.className = "piece";
-
-        let percorso = this.config.path + '/' + piece + '.svg';
-        img.src = percorso;
+        img.src = this.config.path + '/' + piece + '.svg';;
         img.style.opacity = fade ? 0 : 1;
-        img.setAttribute('draggable', 'true');
 
         let board = this;
-
         img.onmousedown = function (event) {
 
             let recentHighlighted;
             let from = square;
             let to;
+            let moved = false;
 
-            // (1) prepare to moving: make absolute and on top by z-index
+            if (board.containsPiece(square)[1] !== board.turn()) return;
+            board.onClick(square);
+
             img.style.position = 'absolute';
             img.style.zIndex = 1000;
 
-            // centers the ball at (pageX, pageY) coordinates
+            // Function to move the piece with the mouse pointer
             function moveAt(pageX, pageY) {
+                moved = true;
                 img.style.left = pageX - img.offsetWidth / 2 + 'px';
                 img.style.top = pageY - img.offsetHeight / 2 + 'px';
             }
 
-            // move our absolutely positioned ball under the pointer
-            moveAt(event.pageX, event.pageY);
-
             function onMouseMove(event) {
+
+                // Bug fix for spamming the mousemove event
+                if(!piece) return;
 
                 moveAt(event.pageX, event.pageY);
 
-                // find the current square
+                // Find the square where the mouse is
                 let x = event.clientX - board.board.getBoundingClientRect().left;
                 let y = event.clientY - board.board.getBoundingClientRect().top;
                 let col = Math.floor(x / (board.board.offsetWidth / 8));
                 let row = Math.floor(y / (board.board.offsetHeight / 8));
-                let square = board.getSquareID(row, col);
-                to = square;
+                to = board.getSquareID(row, col);
 
-                if (square !== recentHighlighted) {
-                    board.highlightSquare(square);
+                if (to !== recentHighlighted) {
+                    board.highlightSquare(to);
                     board.dehighlightSquare(recentHighlighted);
-                    recentHighlighted = square;
+                    recentHighlighted = to;
                 }
-
-                // if is the same square from, center in from square
             }
-
-            // (2) move the ball on mousemove
             document.addEventListener('mousemove', onMouseMove);
 
-            // (3) drop the ball, remove unneeded handlers
+            // Drop the piece and remove the event listener
             img.onmouseup = function () {
                 board.dehighlightSquare(recentHighlighted);
                 document.removeEventListener('mousemove', onMouseMove);
                 img.onmouseup = null;
-                if (!board.onClick(to, false)) {
-                    // ritorna alla posizione iniziale
-                    img.style.position = 'relative';
-                    img.style.zIndex = 0;
-                    img.style.left = 0;
-                    img.style.top = 0;
+                if (moved && !board.onClick(to, false)) {
 
-
+                    // If the move is not legal, move the piece back to the original square
+                    let startX = img.getBoundingClientRect().left-4;
+                    let startY = img.getBoundingClientRect().top-4;
+                    let endX = board.celle[from].getBoundingClientRect().left;
+                    let endY = board.celle[from].getBoundingClientRect().top;
+                    if (board.prom) board.traslation(img, startX, startY, endX, endY, false, 0, null, from);
+                    else board.traslation(img, startX, startY, endX, endY, false, 200, null, from);
                 }
             };
 
         };
 
+        // Prevent the image from being dragged
         img.ondragstart = function () {
-            board.onClick(square);
             return false;
         };
-
-
-        // img.addEventListener('dragstart', function(e) {
-        //     e.dataTransfer.setData('text/plain', this.id);
-        //     if (board.colorPiece(square) === board.turn()) board.onClick(square);
-        // });
-
 
         this.pezzi[square] = { 'img': img, 'piece': piece };
         this.pieces[(piece, square)] = { 'img': img };
         this.celle[square].appendChild(img);
 
         if (fade) this.fadeInPiece(square);
+        return img;
     }
 
     updatePieces(animation) {
-        console.log('updatePieces', animation);
 
         let ok = {};
         let escaping = {};
@@ -447,30 +469,28 @@ class Chessboard {
             let cella = this.celle[casella];
             cella.addEventListener("mouseover", () => this.hintMoves(casella));
             cella.addEventListener("mouseout", () => this.dehintMoves(casella));
-            cella.addEventListener("click", () => this.onClick(casella));
-            cella.addEventListener('dragover', function (event) {
-                event.preventDefault(); // Permette il drop
+            cella.addEventListener("click", () => {
+                this.onClick(casella);
             });
-
-            let board = this;
-            cella.addEventListener('drop', function (event) {
-                event.preventDefault(); // Previene l'apertura del link
-                board.onClick(casella);
+            cella.addEventListener("touch", () => {
+                this.onClick(casella);
             });
         }
     }
 
     onClick(casella, animation = true) {
 
-        console.log('onClick', casella, animation);
-        let from = this.casellaCliccata;
-        this.casellaCliccata = null;
+        if (!casella || casella === this.casellaCliccata) return;
 
         if (this.promoting) {
             this.depromoteAllSquares();
             this.removeAllCovers();
             this.promoting = false;
+            if (casella.length === 2) this.casellaCliccata = null;
         }
+
+        let from = this.casellaCliccata;
+        this.casellaCliccata = null;
 
         if (from) {
             this.deselectSquare(from);
@@ -482,8 +502,8 @@ class Chessboard {
 
             let mossa = from + casella;
 
-            if (!this.legalMove(mossa)) return;
-            if (mossa.length == 4 && this.promozione(mossa)) return;
+            if (!this.legalMove(mossa)) return false;
+            if (mossa.length == 4 && this.promozione(mossa)) return false;
 
             // Esegui la mossa se accettata dalla funzione onMossa
 
@@ -579,8 +599,6 @@ class Chessboard {
         // non passa animation
         animation = this.animate;
 
-        console.log('move', mossa, animation);
-
         this.unmoveAllSquares();
 
         let move = this.game.move({
@@ -596,7 +614,6 @@ class Chessboard {
         this.movedSquare(mossa.slice(2, 4));
         this.movedSquare(mossa.slice(0, 2));
     }
-
 
     movedSquare(square) {
         let elem = this.celle[square];
@@ -732,6 +749,8 @@ class Chessboard {
         }
         this.celle = {};
     }
+
+    // Highlight
 
     highlightSquare(square) {
         if (!square || !this.celle[square]) return;

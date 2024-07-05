@@ -28,7 +28,4 @@ function onMossa(mossa) {
 }
 
 board.setPosition(DEFAULT_POSITION_WHITE, 'w');
-setTimeout(() => {
-    board.setPosition(fen, 'w');
-}, 2000);
 

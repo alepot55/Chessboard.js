@@ -13,6 +13,10 @@ class ChessboardConfig {
         this.path = settings.path || 'default_pieces';
         this.animation = settings.animation || ANIMATION;
         this.free = settings.free || true;
+
+        // moveHighlight: true, false
+        this.moveHighlight = settings.moveHighlight ? true : false;
+
     }
 
 
@@ -62,14 +66,12 @@ class ChessboardConfig {
 class Chessboard {
 
     constructor(config) {
-
         this.config = config;
         this.pezzi = {};
         this.pieces = {};
         this.celle = {};
         this.squares = {};
         this.game = Chess(config.position);
-
         this.initParams();
         this.buildBoard();
         this.updatePosition();
@@ -78,17 +80,14 @@ class Chessboard {
     // Build
 
     buildBoard() {
-
         this.board = document.getElementById(this.config.id_div);
         this.board.className = "board";
-
         this.buildSquares();
     }
 
     buildSquares() {
-
         this.squares = {};
-        this.casellaCliccata = null;
+        this.lastSquare = null;
         this.celle = {};
         this.pezzi = {};
         this.pieces = {};
@@ -119,10 +118,10 @@ class Chessboard {
 
     initParams() {
         this.promoting = false;
-        this.casellaCliccata = null;
+        this.lastSquare = null;
         this.history = [];
         this.mosseIndietro = [];
-        this.casellaCliccata = null;
+        this.lastSquare = null;
     }
 
 
@@ -134,35 +133,8 @@ class Chessboard {
     }
 
     colorPiece(square) {
-        let piece = this.game.get(square);
-        return piece ? piece['color'] : null;
-    }
-
-    translation(elem, startX, startY, endX, endY, duration) {
-
-        let startTime;
-
-        function translate(currentTime) {
-            if (!startTime) {
-                startTime = currentTime;
-            }
-            let timeElapsed = currentTime - startTime;
-            let t = timeElapsed / duration;
-            let progress = Math.min(1 / (1 + (t / (1 - t)) ** (-3)), 1);
-
-            let x = startX + (endX - startX) * progress;
-            let y = startY + (endY - startY) * progress;
-
-            elem.style.left = x + 'px';
-            elem.style.top = y + 'px';
-
-            if (progress < 1) {
-                requestAnimationFrame(translate);
-            }
-        }
-
-        requestAnimationFrame(translate);
-
+        let piece = this.containsPiece(square);
+        return piece ? piece[1] : null;
     }
 
     traslation(elem, startX, startY, endX, endY, prom, duration = this.config.duration, from = null, to = null) {
@@ -314,7 +286,7 @@ class Chessboard {
             function onMouseMove(event) {
 
                 // Bug fix for spamming the mousemove event
-                if(!piece) return;
+                if (!piece) return;
 
                 moveAt(event.pageX, event.pageY);
 
@@ -341,11 +313,12 @@ class Chessboard {
                 if (moved && !board.onClick(to, false)) {
 
                     // If the move is not legal, move the piece back to the original square
-                    let startX = img.getBoundingClientRect().left-4;
-                    let startY = img.getBoundingClientRect().top-4;
+                    let startX = img.getBoundingClientRect().left - 4;
+                    let startY = img.getBoundingClientRect().top - 4;
                     let endX = board.celle[from].getBoundingClientRect().left;
                     let endY = board.celle[from].getBoundingClientRect().top;
-                    if (board.prom) board.traslation(img, startX, startY, endX, endY, false, 0, null, from);
+                    console.log(board.prom);
+                    if (board.promoting) board.traslation(img, startX, startY, endX, endY, false, 0, null, from);
                     else board.traslation(img, startX, startY, endX, endY, false, 200, null, from);
                 }
             };
@@ -450,15 +423,17 @@ class Chessboard {
     }
 
     opponentPiece(square) {
-        return this.game.get(square) !== null && this.game.get(square)['color'] !== this.config.color;
+        let piece = this.containsPiece(square);
+        return piece && piece[1] !== this.config.color;
     }
 
     playerPiece(square) {
-        return this.game.get(square) !== null && this.game.get(square)['color'] === this.config.color;
+        let piece = this.containsPiece(square);
+        return piece && piece[1] === this.config.color;
     }
 
     isPiece(piece, square) {
-        return this.game.get(square) !== null && this.game.get(square)['color'] === piece[1] && this.game.get(square)['type'] === piece[0];
+        return this.containsPiece(square) === piece;
     }
 
     // Listeners
@@ -480,21 +455,21 @@ class Chessboard {
 
     onClick(casella, animation = true) {
 
-        if (!casella || casella === this.casellaCliccata) return;
+        if (!casella || casella === this.lastSquare) return;
 
         if (this.promoting) {
             this.depromoteAllSquares();
             this.removeAllCovers();
             this.promoting = false;
-            if (casella.length === 2) this.casellaCliccata = null;
+            if (casella.length === 2) this.lastSquare = null;
         }
 
-        let from = this.casellaCliccata;
-        this.casellaCliccata = null;
+        let from = this.lastSquare;
+        this.lastSquare = null;
 
         if (from) {
             this.deselectSquare(from);
-            this.dehintMoves(from);
+            this.dehintAllSquares();
         }
 
         // Se ci sono caselle selezionate e non possiedo la casella cliccata
@@ -503,12 +478,9 @@ class Chessboard {
             let mossa = from + casella;
 
             if (!this.legalMove(mossa)) return false;
-            if (mossa.length == 4 && this.promozione(mossa)) return false;
+            if (mossa.length == 4 && this.promote(mossa)) return false;
 
             // Esegui la mossa se accettata dalla funzione onMossa
-
-            // non passa animation
-            this.animate = animation;
             if (this.config.onMossa(mossa)) this.makeMove(mossa, animation);
             return true;
 
@@ -516,7 +488,7 @@ class Chessboard {
 
             this.selectSquare(casella);
             this.hintMoves(casella);
-            this.casellaCliccata = casella;
+            this.lastSquare = casella;
 
         }
         return false;
@@ -528,15 +500,15 @@ class Chessboard {
 
         if (!this.config.free && this.opponentPiece(square)) return;
 
-        if (this.config.hint && this.casellaCliccata === null) {
+        if (!this.config.hint || this.lastSquare) return;
 
-            let hint = document.createElement("div");
-            hint.className = "hint";
+        let hint = document.createElement("div");
+        hint.className = "hint";
 
-            if (this.colorPiece(square) && this.colorPiece(square) !== this.turn()) hint.className += " catchable";
+        if (this.colorPiece(square) && this.colorPiece(square) !== this.turn()) hint.className += " catchable";
 
-            this.celle[square].appendChild(hint);
-        }
+        this.celle[square].appendChild(hint);
+
     }
 
     hintMoves(square) {
@@ -554,7 +526,7 @@ class Chessboard {
     }
 
     dehintSquare(square) {
-        if (this.config.hint && this.casellaCliccata === null) {
+        if (this.config.hint && this.lastSquare === null) {
             let cella = this.celle[square];
             let figli = cella.childNodes;
 
@@ -595,10 +567,6 @@ class Chessboard {
     // Moves
 
     makeMove(mossa, animation) {
-
-        // non passa animation
-        animation = this.animate;
-
         this.unmoveAllSquares();
 
         let move = this.game.move({
@@ -607,12 +575,25 @@ class Chessboard {
             promotion: mossa.length === 5 ? mossa[4] : null
         });
 
+        if (!move) return false;
+
         this.history.push(move);
 
         this.updatePosition(false, animation);
 
         this.movedSquare(mossa.slice(2, 4));
         this.movedSquare(mossa.slice(0, 2));
+
+        return true;
+
+    }
+
+    makeRandomMove() {
+        if (this.isGameOver()) return;
+        let legalMoves = this.getLegalMoves();
+        let randomMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+        let mossa = randomMove['from'] + randomMove['to'] + (randomMove['promotion'] ? randomMove['promotion'] : '');
+        this.makeMove(mossa);
     }
 
     movedSquare(square) {
@@ -672,7 +653,6 @@ class Chessboard {
         let parts = fen.split(' ');
         parts[1] = color;
         return parts.join(' ');
-
     }
 
     setPosition(position, color = null) {
@@ -753,13 +733,13 @@ class Chessboard {
     // Highlight
 
     highlightSquare(square) {
-        if (!square || !this.celle[square]) return;
+        if (!square || !this.celle[square] || !this.config.moveHighlight) return;
         let elem = this.celle[square];
         elem.className += ' highlighted';
     }
 
     dehighlightSquare(square) {
-        if (!square || !this.celle[square]) return;
+        if (!square || !this.celle[square] || !this.config.moveHighlight) return;
         let elem = this.celle[square];
         elem.className = elem.className.replace(' highlighted', '');
     }
@@ -821,7 +801,8 @@ class Chessboard {
         }
     }
 
-    promozione(mossa) {
+    promote(mossa) {
+
         let to = mossa.slice(2, 4);
         let from = mossa.slice(0, 2);
         let pezzo = this.game.get(from);
@@ -829,6 +810,8 @@ class Chessboard {
         let choices = ['q', 'r', 'b', 'n']
 
         if (pezzo['type'] !== 'p' || !(row === 0 || row === 7)) return false;
+
+        this.promoting = true;
 
         for (let casella in this.celle) {
             let [rowCurr, colCurr] = this.getSquareCoord(casella);
@@ -845,8 +828,7 @@ class Chessboard {
             }
         }
 
-        this.casellaCliccata = from;
-        this.promoting = true;
+        this.lastSquare = from;
 
         return true;
     }

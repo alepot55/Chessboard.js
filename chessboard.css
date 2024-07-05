@@ -15,7 +15,6 @@
     width: var(--dimensioneScacchieraLarghezza);
     height: var(--dimensioneScacchieraAltezza);
     border: 1px solid black;
-    margin-left: 100px;
 }
 
 .square {

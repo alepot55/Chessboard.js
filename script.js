@@ -18,14 +18,18 @@ var config = new ChessboardConfig({
     color: 'w', 
     onMossa: onMossa, 
     hint: true, 
-    free: false
+    free: false,
+    moveHighlight: false
 });
 
 var board = config.build()
 
 function onMossa(mossa) {
-    board.makeMove(mossa);
+    setTimeout(() => {
+        board.makeRandomMove();
+    }, 500);
+    return true;
 }
 
-board.setPosition(DEFAULT_POSITION_WHITE, 'w');
+board.setPosition(fen, 'w');
 

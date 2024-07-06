@@ -1,25 +1,30 @@
 :root {
-    --dimensioneScacchieraAltezza: 600px;
-    --dimensioneScacchieraLarghezza: 600px;
-    
-    --dimensioneCellaAltezza: calc(var(--dimensioneScacchieraAltezza) / 8);
-    --dimensioneCellaLarghezza: calc(var(--dimensioneScacchieraLarghezza) / 8);
+    --dimBoard: 600px;
+    --pieceRatio: 0.9;
 
-    --dimensionePezzoLarghezza: calc(var(--dimensioneCellaLarghezza) * 0.9);
-    --dimensionePezzoAltezza: calc(var(--dimensioneCellaAltezza) * 0.9);
+    --blackSquare: #b58863;
+    --whiteSquare: #f0d9b5;
+    --highlightSquare: yellow;
+    --selectedSquareWhite: #ababaa;
+    --selectedSquareBlack: #ababaa;
+    --movedSquareBlack: #e9e981;
+    --movedSquareWhite: #f1f1a0;
+    --choiceSquare: white;
+    --coverSquare: black;
+    --hintColor: #ababaa;
 }
 
 .board {
     display: grid;
     grid-template: repeat(8, 1fr) / repeat(8, 1fr);
-    width: var(--dimensioneScacchieraLarghezza);
-    height: var(--dimensioneScacchieraAltezza);
+    width: var(--dimBoard);
+    height: var(--dimBoard);
     border: 1px solid black;
 }
 
 .square {
-    width: var(--dimensioneCellaLarghezza);
-    height: var(--dimensioneCellaAltezza);
+    width: calc(var(--dimBoard) / 8);
+    height: calc(var(--dimBoard) / 8);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -28,8 +33,14 @@
 .piece {
     position: absolute;
     z-index: 10;
-    width: var(--dimensionePezzoLarghezza);
-    height: var(--dimensionePezzoAltezza);
+    width: calc(calc(var(--dimBoard) / 8) * var(--pieceRatio));
+    height: calc(calc(var(--dimBoard) / 8) * var(--pieceRatio));
+
+    /* No selection */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none; /* Standard */
 }
 
 .choicable {
@@ -37,9 +48,9 @@
 }
 
 .hint {
-    background: #ababaa;
-    width: calc(var(--dimensioneCellaLarghezza) / 3.5);
-    height: calc(var(--dimensioneCellaAltezza) / 3.5);
+    background: var(--hintColor);
+    width: calc(calc(var(--dimBoard) / 8) / 3.5);
+    height: calc(calc(var(--dimBoard) / 8) / 3.5);
     position: absolute;
     z-index: 5;
     border-radius: 50%;
@@ -47,53 +58,45 @@
 }
 
 .catchable {
-    width: calc(var(--dimensioneCellaLarghezza) * 0.9);
-    height: calc(var(--dimensioneCellaAltezza) * 0.9);
+    width: calc(calc(var(--dimBoard) / 8) * 0.9);
+    height: calc(calc(var(--dimBoard) / 8) * 0.9);
 }
 
 .blackSquare {
-    background: #b58863;
+    background: var(--blackSquare);
 }
 
 .whiteSquare {
-    background: #f0d9b5;
+    background: var(--whiteSquare);
 }
 
 .selectedSquareWhite {
-    background: #ababaa;
+    background: var(--selectedSquareWhite);
 }
 
 .selectedSquareBlack {
-    background: #ababaa;
-}
-
-.blackSquareFog {
-    background: #2b2b2a;
-}
-
-.whiteSquareFog {
-    background: #5e5e5d;
+    background: var(--selectedSquareBlack);
 }
 
 .movedSquareBlack {
-    background: #e9e981;
+    background: var(--movedSquareBlack);
 }
 
 .movedSquareWhite {
-    background: #f1f1a0;
+    background: var(--movedSquareWhite);
 }
 
 .choice {
-    background: white;
+    background: var(--choiceSquare);
     z-index: 20;
 }
 
 .cover {
-    background: black;
+    background: var(--coverSquare);
     opacity: 0.5;
     z-index: 20;
 }
 
 .highlighted {
-    box-shadow: inset 0 0 10px yellow;
+    box-shadow: inset 0 0 10px var(--highlightSquare);
 }

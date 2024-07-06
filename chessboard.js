@@ -1,6 +1,8 @@
 const DEFAULT_POSITION_WHITE = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 const DEFAULT_POSITION_BLACK = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1'
 const ANIMATION = 300;
+const SLOW_ANIMATION = 600;
+const FAST_ANIMATION = 150;
 
 class ChessboardConfig {
 
@@ -8,52 +10,121 @@ class ChessboardConfig {
         this.id_div = settings.id_div;
         this.position = settings.position || DEFAULT_POSITION_WHITE;
         this.color = settings.color || 'w';
-        this.onMossa = settings.onMossa || (() => true);
         this.hint = settings.hint;
-        this.path = settings.path || 'default_pieces';
         this.animation = settings.animation || ANIMATION;
-        this.free = settings.free || true;
+
+        // deaggable: true, false
+        this.draggable = settings.draggable;
+
+        // dropOffBoard: 'snapback', 'trash'
+        this.dropOffBoard = settings.dropOffBoard || 'snapback';
+
+        // hints: true, false
+        this.hints = settings.hints;
+
+        // ---------------------- Move
+
+        // movableColors: 'white', 'black', 'both', 'none'
+        this.movableColors = settings.movableColors || 'both';
 
         // moveHighlight: true, false
-        this.moveHighlight = settings.moveHighlight ? true : false;
+        this.moveHighlight = settings.moveHighlight;
+
+        // moveAnimation: 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'none'
+        this.moveAnimation = settings.moveAnimation ? settings.moveAnimation : 'ease';
+
+        // moveTime: integer, 'slow', 'fast'
+        this.moveTime = settings.moveTime ? settings.moveTime : 'fast';
+
+        // ---------------------- Snapback
+
+        // snapbackTime: integer, 'slow', 'fast'
+        this.snapbackTime = settings.snapbackTime ? settings.snapbackTime : 'fast';
+
+        // snapbackAnimation: 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'none'
+        this.snapbackAnimation = settings.snapbackAnimation ? settings.snapbackAnimation : 'ease';
+
+        // ---------------------- Fade
+
+        // fadeTime: integer, 'slow', 'fast'
+        this.fadeTime = settings.fadeTime ? settings.fadeTime : 'fast';
+
+        // fadeAnimation: 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'none'
+        this.fadeAnimation = settings.fadeAnimation ? settings.fadeAnimation : 'ease';
+
+        // ---------------------- Pieces
+
+        // ratio: integer
+
+        settings.ratio ? this.setCSSProperty('pieceRatio', settings.ratio) : null;
+
+        // piecesPath: string
+        this.piecesPath = settings.piecesPath ? settings.piecesPath : 'default_pieces';
+
+
+        // ---------------------- Methods
+
+        // onMove: function(move)
+        this.onMove = settings.onMove ? settings.onMove : () => true;
+
+        // onMoveEnd: function(move)
+        this.onMoveEnd = settings.onMoveEnd ? settings.onMoveEnd : () => true;
+
+        // onChange: function(fen)
+        this.onChange = settings.onChange ? settings.onChange : () => true;
+
+        // onDragStart: function(from, piece)
+        this.onDragStart = settings.onDragStart ? settings.onDragStart : () => true;
+
+        // onDragMove: function(from, to, piece)
+        this.onDragMove = settings.onDragMove ? settings.onDragMove : () => true;
+
+        // onDrop: function(from, to, piece)
+        this.onDrop = settings.onDrop ? settings.onDrop : () => true;
+
+        // onSnapbackEnd: function(from, piece)
+        this.onSnapbackEnd = settings.onSnapbackEnd ? settings.onSnapbackEnd : () => true;
+
+        // ---------------------- Colors
+
+        // whiteSquare: string
+        settings.whiteSquare ? this.setCSSProperty('whiteSquare', settings.whiteSquare) : null;
+
+        // blackSquare: string
+        settings.blackSquare ? this.setCSSProperty('blackSquare', settings.blackSquare) : null;
+
+        // highlightSquare: string
+        settings.highlightSquare ? this.setCSSProperty('highlightSquare', settings.highlightSquare) : null;
+
+        // selectedSquareWhite: string
+        settings.selectedSquareWhite ? this.setCSSProperty('selectedSquareWhite', settings.selectedSquareWhite) : null;
+
+        // selectedSquareBlack: string
+        settings.selectedSquareBlack ? this.setCSSProperty('selectedSquareBlack', settings.selectedSquareBlack) : null;
+
+        // movedSquareWhite: string
+        settings.movedSquareWhite ? this.setCSSProperty('movedSquareWhite', settings.movedSquareWhite) : null;
+
+        // movedSquareBlack: string
+        settings.movedSquareBlack ? this.setCSSProperty('movedSquareBlack', settings.movedSquareBlack) : null;
+
+        // choiceSquare: string
+        settings.choiceSquare ? this.setCSSProperty('choiceSquare', settings.choiceSquare) : null;
+
+        // coverSquare: string
+        settings.coverSquare ? this.setCSSProperty('coverSquare', settings.coverSquare) : null;
+
+        // hintColor: string
+        settings.hintColor ? this.setCSSProperty('hintColor', settings.hintColor) : null;
 
     }
 
-
-    setIdDiv(id_div) {
-        this.config.id_div = id_div;
-        return this;
-    }
-
-    setPosition(position) {
-        this.position = position;
-        return this;
+    setCSSProperty(property, value) {
+        document.documentElement.style.setProperty('--' + property, value);
     }
 
     setColor(color) {
         this.color = color;
-        return this;
-    }
-
-    setOnMossa(onMossa) {
-        this.config.onMossa = onMossa;
-        return this;
-    }
-
-    setHints(hints) {
-        this.hints = hints;
-        return this;
-    }
-
-    setPath(path) {
-        this.config.path = path;
-        return this;
-    }
-
-    setTheme(theme) {
-        for (let key in theme) {
-            this.theme[key] = theme[key];
-        }
         return this;
     }
 
@@ -71,13 +142,24 @@ class Chessboard {
         this.pieces = {};
         this.celle = {};
         this.squares = {};
-        this.game = Chess(config.position);
+        this.buildGame(config.position);
         this.initParams();
         this.buildBoard();
         this.updatePosition();
     }
 
     // Build
+
+    buildGame(position) {
+        if (typeof position === 'string') this.game = Chess(position);
+        else {
+            let game = new Chess('start');
+            for (let square in position) {
+                game.put({ type: position[square][0], color: position[square][1] }, square);
+            }
+            this.game = game;
+        }
+    }
 
     buildBoard() {
         this.board = document.getElementById(this.config.id_div);
@@ -124,8 +206,18 @@ class Chessboard {
         this.lastSquare = null;
     }
 
+    resizeBoard(value) {
+        document.documentElement.style.setProperty('--dimBoard', value + 'px');
+        this.updatePosition();
+    }
+
 
     // Pieces
+
+    getPiecePath(piece) {
+        if (typeof this.config.piecesPath === 'string') return this.config.piecesPath + '/' + piece + '.svg';
+        else return this.config.piecesPath(piece);
+    }
 
     containsPiece(square) {
         let piece = this.game.get(square);
@@ -137,9 +229,32 @@ class Chessboard {
         return piece ? piece[1] : null;
     }
 
-    traslation(elem, startX, startY, endX, endY, prom, duration = this.config.duration, from = null, to = null) {
+    traslation(elem, from, to, duration) {
 
         let piece = elem.src.split('/').pop().split('.')[0];
+
+        if (duration === 'none' || duration === 0) {
+            this.removePiece(from, piece, false);
+            this.putPiece(to, piece, false);
+            return;
+        }
+        else if (duration === 'slow') duration = SLOW_ANIMATION;
+        else if (duration === 'fast') duration = FAST_ANIMATION;
+
+        let startX, startY, endX, endY;
+
+        if (from) {
+            startX = this.celle[from].getBoundingClientRect().left;
+            startY = this.celle[from].getBoundingClientRect().top;
+        } else {
+            startX = elem.getBoundingClientRect().left - 4;
+            startY = elem.getBoundingClientRect().top - 4;
+        }
+
+        endX = this.celle[to].getBoundingClientRect().left;
+        endY = this.celle[to].getBoundingClientRect().top;
+
+
         let x = endX - startX;
         let y = endY - startY;
         let startTime;
@@ -152,22 +267,21 @@ class Chessboard {
 
             let timeElapsed = currentTime - startTime;
             let t = timeElapsed / duration;
-            let progress = Math.min(1 / (1 + (t / (1 - t)) ** (-3)), 1);
+            let progress = board.transitionTimingFunction(t, board.config.moveAnimation);
             elem.style.transform = 'translate(' + (x * progress) + 'px, ' + (y * progress) + 'px)';
 
-            if (progress < 1) {
+            if (t < 1) {
                 requestAnimationFrame(translate);
             } else {
-                if (prom && from) board.removePiece(from, 'p' + piece[1], false);
-                else if (from) board.removePiece(from, piece, false);
-                if (to && board.containsPiece(to)) board.putPiece(to, board.containsPiece(to), false);
+                if (from) board.removePiece(from, piece, false);
+                if (to) board.putPiece(to, board.containsPiece(to), false);
             }
         }
 
         requestAnimationFrame(translate);
     }
 
-    translatePiece(piece, from, to, removeTo, prom, animate, duration = this.config.animation) {
+    translatePiece(piece, from, to, removeTo, animate) {
 
         if (!animate) {
             this.removePiece(from, piece, false);
@@ -175,35 +289,46 @@ class Chessboard {
             return;
         };
 
-        let startX = this.celle[from].getBoundingClientRect().left;
-        let startY = this.celle[from].getBoundingClientRect().top;
-        let endX = this.celle[to].getBoundingClientRect().left;
-        let endY = this.celle[to].getBoundingClientRect().top;
-
         let elem = this.pieces[(piece, from)]['img'];
 
         if (removeTo) this.removePiece(to);
 
-        return this.traslation(elem, startX, startY, endX, endY, prom, duration, from, to);
+        return this.traslation(elem, from, to, this.config.moveTime);
     }
 
-    fadeInPiece(square, duration = this.config.animation) {
+    snapbackPiece(square, piece, animate = true) {
+
+        if (!animate) {
+            this.removePiece(square, piece, false);
+            this.putPiece(square, piece, false);
+            return;
+        }
+
+        let elem = this.pieces[(piece, square)]['img'];
+        this.traslation(elem, null, square, this.config.snapbackTime);
+    }
+
+    fadeInPiece(square) {
+
+        let duration = this.config.fadeTime;
+        if (duration === 'slow') duration = SLOW_ANIMATION;
+        else if (duration === 'fast') duration = FAST_ANIMATION;
 
         let elem = this.pezzi[square]['img'];
 
         let startTime;
+        let board = this;
 
         function fadeIn(currentTime) {
             if (!startTime) {
                 startTime = currentTime;
             }
             let timeElapsed = currentTime - startTime;
-            // let progress = Math.min(timeElapsed / duration, 1);
             let t = timeElapsed / duration;
-            let progress = Math.min(1 / (1 + (t / (1 - t)) ** (-3)), 1);
-            elem.style.opacity = progress; // l'opacità aumenta con il progresso dell'animazione
+            let progress = board.transitionTimingFunction(t, board.config.fadeAnimation);
+            elem.style.opacity = progress;
 
-            if (progress < 1) {
+            if (t < 1) {
                 requestAnimationFrame(fadeIn);
             }
         }
@@ -211,8 +336,17 @@ class Chessboard {
         requestAnimationFrame(fadeIn);
     }
 
-    fadeOutPiece(square, img, remove = true, duration = this.config.animation) {
-        let elem = this.pieces[square]['img'];
+    fadeOutPiece(square, img, remove, animate) {
+
+        let duration = this.config.fadeTime;
+        if (duration === 'slow') duration = SLOW_ANIMATION;
+        else if (duration === 'fast') duration = FAST_ANIMATION;
+
+        if (!animate) {
+            if (remove) this.celle[square].removeChild(img);
+            else img.style.opacity = 0;
+            return;
+        }
 
         let startTime;
         let board = this;
@@ -222,12 +356,11 @@ class Chessboard {
                 startTime = currentTime;
             }
             let timeElapsed = currentTime - startTime;
-            // let progress = Math.min(timeElapsed / duration, 1);
             let t = timeElapsed / duration;
-            let progress = Math.min(1 / (1 + (t / (1 - t)) ** (-3)), 1);
-            elem.style.opacity = 1 - progress; // l'opacità diminuisce con il progresso dell'animazione
+            let progress = board.transitionTimingFunction(t, board.config.fadeAnimation);
+            img.style.opacity = 1 - progress;
 
-            if (progress < 1) {
+            if (t < 1) {
                 requestAnimationFrame(fadeOut);
             } else {
                 if (remove) board.celle[square].removeChild(img);
@@ -259,28 +392,32 @@ class Chessboard {
 
         let img = document.createElement("img");
         img.className = "piece";
-        img.src = this.config.path + '/' + piece + '.svg';;
+        img.src = this.getPiecePath(piece);
         img.style.opacity = fade ? 0 : 1;
 
         let board = this;
         img.onmousedown = function (event) {
 
-            let recentHighlighted;
+            if (!board.config.draggable) return;
+
+            let recent;
             let from = square;
-            let to;
+            let to = square;
             let moved = false;
 
-            if (board.containsPiece(square)[1] !== board.turn()) return;
+            if (!board.canMove(from)) return;
             board.onClick(square);
 
             img.style.position = 'absolute';
-            img.style.zIndex = 1000;
+            img.style.zIndex = 15;
 
             // Function to move the piece with the mouse pointer
             function moveAt(pageX, pageY) {
+                if (!moved && !board.config.onDragStart(from, piece)) return;
                 moved = true;
                 img.style.left = pageX - img.offsetWidth / 2 + 'px';
                 img.style.top = pageY - img.offsetHeight / 2 + 'px';
+                return true;
             }
 
             function onMouseMove(event) {
@@ -288,38 +425,38 @@ class Chessboard {
                 // Bug fix for spamming the mousemove event
                 if (!piece) return;
 
-                moveAt(event.pageX, event.pageY);
+                if (!moveAt(event.pageX, event.pageY)) return;
 
                 // Find the square where the mouse is
                 let x = event.clientX - board.board.getBoundingClientRect().left;
                 let y = event.clientY - board.board.getBoundingClientRect().top;
                 let col = Math.floor(x / (board.board.offsetWidth / 8));
                 let row = Math.floor(y / (board.board.offsetHeight / 8));
-                to = board.getSquareID(row, col);
+                if (x < 0 || x > board.board.offsetWidth || y < 0 || y > board.board.offsetHeight) to = null;
+                else to = board.getSquareID(row, col);
+                board.config.onDragMove(from, to, piece);
 
-                if (to !== recentHighlighted) {
+                if (to !== recent) {
                     board.highlightSquare(to);
-                    board.dehighlightSquare(recentHighlighted);
-                    recentHighlighted = to;
+                    board.dehighlightSquare(recent);
+                    recent = to;
                 }
             }
             document.addEventListener('mousemove', onMouseMove);
 
             // Drop the piece and remove the event listener
             img.onmouseup = function () {
-                board.dehighlightSquare(recentHighlighted);
+                board.dehighlightSquare(recent);
                 document.removeEventListener('mousemove', onMouseMove);
                 img.onmouseup = null;
-                if (moved && !board.onClick(to, false)) {
-
-                    // If the move is not legal, move the piece back to the original square
-                    let startX = img.getBoundingClientRect().left - 4;
-                    let startY = img.getBoundingClientRect().top - 4;
-                    let endX = board.celle[from].getBoundingClientRect().left;
-                    let endY = board.celle[from].getBoundingClientRect().top;
-                    console.log(board.prom);
-                    if (board.promoting) board.traslation(img, startX, startY, endX, endY, false, 0, null, from);
-                    else board.traslation(img, startX, startY, endX, endY, false, 200, null, from);
+                let drop = board.config.onDrop(from, to, piece);
+                if ((board.config.dropOffBoard === 'trash' || drop === 'trash') && !to) {
+                    board.dehintAllSquares();
+                    board.deselectSquare(from);
+                    board.eliminatePiece(from);
+                } else if (moved && (!board.onClick(to, false) || drop === 'snapback')) {
+                    board.snapbackPiece(from, piece, !board.promoting);
+                    board.config.onSnapbackEnd(from, piece);
                 }
             };
 
@@ -388,7 +525,7 @@ class Chessboard {
         }
 
         for (let [piece, from, to] of toTranslate) {
-            this.translatePiece(piece, from, to, !escaping[to], false, animation);
+            this.translatePiece(piece, from, to, !escaping[to], animation);
         }
 
         for (let square in this.celle) {
@@ -404,7 +541,7 @@ class Chessboard {
                     if (lastMove && lastMove['promotion']) {
                         if (lastMove['to'] === square) {
                             let piece = lastMove['promotion'] + lastMove['color'];
-                            this.translatePiece(piece, lastMove['from'], square, true, true, animation);
+                            this.translatePiece(piece, lastMove['from'], square, true, animation);
                             ok[lastMove['from']] = true;
                         }
                     } else {
@@ -414,6 +551,8 @@ class Chessboard {
                 }
             }
         }
+
+        this.config.onChange(this.game.fen());
     }
 
     removePieces() {
@@ -436,20 +575,26 @@ class Chessboard {
         return this.containsPiece(square) === piece;
     }
 
+    eliminatePiece(square) {
+        this.game.remove(square);
+        this.removePiece(square, null, true);
+    }
+
+
     // Listeners
 
     addListeners() {
         if (this.mosseIndietro.length > 0) return;
-        for (let casella in this.celle) {
-            let cella = this.celle[casella];
-            cella.addEventListener("mouseover", () => this.hintMoves(casella));
-            cella.addEventListener("mouseout", () => this.dehintMoves(casella));
-            cella.addEventListener("click", () => {
-                this.onClick(casella);
+        for (let square in this.celle) {
+            let elem = this.celle[square];
+            elem.addEventListener("mouseover", () => {
+                if (!this.lastSquare) this.hintMoves(square);
             });
-            cella.addEventListener("touch", () => {
-                this.onClick(casella);
+            elem.addEventListener("mouseout", () => {
+                if (!this.lastSquare) this.dehintMoves(square);
             });
+            elem.addEventListener("click", () => this.onClick(square));
+            elem.addEventListener("touch", () => this.onClick(square));
         }
     }
 
@@ -470,7 +615,7 @@ class Chessboard {
         if (from) {
             this.deselectSquare(from);
             this.dehintAllSquares();
-        }
+        } else if (!this.canMove(casella)) return;
 
         // Se ci sono caselle selezionate e non possiedo la casella cliccata
         if (from !== null && this.colorPiece(casella) !== this.colorPiece(from)) {
@@ -480,8 +625,10 @@ class Chessboard {
             if (!this.legalMove(mossa)) return false;
             if (mossa.length == 4 && this.promote(mossa)) return false;
 
-            // Esegui la mossa se accettata dalla funzione onMossa
-            if (this.config.onMossa(mossa)) this.makeMove(mossa, animation);
+            // Esegui la mossa se accettata dalla funzione onMove
+            if (this.config.onMove(mossa)) this.makeMove(mossa, animation);
+            else return false;
+
             return true;
 
         } else if (this.colorPiece(casella) === this.turn()) {
@@ -498,9 +645,7 @@ class Chessboard {
 
     hintSquare(square) {
 
-        if (!this.config.free && this.opponentPiece(square)) return;
-
-        if (!this.config.hint || this.lastSquare) return;
+        if (!this.config.hints || !this.celle[square]) return;
 
         let hint = document.createElement("div");
         hint.className = "hint";
@@ -526,8 +671,9 @@ class Chessboard {
     }
 
     dehintSquare(square) {
-        if (this.config.hint && this.lastSquare === null) {
+        if (this.config.hints) {
             let cella = this.celle[square];
+            if (!cella) return;
             let figli = cella.childNodes;
 
             for (let i = figli.length - 1; i >= 0; i--) {
@@ -566,25 +712,38 @@ class Chessboard {
 
     // Moves
 
-    makeMove(mossa, animation) {
+    canMove(square) {
+        if (!this.containsPiece(square)) return false;
+        if (this.config.movableColors === 'none') return false;
+        if (this.config.movableColors === 'white' && this.colorPiece(square) === 'b') return false;
+        if (this.config.movableColors === 'black' && this.colorPiece(square) === 'w') return false;
+        return true;
+    }
+
+    makeMove(move, animation) {
         this.unmoveAllSquares();
 
-        let move = this.game.move({
-            from: mossa.slice(0, 2),
-            to: mossa.slice(2, 4),
-            promotion: mossa.length === 5 ? mossa[4] : null
+
+        move = this.game.move({
+            from: move.slice(0, 2),
+            to: move.slice(2, 4),
+            promotion: move.length === 5 ? move[4] : null
         });
 
-        if (!move) return false;
 
         this.history.push(move);
 
         this.updatePosition(false, animation);
 
-        this.movedSquare(mossa.slice(2, 4));
-        this.movedSquare(mossa.slice(0, 2));
+        this.movedSquare(move['to']);
+        this.movedSquare(move['from']);
+
+        this.dehintAllSquares();
+
+        this.config.onMoveEnd(move);
 
         return true;
+
 
     }
 
@@ -776,7 +935,7 @@ class Chessboard {
 
         let img = document.createElement("img");
         img.className = "piece choicable";
-        img.src = this.config.path + '/' + piece + '.svg';
+        img.src = this.getPiecePath(piece);
         choice.appendChild(img);
 
         this.celle[square].appendChild(choice);
@@ -868,5 +1027,23 @@ class Chessboard {
         }
         this.updatePosition();
     }
+
+    // Other
+
+    transitionTimingFunction(x, type = 'ease') {
+        switch (type) {
+            case 'linear':
+                return x;
+            case 'ease':
+                return (x ** 2) * (3 - 2 * x);
+            case 'ease-in':
+                return x ** 2;
+            case 'ease-out':
+                return -1 * (x - 1) ** 2 + 1;
+            case 'ease-in-out':
+                return (x < 0.5) ? 2 * x ** 2 : 4 * x - 2 * x ** 2 - 1;
+        }
+    }
+
 
 }

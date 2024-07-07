@@ -13,6 +13,9 @@ class ChessboardConfig {
         this.hint = settings.hint;
         this.animation = settings.animation || ANIMATION;
 
+        // mode: 'normal', 'creative'
+        this.mode = settings.mode || 'normal';
+
         // deaggable: true, false
         this.draggable = settings.draggable;
 
@@ -21,6 +24,12 @@ class ChessboardConfig {
 
         // hints: true, false
         this.hints = settings.hints;
+
+        // onlyLegalMoves: true, false
+        this.onlyLegalMoves = settings.onlyLegalMoves;
+
+        // clickable: true, false
+        this.clickable = settings.clickable;
 
         // ---------------------- Move
 
@@ -55,7 +64,6 @@ class ChessboardConfig {
         // ---------------------- Pieces
 
         // ratio: integer
-
         settings.ratio ? this.setCSSProperty('pieceRatio', settings.ratio) : null;
 
         // piecesPath: string
@@ -116,6 +124,15 @@ class ChessboardConfig {
 
         // hintColor: string
         settings.hintColor ? this.setCSSProperty('hintColor', settings.hintColor) : null;
+
+        // Configure modes
+
+        if (this.mode === 'creative') {
+            this.onlyLegalMoves = false;
+            this.hints = false;
+        } else if (this.mode === 'normal') {
+            this.onlyLegalMoves = true;
+        }
 
     }
 
@@ -406,7 +423,9 @@ class Chessboard {
             let moved = false;
 
             if (!board.canMove(from)) return;
-            board.onClick(square);
+
+            if (!board.config.clickable) board.lastSquare = null;
+            board.onClick(square)
 
             img.style.position = 'absolute';
             img.style.zIndex = 15;
@@ -451,6 +470,7 @@ class Chessboard {
                 img.onmouseup = null;
                 let drop = board.config.onDrop(from, to, piece);
                 if ((board.config.dropOffBoard === 'trash' || drop === 'trash') && !to) {
+                    board.unmoveAllSquares();
                     board.dehintAllSquares();
                     board.deselectSquare(from);
                     board.eliminatePiece(from);
@@ -593,58 +613,55 @@ class Chessboard {
             elem.addEventListener("mouseout", () => {
                 if (!this.lastSquare) this.dehintMoves(square);
             });
-            elem.addEventListener("click", () => this.onClick(square));
-            elem.addEventListener("touch", () => this.onClick(square));
+            elem.addEventListener("click", () => {
+                if (this.config.clickable) this.onClick(square)
+            });
+            elem.addEventListener("touch", () => {
+                if (this.config.clickable) this.onClick(square)
+            });
         }
     }
 
-    onClick(casella, animation = true) {
+    onClick(square, animation = true) {
 
-        if (!casella || casella === this.lastSquare) return;
+        if (!square || square === this.lastSquare) return;
 
         if (this.promoting) {
             this.depromoteAllSquares();
             this.removeAllCovers();
             this.promoting = false;
-            if (casella.length === 2) this.lastSquare = null;
+            if (square.length === 2) this.lastSquare = null;
         }
 
         let from = this.lastSquare;
         this.lastSquare = null;
+        let move = from + square;
 
         if (from) {
             this.deselectSquare(from);
             this.dehintAllSquares();
-        } else if (!this.canMove(casella)) return;
+        } else if (!this.canMove(square)) return;
 
-        // Se ci sono caselle selezionate e non possiedo la casella cliccata
-        if (from !== null && this.colorPiece(casella) !== this.colorPiece(from)) {
+        if (from && this.canMove(from)) {
 
-            let mossa = from + casella;
+            if (this.config.onlyLegalMoves && !this.legalMove(move)) return;
+            if (move.length == 4 && this.promote(move)) return;
 
-            if (!this.legalMove(mossa)) return false;
-            if (mossa.length == 4 && this.promote(mossa)) return false;
-
-            // Esegui la mossa se accettata dalla funzione onMove
-            if (this.config.onMove(mossa)) this.makeMove(mossa, animation);
-            else return false;
+            if (this.config.onMove(move)) this.makeMove(move, animation);
+            else return;
 
             return true;
 
-        } else if (this.colorPiece(casella) === this.turn()) {
-
-            this.selectSquare(casella);
-            this.hintMoves(casella);
-            this.lastSquare = casella;
-
+        } else if (this.canMove(square)) {
+            this.selectSquare(square);
+            this.hintMoves(square);
+            this.lastSquare = square;
         }
-        return false;
     }
 
     // Hint
 
     hintSquare(square) {
-
         if (!this.config.hints || !this.celle[square]) return;
 
         let hint = document.createElement("div");
@@ -693,6 +710,7 @@ class Chessboard {
     // Select
 
     selectSquare(square) {
+        if (!this.config.clickable) return;
         let elem = this.celle[square];
         if (this.isWhiteSquare(square)) elem.className += ' selectedSquareWhite';
         else elem.className += ' selectedSquareBlack';
@@ -717,12 +735,22 @@ class Chessboard {
         if (this.config.movableColors === 'none') return false;
         if (this.config.movableColors === 'white' && this.colorPiece(square) === 'b') return false;
         if (this.config.movableColors === 'black' && this.colorPiece(square) === 'w') return false;
+        if (!this.config.onlyLegalMoves) return true;
+        if (this.colorPiece(square) !== this.turn()) return false;
         return true;
     }
 
     makeMove(move, animation) {
-        this.unmoveAllSquares();
 
+        if (!this.config.onlyLegalMoves) {
+            let piece = this.containsPiece(move.slice(0, 2));
+            this.game.remove(move.slice(0, 2));
+            this.game.remove(move.slice(2, 4));
+            this.game.put({ type: move[4] ? move[4] : piece[0], color: piece[1] }, move.slice(2, 4));
+            return this.updatePosition(false, false);
+        }
+
+        this.unmoveAllSquares();
 
         move = this.game.move({
             from: move.slice(0, 2),
@@ -961,6 +989,8 @@ class Chessboard {
     }
 
     promote(mossa) {
+
+        if (!this.config.onlyLegalMoves) return false;
 
         let to = mossa.slice(2, 4);
         let from = mossa.slice(0, 2);

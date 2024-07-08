@@ -1,0 +1,17 @@
+# Ignora tutti i file .txt
+*.txt
+
+# Ignora la directory node_modules
+node_modules
+
+# Ignora la directory test
+test
+
+# Ma include il file .travis.yml, anche se è nella directory test
+!test/.travis.yml
+
+*.html
+script.js
+fogboard.js
+.vscode
+.npmignore

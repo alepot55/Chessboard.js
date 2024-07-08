@@ -4,12 +4,11 @@
     <title>Scacchiera</title>
     <link rel="stylesheet" href="chessboard.css">
 </head>
-<body>
-    <h1>Scacchiera</h1>
+<body style="margin: 100px; display: flex; align-content: center; justify-content: center;">
     <div id="board">
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
-    <script src="chessboard.js"></script>
-    <script src="script.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/chess.js/dist/esm/chess.js"></script>
+    <script type="module" src="./chessboard.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -1,15 +1,27 @@
 {
   "dependencies": {
-    "chess.js": "^1.0.0-beta.8"
+    "chess.js": "^1.0.1-beta.8"
   },
-  "name": "chessboard",
+  "name": "@alepot55/chessboardjs",
   "version": "1.0.0",
   "main": "chessboard.js",
-  "devDependencies": {},
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "alepot55",
   "license": "ISC",
-  "description": ""
+  "description": "Chessboard configuration with multiple customization options. By alepot55",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alepot55/ChessBoard.git"
+  },
+  "keywords": [
+    "chess",
+    "chessboard"
+  ],
+  "bugs": {
+    "url": "https://github.com/alepot55/ChessBoard/issues"
+  },
+  "homepage": "https://github.com/alepot55/ChessBoard#readme"
 }

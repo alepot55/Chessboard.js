@@ -19,7 +19,7 @@
     grid-template: repeat(8, 1fr) / repeat(8, 1fr);
     width: var(--dimBoard);
     height: var(--dimBoard);
-    border: 1px solid black;
+    background-color: var(--blackSquare);
 }
 
 .square {
@@ -37,10 +37,14 @@
     height: calc(calc(var(--dimBoard) / 8) * var(--pieceRatio));
 
     /* No selection */
-    -webkit-user-select: none; /* Safari */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE10+/Edge */
-    user-select: none; /* Standard */
+    -webkit-user-select: none;
+    /* Safari */
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* IE10+/Edge */
+    user-select: none;
+    /* Standard */
 }
 
 .choicable {

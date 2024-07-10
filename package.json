@@ -1,9 +1,9 @@
 {
   "dependencies": {
-    "chess.js": "^1.0.1-beta.8"
+    "chess.js": "^1.0.0-beta.8"
   },
   "name": "@alepot55/chessboardjs",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "main": "chessboard.js",
   "type": "module",
   "scripts": {

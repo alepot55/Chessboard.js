@@ -1,8 +1,7 @@
-import { Chess } from './node_modules/chess.js/dist/esm/chess.js';
-
 const DEFAULT_POSITION_WHITE = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 const SLOW_ANIMATION = 600;
 const FAST_ANIMATION = 150;
+
 class ChessboardConfig {
 
     constructor(settings) {
@@ -14,19 +13,20 @@ class ChessboardConfig {
             position: 'start',
             orientation: 'w',
             mode: 'normal',
-            draggable: true,
-            dropOffBoard: 'snapback',
-            hints: true,
-            clickable: true,
-            size: 600,
+            size: 'auto',
 
             // ---------------------- Moves
+            draggable: true,
+            hints: true,
+            clickable: true,
             movableColors: 'both',
             moveHighlight: true,
+            overHighlight: true,
             moveAnimation: 'ease',
             moveTime: 'fast',
 
             // ---------------------- Snapback
+            dropOffBoard: 'snapback',
             snapbackTime: 'fast',
             snapbackAnimation: 'ease',
 
@@ -36,7 +36,7 @@ class ChessboardConfig {
 
             // ---------------------- Pieces
             ratio: 0.9,
-            piecesPath: 'default_pieces',
+            piecesPath: 'https://cdn.jsdelivr.net/npm/@alepot55/chessboardjs/default_pieces',
 
             // ---------------------- Events
             onMove: () => true,
@@ -53,8 +53,8 @@ class ChessboardConfig {
             highlight: 'yellow',
             selectedSquareWhite: '#ababaa',
             selectedSquareBlack: '#ababaa',
-            movedWhite: '#f1f1a0',
-            movedBlack: '#e9e981',
+            movedSquareWhite: '#f1f1a0',
+            movedSquareBlack: '#e9e981',
             choiceSquare: 'white',
             coverSquare: 'black',
             hintColor: '#ababaa'
@@ -73,6 +73,7 @@ class ChessboardConfig {
 
         // mode: 'normal', 'creative'
         this.mode = settings.mode === undefined ? defaults.mode : settings.mode;
+        
         // deaggable: true, false
         this.draggable = settings.draggable === undefined ? defaults.draggable : settings.draggable;
 
@@ -95,6 +96,9 @@ class ChessboardConfig {
 
         // moveHighlight: true, false
         this.moveHighlight = settings.moveHighlight === undefined ? defaults.moveHighlight : settings.moveHighlight;
+
+        // overHighlight: true, false
+        this.overHighlight = settings.overHighlight === undefined ? defaults.overHighlight : settings.overHighlight;
 
         // moveAnimation: 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'none'
         this.moveAnimation = settings.moveAnimation === undefined ? defaults.moveAnimation : settings.moveAnimation;
@@ -159,7 +163,7 @@ class ChessboardConfig {
         settings.blackSquare === undefined ? this.setCSSProperty('blackSquare', defaults.blackSquare) : this.setCSSProperty('blackSquare', settings.blackSquare);
 
         // highlight: string
-        settings.highlight === undefined ? this.setCSSProperty('highlight', defaults.highlight) : this.setCSSProperty('highlight', settings.highlight);
+        settings.highlight === undefined ? this.setCSSProperty('highlightSquare', defaults.highlight) : this.setCSSProperty('highlightSquare', settings.highlight);
 
         // selectedSquareWhite: string
         settings.selectedSquareWhite === undefined ? this.setCSSProperty('selectedSquareWhite', defaults.selectedSquareWhite) : this.setCSSProperty('selectedSquareWhite', settings.selectedSquareWhite);
@@ -167,11 +171,11 @@ class ChessboardConfig {
         // selectedSquareBlack: string
         settings.selectedSquareBlack === undefined ? this.setCSSProperty('selectedSquareBlack', defaults.selectedSquareBlack) : this.setCSSProperty('selectedSquareBlack', settings.selectedSquareBlack);
 
-        // movedWhite: string
-        settings.movedWhite === undefined ? this.setCSSProperty('movedWhite', defaults.movedWhite) : this.setCSSProperty('movedWhite', settings.movedWhite);
+        // movedSquareWhite: string
+        settings.movedSquareWhite === undefined ? this.setCSSProperty('movedSquareWhite', defaults.movedSquareWhite) : this.setCSSProperty('movedSquareWhite', settings.movedSquareWhite);
 
-        // movedBlack: string
-        settings.movedBlack === undefined ? this.setCSSProperty('movedBlack', defaults.movedBlack) : this.setCSSProperty('movedBlack', settings.movedBlack);
+        // movedSquareBlack: string
+        settings.movedSquareBlack === undefined ? this.setCSSProperty('movedSquareBlack', defaults.movedSquareBlack) : this.setCSSProperty('movedSquareBlack', settings.movedSquareBlack);
 
         // choiceSquare: string
         settings.choiceSquare === undefined ? this.setCSSProperty('choiceSquare', defaults.choiceSquare) : this.setCSSProperty('choiceSquare', settings.choiceSquare);
@@ -190,6 +194,8 @@ class ChessboardConfig {
         } else if (this.mode === 'normal') {
             this.onlyLegalMoves = true;
         }
+
+        return this;
     }
 
     setCSSProperty(property, value) {
@@ -202,7 +208,7 @@ class ChessboardConfig {
     }
 }
 
-export class Chessboard {
+class Chessboard {
 
     constructor(config) {
 
@@ -212,7 +218,7 @@ export class Chessboard {
         this.pieces = {};
         this.celle = {};
         this.squares = {};
-        this.buildGame(config.position);
+        this.buildGame(this.config.position);
         this.initParams();
         this.buildBoard();
         this.updatePosition();
@@ -243,6 +249,7 @@ export class Chessboard {
         if (!this.board) {
             throw new Error('Board id not found - ' + this.config.id_div + ' - must be a valid id of a div element');
         }
+        this.resize(this.config.size);
         this.board.className = "board";
         this.buildSquares();
     }
@@ -288,7 +295,15 @@ export class Chessboard {
 
     resize(value) {
         if (value === 'auto') {
-            this.board.style.height = this.board.offsetWidth + 'px';
+            let size;
+            if (this.board.offsetWidth === 0) {
+                size = this.board.offsetHeight;
+            } else if (this.board.offsetHeight === 0) {
+                size = this.board.offsetWidth;
+            } else {
+                size = Math.min(this.board.offsetWidth, this.board.offsetHeight);
+            }
+            this.resize(size);
         } else if (typeof value !== 'number') {
             throw new Error('Invalid value - ' + value + ' - must be a number or "auto"');
         } else {
@@ -307,7 +322,7 @@ export class Chessboard {
     // Pieces
 
     checkPiece(piece) {
-        if (['p', 'r', 'n', 'b', 'q', 'k'].indexOf(piece[0]) === -1 || ['w', 'b'].indexOf(piece[1]) === -1) throw new Error('Invalid piece - ' + piece + ' - must be a valid piece like "wp" or "bk"');
+        if (['p', 'r', 'n', 'b', 'q', 'k'].indexOf(piece[0]) === -1 || ['w', 'b'].indexOf(piece[1]) === -1) throw new Error('Invalid piece - ' + piece + ' - must be a valid piece like "pw" or "kb"');
     }
 
     getPiecePath(piece) {
@@ -393,9 +408,9 @@ export class Chessboard {
         return this.traslation(elem, from, to, this.config.moveTime);
     }
 
-    snapbackPiece(square, piece, animate = true) {
+    snapbackPiece(square, piece, animate) {
 
-        if (!animate) {
+        if (!animate || this.config.snapbackAnimation === 'none' || this.config.snapbackTime === 0) {
             this.removePiece(square, piece, false);
             this.insert(square, piece, false);
             return;
@@ -482,7 +497,9 @@ export class Chessboard {
         return piece;
     }
 
-    insert(square, piece, fade = true) {
+    insert(square, piece, fade = this.config.fadeAnimation) {
+
+        if (fade === 'none' || fade === 0) fade = false;
 
         this.checkPiece(piece);
         this.checkSquare(square);
@@ -508,7 +525,7 @@ export class Chessboard {
             if (!board.canMove(from)) return;
 
             if (!board.config.clickable) board.lastSquare = null;
-            board.onClick(square)
+            if (board.onClick(square)) return;
 
             img.style.position = 'absolute';
             img.style.zIndex = 15;
@@ -532,6 +549,7 @@ export class Chessboard {
                 // Find the square where the mouse is
                 let x = event.clientX - board.board.getBoundingClientRect().left;
                 let y = event.clientY - board.board.getBoundingClientRect().top;
+
                 let col = Math.floor(x / (board.board.offsetWidth / 8));
                 let row = Math.floor(y / (board.board.offsetHeight / 8));
                 if (x < 0 || x > board.board.offsetWidth || y < 0 || y > board.board.offsetHeight) to = null;
@@ -552,6 +570,7 @@ export class Chessboard {
                 document.removeEventListener('mousemove', onMouseMove);
                 img.onmouseup = null;
                 let drop = board.config.onDrop(from, to, piece);
+
                 if ((board.config.dropOffBoard === 'trash' || drop === 'trash') && !to) {
                     board.unmoveAllSquares();
                     board.dehintAllSquares();
@@ -575,6 +594,7 @@ export class Chessboard {
         this.celle[square].appendChild(img);
 
         if (fade) this.fadeInPiece(square);
+        else img.style.opacity = 1;
         return img;
     }
 
@@ -686,23 +706,25 @@ export class Chessboard {
         for (let square in this.celle) {
             let elem = this.celle[square];
             elem.addEventListener("mouseover", () => {
-                if (!this.lastSquare) this.hintMoves(square);
+                if (!this.lastSquare) this.hintMoves(elem.id);
             });
             elem.addEventListener("mouseout", () => {
-                if (!this.lastSquare) this.dehintMoves(square);
+                if (!this.lastSquare) this.dehintMoves(elem.id);
             });
             elem.addEventListener("click", () => {
-                if (this.config.clickable) this.onClick(square)
+                if (this.config.clickable && (!this.pezzi[elem.id] || this.config.onlyLegalMoves)) this.onClick(elem.id)
             });
             elem.addEventListener("touch", () => {
-                if (this.config.clickable) this.onClick(square)
+                if (this.config.clickable) this.onClick(elem.id)
             });
         }
     }
 
-    onClick(square, animation = true) {
+    onClick(square, animation = this.config.moveAnimation) {
 
         if (!square || square === this.lastSquare) return;
+
+        if (animation === 'none') animation = false;
 
         if (this.promoting) {
             this.depromoteAllSquares();
@@ -720,7 +742,8 @@ export class Chessboard {
             this.dehintAllSquares();
         } else if (!this.canMove(square)) return;
 
-        if (from && this.canMove(from)) {
+
+        if (from && this.canMove(from) && (!this.canMove(square) || !this.config.onlyLegalMoves)) {
 
             if (this.config.onlyLegalMoves && !this.legalMove(move)) return;
             if (move.length == 4 && this.promote(move)) return;
@@ -731,6 +754,7 @@ export class Chessboard {
             return true;
 
         } else if (this.canMove(square)) {
+
             this.select(square);
             this.hintMoves(square);
             this.lastSquare = square;
@@ -753,21 +777,22 @@ export class Chessboard {
     }
 
     hintMoves(square) {
+        if (!this.canMove(square)) return;
         let mosse = this.game.moves({ square: square, verbose: true });
         for (let mossa of mosse) {
-            this.hint(mossa['to']);
+            if (mossa['to'].length === 2) this.hint(mossa['to']);
         }
     }
 
     dehintMoves(square) {
         let mosse = this.game.moves({ square: square, verbose: true });
         for (let mossa of mosse) {
-            this.dehint(mossa['to']);
+            if (mossa['to'].length === 2) this.dehint(mossa['to']);
         }
     }
 
     dehint(square) {
-        this.checkSquare(square);
+        if (square.length !== 2) return;
         if (this.config.hints) {
             let cella = this.celle[square];
             if (!cella) return;
@@ -793,6 +818,7 @@ export class Chessboard {
         this.checkSquare(square);
         if (!this.config.clickable) return;
         let elem = this.celle[square];
+        if (elem.className.includes('selectedSquareWhite') || elem.className.includes('selectedSquareBlack')) return;
         if (this.isWhiteSquare(square)) elem.className += ' selectedSquareWhite';
         else elem.className += ' selectedSquareBlack';
     }
@@ -825,14 +851,17 @@ export class Chessboard {
     canMove(square) {
         if (!this.piece(square)) return false;
         if (this.config.movableColors === 'none') return false;
-        if (this.config.movableColors === 'white' && this.colorPiece(square) === 'b') return false;
-        if (this.config.movableColors === 'black' && this.colorPiece(square) === 'w') return false;
+        if (this.config.movableColors === 'w' && this.colorPiece(square) === 'b') return false;
+        if (this.config.movableColors === 'b' && this.colorPiece(square) === 'w') return false;
         if (!this.config.onlyLegalMoves) return true;
         if (this.colorPiece(square) !== this.turn()) return false;
         return true;
     }
 
     move(move, animation) {
+        console.log(move);
+
+        if (!this.canMove(move.slice(0, 2))) return false;
 
         this.checkMove(move);
 
@@ -862,7 +891,7 @@ export class Chessboard {
 
         this.dehintAllSquares();
 
-        this.config.onMoveEnd(move);
+        this.config.onMoveEnd(move['from'] + move['to'] + (move['promotion'] ? move['promotion'] : ''));
 
         return true;
 
@@ -871,16 +900,19 @@ export class Chessboard {
 
     moved(square) {
         this.checkSquare(square);
+        if (!this.config.moveHighlight) return;
         let elem = this.celle[square];
-        if (this.isWhiteSquare(square)) elem.className += ' movedWhite';
-        else elem.className += ' movedBlack';
+        if (elem.className.includes(' movedSquareWhite') || elem.className.includes(' movedSquareBlack')) return;
+        if (this.isWhiteSquare(square)) elem.className += ' movedSquareWhite';
+        else elem.className += ' movedSquareBlack';
     }
 
     unmoved(square) {
         this.checkSquare(square);
+        if (!this.config.moveHighlight) return;
         let elem = this.celle[square];
-        if (this.isWhiteSquare(square)) elem.className = elem.className.replace(' movedWhite', '');
-        else elem.className = elem.className.replace(' movedBlack', '');
+        if (this.isWhiteSquare(square)) elem.className = elem.className.replace(' movedSquareWhite', '');
+        else elem.className = elem.className.replace(' movedSquareBlack', '');
     }
 
     unmoveAllSquares() {
@@ -909,7 +941,7 @@ export class Chessboard {
         return this.history[this.history.length - 1];
     }
 
-    history() {
+    getHistory() {
         return this.history;
     }
 
@@ -927,13 +959,12 @@ export class Chessboard {
         return this.game.turn();
     }
 
-    orientation() {
+    getOrientation() {
         return this.config.orientation;
     }
 
     orientation(color) {
-        this.config.setOrientation(color);
-        this.updatePosition();
+        if ((color === 'w' || color === 'b') && color !== this.config.orientation) this.flip();
     }
 
     // Position
@@ -975,12 +1006,34 @@ export class Chessboard {
         return this.config.orientation === 'w';
     }
 
-    updatePosition(change_color = false, animation = true) {
+    updatePosition(change_color = false, animation = this.config.moveAnimation) {
         if (change_color) {
-            this.removeSquares();
-            this.buildSquares();
+            this.renameSquares();
         }
         this.updatePieces(animation);
+    }
+
+    renameSquares() {
+        let new_celle = {};
+        let new_pezzi = {};
+        let new_pieces = {};
+        for (let elem in this.celle) {
+            let square = this.celle[elem];
+            let id = square.id;
+            let [row, col] = this.getSquareCoord(id);
+            let new_row = 7 - row;
+            let new_col = 7 - col;
+            square.id = this.getSquareID(new_row, new_col);
+            new_celle[square.id] = square;
+            if (this.pezzi[id]) {
+                new_pezzi[square.id] = this.pezzi[id];
+                new_pieces[(this.pezzi[id]['piece'], square.id)] = this.pieces[(this.pezzi[id]['piece'], id)];
+            }
+
+        }
+        this.celle = new_celle;
+        this.pezzi = new_pezzi;
+        this.pieces = new_pieces;
     }
 
     fen() {
@@ -1037,15 +1090,15 @@ export class Chessboard {
     // Highlight
 
     highlight(square) {
-        this.checkSquare(square);
-        if (!square || !this.celle[square] || !this.config.moveHighlight) return;
+        if (!square || !this.celle[square] || !this.config.overHighlight) return;
         let elem = this.celle[square];
+        if (elem.className.includes('highlighted')) return;
         elem.className += ' highlighted';
     }
 
     dehighlight(square) {
+        if (!square || !this.celle[square] || !this.config.overHighlight) return;
         this.checkSquare(square);
-        if (!square || !this.celle[square] || !this.config.moveHighlight) return;
         let elem = this.celle[square];
         elem.className = elem.className.replace(' highlighted', '');
     }

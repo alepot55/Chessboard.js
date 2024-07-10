@@ -1,14 +1,535 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Scacchiera</title>
-    <link rel="stylesheet" href="chessboard.css">
+    <link rel="stylesheet" href="./chessboard.css">
+
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            justify-content: space-evenly;
+            padding: auto;
+        }
+
+        .list_container {
+            width: 250px;
+            margin-right: 10px;
+        }
+
+        .collapsible {
+            cursor: pointer;
+            width: 100%;
+            height: 50px;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+            margin-top: 8px;
+            padding: 0 20px;
+            border-radius: 7px;
+            transition: all 0.2s;
+            background-color: #f1f1f1;
+        }
+
+        .active,
+        .collapsible:hover {
+            background-color: #ddd;
+        }
+
+        .collapsible:after {
+            content: '\2795';
+            font-size: 13px;
+            color: white;
+            float: right;
+            margin-left: 5px;
+        }
+
+        .active:after {
+            content: "\2796";
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+        }
+
+        .item {
+            width: 100%;
+            line-height: 50px;
+            border-bottom: 1px solid #ccc;
+            padding: 0 20px;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .item:hover {
+            background-color: #f9f9f9;
+        }
+    </style>
+
+
 </head>
-<body style="margin: 100px; display: flex; align-content: center; justify-content: center;">
-    <div id="board">
+
+<body>
+
+    <div class="list_container">
+
+        <!-- Colonna Basic -->
+        <div class="set">
+            <button type="button" class="collapsible">Basic</button>
+            <div class="content">
+                <div class="item">Start position</div>
+                <div class="item">Position FEN</div>
+                <div class="item">Position Object</div>
+                <div class="item">Orientation</div>
+                <div class="item">Size</div>
+            </div>
+        </div>
+
+        <!-- Colonna Configurations -->
+        <div class="set">
+            <button type="button" class="collapsible">Configurations</button>
+            <div class="content">
+                <div class="item">Draggable</div>
+                <div class="item">Clickable</div>
+                <div class="item">Mode</div>
+                <div class="item">Movable colors</div>
+                <div class="item">Animations</div>
+                <div class="item">Pieces</div>
+                <div class="item">Colors</div>
+            </div>
+        </div>
+
+        <!-- Colonna Methods -->
+        <div class="set">
+            <button type="button" class="collapsible">Methods</button>
+            <div class="content">
+                <div class="item">Position (FEN)</div>
+                <div class="item">Moves</div>
+                <div class="item">State</div>
+                <div class="item">Reset board</div>
+                <div class="item">Destroy board</div>
+                <div class="item">Hints</div>
+                <div class="item">Selections</div>
+                <div class="item">Highlights</div>
+            </div>
+        </div>
+
+        <!-- Colonna Events -->
+        <div class="set">
+            <button type="button" class="collapsible">Events</button>
+            <div class="content">
+                <div class="item">onMove</div>
+                <div class="item">onMoveEnd</div>
+                <div class="item">onDragStart</div>
+                <div class="item">onDragMove</div>
+                <div class="item">onDrop</div>
+                <div class="item">onSnapbackEnd</div>
+                <div class="item">onChange</div>
+            </div>
+        </div>
+
+
     </div>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/chess.js/dist/esm/chess.js"></script>
-    <script type="module" src="./chessboard.js"></script>
-    <script type="module" src="script.js"></script>
+
+    <div>
+        <div id="board" style="width: 400px; height: 400px;"></div>
+        <div id="description" style="margin-top: 10px; padding: 10px; border: 1px solid #ccc; height: 400px;">
+            <div id="buttonContainer"></div>
+            <div id="textContainer"></div>
+
+        </div>
+    </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
+    <script src="./chessboard_min.js"></script>
+
+    <script>
+
+        var board = new Chessboard({ id_div: "board" });
+
+        var buttonContainer = document.getElementById("buttonContainer");
+        var textContainer = document.getElementById("textContainer");
+
+        var configs = {
+
+            // Basics
+            1: {
+                id_div: "board",
+                position: "start", // optional
+            },
+            2: {
+                id_div: "board",
+                position: "r1k4r/p2nb1p1/2b4p/1p1n1p2/2PP4/3Q1NB1/1P3PPP/R5K1 w - - 0 19",
+            },
+            3: {
+                id_div: "board",
+                position: {
+                    'd5': 'pw',
+                    'e5': 'kw',
+                    'e8': 'kb',
+                }
+            },
+            4: {
+                id_div: "board",
+                position: "r1k4r/p2nb1p1/2b4p/1p1n1p2/2PP4/3Q1NB1/1P3PPP/R5K1 b - - 0 19",
+                orientation: "b",
+            },
+            5: {
+                id_div: "board",
+                size: 900, // modificare div board
+            },
+
+            // Configurations
+            6: {
+                id_div: "board",
+                draggable: false,
+            },
+            7: {
+                id_div: "board",
+                clickable: false,
+            },
+            8: {
+                id_div: "board",
+                mode: "creative",
+            },
+            9: {
+                id_div: "board",
+                movableColors: "w",
+            },
+            10: {
+                id_div: "board",
+                moveAnimation: 'none',
+                snapbackAnimation: 'none',
+                fadeAnimation: 'none',
+            },
+            11: {
+                id_div: "board",
+                piecesPath: 'https://cdn.jsdelivr.net/npm/@alepot55/chessboardjs/alepot_theme',
+                ratio: 0.75,
+            },
+            12: {
+                id_div: "board",
+                whiteSquare: '#e7edf9', blackSquare: '#b6c1d8',
+                selectedSquareWhite: '#b5a6fc', selectedSquareBlack: '#a192ed',
+                movedSquareWhite: '#b5a6fc', movedSquareBlack: '#a192ed',
+                choiceSquare: 'white',
+                coverSquare: '#343c4c',
+                highlight: 'purple',
+                hintColor: '#b5a6fc',
+            },
+
+            // Methods
+            13: {
+                id_div: "board",
+            },
+            14: {
+                id_div: "board",
+            },
+            15: {
+                id_div: "board",
+            },
+            16: {
+                id_div: "board",
+                position: "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",
+            },
+            17: {
+                id_div: "board",
+            },
+            18: {
+                id_div: "board",
+            },
+            19: {
+                id_div: "board",
+            },
+            20: {
+                id_div: "board",
+            },
+
+            // Events
+            21: {
+                id_div: "board",
+                onMove: (move) => {
+                    textContainer.innerHTML = 'Move: ' + move;
+                    return true;
+                },
+            },
+            22: {
+                id_div: "board",
+                onMoveEnd: (move) => {
+                    textContainer.innerHTML = 'Move end: ' + move;
+                },
+            },
+            23: {
+                id_div: "board",
+                onDragStart: (from, piece) => {
+                    textContainer.innerHTML = 'Drag start: ' + from + ' ' + piece;
+                    return true;
+                },
+            },
+            24: {
+                id_div: "board",
+                onDragMove: (from, to, piece) => {
+                    textContainer.innerHTML = 'Drag move: ' + from + ' ' + to + ' ' + piece;
+                },
+            },
+            25: {
+                id_div: "board",
+                onDrop: (from, to, piece) => {
+                    textContainer.innerHTML = 'Drop: ' + from + ' ' + to + ' ' + piece;
+                },
+            },
+            26: {
+                id_div: "board",
+                onSnapbackEnd: (from, piece) => {
+                    textContainer.innerHTML = 'Snapback end: ' + from + ' ' + piece;
+                },
+            },
+            27: {
+                id_div: "board",
+                onChange: (fen) => {
+                    textContainer.innerHTML = 'Changed: ' + fen;
+                },
+            },
+        };
+
+        var buttons = {
+
+            // Basics
+            1: {
+            },
+            2: {
+            },
+            3: {
+            },
+            4: {
+                'Flip': () => board.flip(),
+                'Orientation': () => textContainer.innerHTML = 'Orientation: ' + board.getOrientation(),
+                'White orientation': () => board.orientation('w'),
+            },
+            5: {
+            },
+
+            // Configurations
+            6: {
+            },
+            7: {
+            },
+            8: {
+            },
+            9: {
+            },
+            10: {
+            },
+            11: {
+            },
+            12: {
+            },
+
+            // Methods
+            13: {
+                'Get FEN': () => {
+                    textContainer.innerHTML = 'FEN: ' + board.fen();
+                },
+                'Ruy Lopez': () => {
+                    board.position('r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 3 3');
+                    textContainer.innerHTML = 'Ruy Lopez';
+                },
+                'Italian Game': () => {
+                    board.position('r1bqk1nr/pppp1ppp/2nb4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4');
+                    textContainer.innerHTML = 'Italian Game';
+                },
+                'Start position': () => {
+                    board.position('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+                    textContainer.innerHTML = 'Start position';
+                },
+            },
+            14: {
+                'a2 - a3': () => {
+                    board.move('a2a3');
+                    textContainer.innerHTML = 'a2 - a3';
+                },
+                'b7 - b5': () => {
+                    board.move('b7b5');
+                    textContainer.innerHTML = 'b7 - b5';
+                },
+                'Start position': () => {
+                    board.position('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+                    textContainer.innerHTML = 'Start position';
+                },
+                'Legal moves': () => {
+                    let moves = board.legalMoves();
+                    for (let i = 0; i < moves.length; i++) {
+                        textContainer.innerHTML += moves[i]['from'] + ' - ' + moves[i]['to'] + '<br>';
+                    }
+                },
+                'History': () => {
+                    let history = board.getHistory();
+                    textContainer.innerHTML = 'History: <br>'
+                    for (let i = 0; i < history.length; i++) {
+                        textContainer.innerHTML += 'move: ' + history[i]['from'] + ' -> ' + history[i]['to'] + ' === piece: ' + history[i]['piece'] + history[i]['color'] + '<br>';
+                    };
+                },
+                'Set d5 moved': () => {
+                    board.moved('d5');
+                    textContainer.innerHTML = 'Set d5 moved';
+                },
+                'Set d5 unmoved': () => {
+                    board.unmoved('d5');
+                    textContainer.innerHTML = 'Set d5 unmoved';
+                },
+            },
+            15: {
+                'State': () => {
+                    let s = board.isGameOver();
+                    textContainer.innerHTML = 'State: ' + (s === 'w' ? 'White wins' : s === 'b' ? 'Black wins' : s === 'd' ? 'Draw' : 'Not over');
+                },
+                'Turn': () => {
+                    let t = board.turn() === 'w' ? 'White' : 'Black';
+                    textContainer.innerHTML = 'Turn: ' + t + ' to move';
+                },
+            },
+            16: {
+                'Reset': () => {
+                    board.clear();
+                    textContainer.innerHTML = 'Reset';
+                },
+                'Ruy Lopez': () => {
+                    board.position('r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 3 3');
+                    textContainer.innerHTML = 'Ruy Lopez';
+                },
+                'Italian Game': () => {
+                    board.position('r1bqk1nr/pppp1ppp/2nb4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4');
+                    textContainer.innerHTML = 'Italian Game';
+                },
+            },
+            17: {
+                'Destroy': () => {
+                    board.destroy();
+                    textContainer.innerHTML = 'Destroy';
+                },
+                'Set board': () => {
+                    board.destroy();
+                    board = new Chessboard('board');
+                    textContainer.innerHTML = 'Set board';
+                },
+            },
+            18: {
+                'Hint on d5': () => {
+                    board.hint('d5');
+                    textContainer.innerHTML = 'Hint on d5';
+                },
+                'Remove hint': () => {
+                    board.dehint('d5');
+                    textContainer.innerHTML = 'Remove hint';
+                },
+            },
+            19: {
+                'Select d5': () => {
+                    board.select('d5');
+                    textContainer.innerHTML = 'Select d5';
+                },
+                'Unselect': () => {
+                    board.deselect('d5');
+                    textContainer.innerHTML = 'Unselect';
+                },
+            },
+            20: {
+                'Highlight d5': () => {
+                    board.highlight('d5');
+                    textContainer.innerHTML = 'Highlight d5';
+                },
+                'Remove highlight': () => {
+                    board.dehighlight('d5');
+                    textContainer.innerHTML = 'Remove highlight';
+                },
+            },
+
+            
+            // Events
+            21: {},
+            22: {},
+            23: {},
+            24: {},
+            25: {},
+            26: {},
+            27: {},
+
+
+        }
+
+        function active(i) {
+            var coll = document.getElementsByClassName("collapsible");
+            coll[i].classList.toggle("active");
+            var content = coll[i].nextElementSibling;
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+
+        var coll = document.getElementsByClassName("collapsible");
+        for (let i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function () {
+                for (let j = 0; j < coll.length; j++) {
+                    if (j !== i) {
+                        coll[j].classList.remove("active");
+                        coll[j].nextElementSibling.style.maxHeight = null;
+                    }
+                }
+                active(i);
+            });
+        }
+
+        function setBoard(config) {
+            if (board) board.destroy();
+            board = new Chessboard(config);
+        }
+
+        var items = document.getElementsByClassName("item");
+
+        for (let i = 0; i < items.length; i++) {
+            items[i].addEventListener("click", function () {
+                setBoard(configs[i + 1]);
+            });
+        }
+
+        // Put buttons in description (desc under board)
+        for (let i = 0; i < items.length; i++) {
+            let button = buttons[i + 1];
+            for (let key in button) {
+
+                let btn = document.createElement("button");
+                btn.innerHTML = key;
+                btn.onclick = button[key];
+
+                // Show button only if the associated item is clicked
+                btn.style.display = "none";
+                for (let j = 0; j < items.length; j++) {
+                    items[j].addEventListener("click", function () {
+                        if (i === j) {
+                            btn.style.display = "block";
+                        } else {
+                            textContainer.innerHTML = '';
+                            btn.style.display = "none";
+                        }
+                    });
+                }
+
+                buttonContainer.appendChild(btn);
+            }
+        }
+
+
+    </script>
 </body>
+
 </html>

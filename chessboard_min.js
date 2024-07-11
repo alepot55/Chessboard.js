@@ -859,7 +859,6 @@ class Chessboard {
     }
 
     move(move, animation) {
-        console.log(move);
 
         if (!this.canMove(move.slice(0, 2))) return false;
 
@@ -980,6 +979,8 @@ class Chessboard {
         this.dehintAllSquares();
         this.deselectAllSquares();
         this.unmoveAllSquares();
+        this.buildGame(position);
+        position = this.game.fen();
         if (!color) color = position.split(' ')[1];
         let change_color = this.config.orientation !== color;
         this.config.setOrientation(color);
@@ -1036,8 +1037,14 @@ class Chessboard {
         this.pieces = new_pieces;
     }
 
-    fen() {
-        return this.game.fen();
+    getPosition(mode) {
+        if (!mode || mode === 'fen') return this.game.fen();
+        let dict = {};
+        for (let square in this.celle) {
+            let piece = this.piece(square);
+            if (piece) dict[square] = piece;
+        }
+        return dict;
     }
 
     // Squares

@@ -301,67 +301,70 @@ class Chessboard {
         piece.visible();
     }
 
-    // Aggiorna tutte le posizioni dei pezzi sul board
     updateBoardPieces(animation) {
-        // Prepara i dati per aggiornare i pezzi
         let { updatedFlags, escapeFlags, movableFlags, pendingTranslations } = this.prepareBoardUpdateData();
 
-        // Identifica le traduzioni (movimenti) da applicare
         this.identifyPieceTranslations(updatedFlags, escapeFlags, movableFlags, pendingTranslations);
-        // Esegue le traduzioni rilevate
+
         this.executePieceTranslations(pendingTranslations, escapeFlags, animation);
 
-        // Gestisce eventuali aggiornamenti rimanenti
         this.processRemainingPieceUpdates(updatedFlags, animation);
     }
 
-    // Prepara i dati necessari per l'aggiornamento dei pezzi
     prepareBoardUpdateData() {
-        let updatedFlags = {};   // Flag che indica se la cella è stata aggiornata
-        let escapeFlags = {};    // Flag per gestire il movimento "in fuga" dei pezzi
-        let movableFlags = {};   // Flag che indica se un pezzo può essere tradotto in un nuovo stato
-        let pendingTranslations = []; // Array per memorizzare le traduzioni da eseguire
+        let updatedFlags = {};   
+        let escapeFlags = {};    
+        let movableFlags = {};   
+        let pendingTranslations = []; 
 
         for (const square of Object.values(this.squares)) {
             let cellPiece = square.getPiece();
             updatedFlags[square] = false;
             escapeFlags[square] = false;
-            // controlla se il pezzo presente nella cella è diverso da quello che dovrebbe esserci
             movableFlags[square] = cellPiece ? this.piece(square) !== cellPiece.getId() : false;
         }
 
         return { updatedFlags, escapeFlags, movableFlags, pendingTranslations };
     }
 
-    // Identifica i movimenti di traslazione necessari per aggiornare le posizioni dei pezzi
     identifyPieceTranslations(updatedFlags, escapeFlags, movableFlags, pendingTranslations) {
-        for (const targetSquare of Object.values(this.squares)) {
-            let newPieceId = this.piece(targetSquare.id);
-            let newPiece = newPieceId ? new Piece(newPieceId[1], newPieceId[0], this.getPiecePath(newPieceId)) : null;
-            let currentPiece = targetSquare.getPiece();
-            let currentPieceId = currentPiece ? currentPiece.getId() : null;
+        Object.values(this.squares).forEach(targetSquare => {
+            const newPieceId = this.piece(targetSquare.id);
+            const newPiece = newPieceId && new Piece(newPieceId[1], newPieceId[0], this.getPiecePath(newPieceId));
+            const currentPiece = targetSquare.getPiece();
+            const currentPieceId = currentPiece ? currentPiece.getId() : null;
 
-            if (currentPieceId !== newPieceId && !updatedFlags[targetSquare]) {
-                this.evaluateTranslationCandidates(targetSquare, newPiece, currentPiece, updatedFlags, escapeFlags, movableFlags, pendingTranslations);
-            }
-        }
+            if (currentPieceId === newPieceId || updatedFlags[targetSquare]) return;
+
+            this.evaluateTranslationCandidates(
+                targetSquare,
+                newPiece,
+                currentPiece,
+                updatedFlags,
+                escapeFlags,
+                movableFlags,
+                pendingTranslations
+            );
+        });
     }
 
-    // Valuta se ci sono movimenti di traslazione candidati per una determinata cella del board
     evaluateTranslationCandidates(targetSquare, newPiece, oldPiece, updatedFlags, escapeFlags, movableFlags, pendingTranslations) {
-        for (const sourceSquare of Object.values(this.squares)) {
-            let sourcePiece = sourceSquare.getPiece();
-            let newPieceId = newPiece ? newPiece.getId() : null;
+        if (!newPiece) return;
+        const newPieceId = newPiece.getId();
 
-            // Se il pezzo nella cella di partenza corrisponde al nuovo pezzo da posizionare
-            if (sourcePiece && movableFlags[sourceSquare] && !updatedFlags[targetSquare] && sourceSquare.id !== targetSquare.id && sourcePiece.id === newPieceId && !this.isPiece(newPieceId, sourceSquare.id)) {
+        for (const sourceSquare of Object.values(this.squares)) {
+            if (sourceSquare.id === targetSquare.id || updatedFlags[targetSquare]) continue;
+
+            const sourcePiece = sourceSquare.getPiece();
+            if (!sourcePiece || !movableFlags[sourceSquare] || this.isPiece(newPieceId, sourceSquare.id)) continue;
+
+            if (sourcePiece.id === newPieceId) {
                 this.handleTranslationMovement(targetSquare, sourceSquare, oldPiece, sourcePiece, updatedFlags, escapeFlags, movableFlags, pendingTranslations);
                 break;
             }
         }
     }
 
-    // Gestisce il movimento di traslazione da una cella all'altra, compreso il caso speciale en passant
     handleTranslationMovement(targetSquare, sourceSquare, oldPiece, currentSource, updatedFlags, escapeFlags, movableFlags, pendingTranslations) {
         // Verifica il caso specifico "en passant"
         let lastMove = this.lastMove();
@@ -378,10 +381,8 @@ class Chessboard {
         updatedFlags[targetSquare] = true;
     }
 
-    // Applica le traslazioni identificate per muovere i pezzi sul board
     executePieceTranslations(pendingTranslations, escapeFlags, animation) {
-        for (let [piece, sourceSquare, targetSquare] of pendingTranslations) {
-            // Se targetSquare non è in stato "escape" ed esiste già un pezzo, lo rimuove
+        for (let [_, sourceSquare, targetSquare] of pendingTranslations) {
             let removeTarget = !escapeFlags[targetSquare] && targetSquare.getPiece();
             let moveObj = new Move(sourceSquare, targetSquare);
             this.translatePiece(moveObj, removeTarget, animation);
@@ -425,9 +426,7 @@ class Chessboard {
         }
     }
 
-    isPiece(piece, square) {
-        return this.piece(square) === piece;
-    }
+    isPiece(piece, square) { return this.piece(square) === piece }
 
     deletePiece(square, animation = true) {
         this.game.remove(square);

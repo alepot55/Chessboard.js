@@ -16,6 +16,10 @@ class Move {
         return this.promotion !== null;
     }
 
+    setPromotion(promotion) {
+        this.promotion = promotion;
+    }
+
     check() {
         if (this.piece === null) {
             throw new Error('Move: no piece to move');
@@ -30,6 +34,11 @@ class Move {
         if (!(this.piece instanceof Piece)) {
             throw new Error('Move: piece must be a Piece object');
         }
+    }
+
+    isLegal(game) {
+        let destinations = game.moves({square: this.from.id, verbose: true}).map(move => move.to);
+        return destinations.indexOf(this.to.id) !== -1;
     }
 
 

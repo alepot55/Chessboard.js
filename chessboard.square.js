@@ -6,7 +6,7 @@ class Square {
         this.row = row;
         this.col = col;
         this.id = this.getId();
-        this.element = this.createElement();   
+        this.element = this.createElement();
         this.piece = null;
     }
 
@@ -55,7 +55,7 @@ class Square {
     }
 
     removePiece() {
-        this.element.removeChild(this.piece.getElement()); 
+        this.element.removeChild(this.piece.getElement());
         this.piece = null;
     }
 
@@ -113,11 +113,15 @@ class Square {
         this.element.classList.remove('highlighted');
     }
 
-    putCover() {
+    putCover(callback) {
         let cover = document.createElement("div");
         cover.classList.add('square');
         cover.classList.add('cover');
         this.element.appendChild(cover);
+        cover.addEventListener('click', (e) => {
+            e.stopPropagation();
+            callback();
+        });
     }
 
     removeCover() {
@@ -127,16 +131,27 @@ class Square {
         }
     }
 
-    putPromotion() {
+    putPromotion(src, callback) {
         let choice = document.createElement("div");
         choice.classList.add('square');
         choice.classList.add('choice');
         this.element.appendChild(choice);
+        let img = document.createElement("img");
+        img.classList.add("piece");
+        img.classList.add("choicable");
+        img.src = src;
+        choice.appendChild(img);
+        choice.addEventListener('click', (e) => {
+            e.stopPropagation();
+            callback();
+        });
+
     }
 
     removePromotion() {
         let choice = this.element.querySelector('.choice');
         if (choice) {
+            choice.removeChild(choice.firstChild);
             this.element.removeChild(choice);
         }
     }

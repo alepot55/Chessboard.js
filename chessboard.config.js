@@ -1,6 +1,26 @@
-const DEFAULT_POSITION_WHITE = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const SLOW_ANIMATION = 600;
-const FAST_ANIMATION = 150;
+const animationTime = {
+    'fast': 200,
+    'slow': 600,
+    'normal': 400,
+    'verySlow': 1000,
+    'veryFast': 100
+};
+
+const boolValues = {
+    'true': true,
+    'false': false,
+    'none': false,
+    1: true,
+    0: false
+};
+
+const transitionFunctions = {
+    'ease': 'ease',
+    'linear': 'linear',
+    'ease-in': 'ease-in',
+    'ease-out': 'ease-out',
+    'ease-in-out': 'ease-in-out'
+};
 
 class ChessboardConfig {
     constructor(settings) {
@@ -44,26 +64,17 @@ class ChessboardConfig {
             hintColor: '#ababaa'
         };
 
-        // Merge defaults with provided settings
         const config = Object.assign({}, defaults, settings);
 
         this.id_div = config.id_div;
         this.position = config.position;
         this.orientation = config.orientation;
         this.mode = config.mode;
-        this.draggable = config.draggable;
         this.dropOffBoard = config.dropOffBoard;
-        this.hints = config.hints;
-        this.clickable = config.clickable;
         this.size = config.size;
         this.movableColors = config.movableColors;
-        this.moveHighlight = config.moveHighlight;
-        this.overHighlight = config.overHighlight;
         this.moveAnimation = config.moveAnimation;
-        this.moveTime = config.moveTime;
-        this.snapbackTime = config.snapbackTime;
         this.snapbackAnimation = config.snapbackAnimation;
-        this.fadeTime = config.fadeTime;
         this.fadeAnimation = config.fadeAnimation;
         this.piecesPath = config.piecesPath;
         this.onMove = config.onMove;
@@ -73,6 +84,16 @@ class ChessboardConfig {
         this.onDragMove = config.onDragMove;
         this.onDrop = config.onDrop;
         this.onSnapbackEnd = config.onSnapbackEnd;
+
+        this.hints = this.setBoolean(config.hints);
+        this.clickable = this.setBoolean(config.clickable);
+        this.draggable = this.setBoolean(config.draggable);
+        this.moveHighlight = this.setBoolean(config.moveHighlight);
+        this.overHighlight = this.setBoolean(config.overHighlight);
+
+        this.moveTime = this.setTime(config.moveTime)
+        this.snapbackTime = this.setTime(config.snapbackTime);
+        this.fadeTime = this.setTime(config.fadeTime);
 
         this.setCSSProperty('pieceRatio', config.ratio);
         this.setCSSProperty('whiteSquare', config.whiteSquare);
@@ -105,6 +126,22 @@ class ChessboardConfig {
         this.orientation = orientation;
         return this;
     }
+
+    setTime(value) {
+        if (typeof value === 'number') return value;
+        if (value in animationTime) return animationTime[value];
+        throw new Error('Invalid time value');
+    }
+
+    setBoolean(value) {
+        if (typeof value === 'boolean') return value;
+        throw new Error('Invalid boolean value');
+    }
+
+    setTransitionFunction(value) {
+        if (transitionFunctions[value]) return transitionFunctions[value];
+        throw new Error('Invalid transition function');
+    }
 }
 
-export { ChessboardConfig, DEFAULT_POSITION_WHITE, SLOW_ANIMATION, FAST_ANIMATION };
+export default ChessboardConfig;

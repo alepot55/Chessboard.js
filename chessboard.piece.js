@@ -6,7 +6,7 @@ class Piece {
         this.element = this.createElement(src, opacity);
 
         this.check();
-        }
+    }
 
     getId() {
         return this.type + this.color;
@@ -47,6 +47,8 @@ class Piece {
             piece.element.style.opacity = opacity;
             if (elapsed < duration) {
                 requestAnimationFrame(fade);
+            } else {
+                piece.element.style.opacity = 1;
             }
         }
         fade();
@@ -62,6 +64,8 @@ class Piece {
             piece.element.style.opacity = opacity;
             if (elapsed < duration) {
                 requestAnimationFrame(fade);
+            } else {
+                piece.element.style.opacity = 0;
             }
         }
     }
@@ -97,7 +101,7 @@ class Piece {
 
         let animation = this.element.animate(keyframes, {
             duration: duration,
-            easing: 'ease', 
+            easing: 'ease',
             fill: 'none'
         });
 

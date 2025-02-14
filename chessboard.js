@@ -1,85 +1,121 @@
-import { Chess } from './chess.js';
-import { ChessboardConfig, DEFAULT_POSITION_WHITE, SLOW_ANIMATION, FAST_ANIMATION } from './chessboard.config.js';
+import { Chess, validateFen } from './chess.js';
+import ChessboardConfig from './chessboard.config.js';
 import Square from './chessboard.square.js';
 import Piece from './chessboard.piece.js';
 import Move from './chessboard.move.js';
 
-export class Chessboard {
+class Chessboard {
+
+    standard_positions = {
+        'start': 'start',
+        'default': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    }
+
+    error_messages = {
+        'invalid_position': 'Invalid position - ',
+        'invalid_id_div': 'Board id not found - ',
+        'invalid_value': 'Invalid value - ',
+        'invalid_piece': 'Invalid piece - ',
+        'invalid_square': 'Invalid square - ',
+        'invalid_fen': 'Invalid fen - ',
+        'invalid_orientation': 'Invalid orientation - ',
+        'invalid_color': 'Invalid color - ',
+        'invalid_mode': 'Invalid mode - ',
+        'invalid_dropOffBoard': 'Invalid dropOffBoard - ',
+        'invalid_snapbackTime': 'Invalid snapbackTime - ',
+        'invalid_snapbackAnimation': 'Invalid snapbackAnimation - ',
+        'invalid_fadeTime': 'Invalid fadeTime - ',
+        'invalid_fadeAnimation': 'Invalid fadeAnimation - ',
+        'invalid_ratio': 'Invalid ratio - ',
+        'invalid_piecesPath': 'Invalid piecesPath - ',
+        'invalid_onMove': 'Invalid onMove - ',
+        'invalid_onMoveEnd': 'Invalid onMoveEnd - ',
+        'invalid_onChange': 'Invalid onChange - ',
+        'invalid_onDragStart': 'Invalid onDragStart - ',
+        'invalid_onDragMove': 'Invalid onDragMove - ',
+        'invalid_onDrop': 'Invalid onDrop - ',
+        'invalid_onSnapbackEnd': 'Invalid onSnapbackEnd - ',
+        'invalid_whiteSquare': 'Invalid whiteSquare - ',
+        'invalid_blackSquare': 'Invalid blackSquare - ',
+        'invalid_highlight': 'Invalid highlight - ',
+        'invalid_selectedSquareWhite': 'Invalid selectedSquareWhite - ',
+        'invalid_selectedSquareBlack': 'Invalid selectedSquareBlack - ',
+        'invalid_movedSquareWhite': 'Invalid movedSquareWhite - ',
+        'invalid_movedSquareBlack': 'Invalid movedSquareBlack - ',
+        'invalid_choiceSquare': 'Invalid choiceSquare - ',
+        'invalid_coverSquare': 'Invalid coverSquare - ',
+        'invalid_hintColor': 'Invalid hintColor - ',
+    }
 
     constructor(config) {
         this.config = new ChessboardConfig(config);
-        this.celle = {};
-        this.buildGame(this.config.position);
-        this.initParams();
-        this.buildBoard();
-        this.updatePosition();
+        this.init();
     }
 
     // Build
 
+    init() {
+        this.initParams();
+        this.buildGame(this.config.position);
+        this.buildBoard();
+        this.buildSquares();
+        this.addListeners();
+        this.updatePosition();
+    }
+
+    initParams() {
+        this.board = null;
+        this.squares = {};
+        this.promoting = false;
+        this.clicked = null;
+        this.history = [];
+        this.mosseIndietro = [];
+        this.clicked = null;
+    }
+
     buildGame(position) {
-        if (position === 'start') {
-            this.game = new Chess();
-        } else if (position === 'default') {
-            this.game = new Chess(DEFAULT_POSITION_WHITE);
-        } else if (typeof position === 'string') {
+        if (typeof position === 'object') {
+            this.game = new Chess('start');
+            Object.entries(position).forEach(([square, [type, color]]) => {
+                this.game.put({ type, color }, square);
+            });
+        } else if (Object.keys(this.standard_positions).includes(position)) {
+            if (position === 'start') this.game = new Chess();
+            else this.game = new Chess(this.standard_positions[position]);
+        } else if (validateFen(position)) {
             this.game = new Chess(position);
-        } else if (typeof position === 'object') {
-            let game = new Chess('start');
-            for (let square in position) {
-                game.put({ type: position[square][0], color: position[square][1] }, square);
-            }
-            this.game = game;
         } else {
-            throw new Error('Invalid position - ' + position + ' - must be a fen string, "start", "default" or a dictionary of pieces, like {a1: "wK", b2: "bQ", ...}');
+            throw new Error(this.error_messages['invalid_position'] + position);
         }
     }
 
     buildBoard() {
         this.board = document.getElementById(this.config.id_div);
         if (!this.board) {
-            throw new Error('Board id not found - ' + this.config.id_div + ' - must be a valid id of a div element');
+            throw new Error(this.error_messages['invalid_id_div'] + this.config.id_div);
         }
         this.resize(this.config.size);
         this.board.className = "board";
-        this.buildSquares();
     }
 
     realCoord(row, col) {
-        if (this.isWhiteOriented()) {
-            row = 7 - row;
-        } else {
-            col = 7 - col;
-        }
+        if (this.isWhiteOriented()) row = 7 - row;
+        else col = 7 - col;
         return [row + 1, col + 1];
     }
 
     buildSquares() {
-        this.lastSquare = null;
-        this.celle = {};
-        this.mosseIndietro = [];
-
 
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
 
                 let [square_row, square_col] = this.realCoord(row, col);
                 let square = new Square(square_row, square_col);
-                this.celle[square.getId()] = square;
+                this.squares[square.getId()] = square;
 
-                this.board.appendChild(square.getElement());
+                this.board.appendChild(square.element);
             }
         }
-
-        this.addListeners();
-    }
-
-    initParams() {
-        this.promoting = false;
-        this.lastSquare = null;
-        this.history = [];
-        this.mosseIndietro = [];
-        this.lastSquare = null;
     }
 
     resize(value) {
@@ -94,7 +130,7 @@ export class Chessboard {
             }
             this.resize(size);
         } else if (typeof value !== 'number') {
-            throw new Error('Invalid value - ' + value + ' - must be a number or "auto"');
+            throw new Error(this.error_messages['invalid_value'] + value);
         } else {
             document.documentElement.style.setProperty('--dimBoard', value + 'px');
             this.updatePosition();
@@ -102,7 +138,6 @@ export class Chessboard {
     }
 
     destroy() {
-        if (!this.board) throw new Error('Board not found');
         this.board.innerHTML = '';
         this.board.className = '';
     }
@@ -111,8 +146,14 @@ export class Chessboard {
     // Pieces
 
     getPiecePath(piece) {
-        if (typeof this.config.piecesPath === 'string') return this.config.piecesPath + '/' + piece + '.svg';
-        else return this.config.piecesPath(piece);
+        if (typeof this.config.piecesPath === 'string')
+            return this.config.piecesPath + '/' + piece + '.svg';
+        else if (typeof this.config.piecesPath === 'object')
+            return this.config.piecesPath[piece];
+        else if (typeof this.config.piecesPath === 'function')
+            return this.config.piecesPath(piece);
+        else
+            throw new Error(this.error_messages['invalid_piecesPath']);
     }
 
     piece(square) {
@@ -126,21 +167,18 @@ export class Chessboard {
     }
 
     movePiece(piece, to, duration, callback) {
-
-        if (duration === 'slow') duration = SLOW_ANIMATION;
-        else if (duration === 'fast') duration = FAST_ANIMATION;
         piece.translate(to, duration, this.transitionTimingFunction, this.config.moveAnimation, callback);
     }
 
-    translatePiece(move, removeTo, animate) {
-        console.log('translatePiece');
+    translatePiece(move, removeTo, animate, callback = null) {
 
-        if (removeTo) this.removePiece(move.to.id);
+        if (removeTo) this.removePiece(move.to, false);
 
         let change_square = () => {
             move.from.removePiece();
             move.to.putPiece(move.piece);
             move.piece.setDrag(this.dragFunction(move.to, move.piece));
+            if (callback) callback();
         }
 
         let duration = animate ? this.config.moveTime : 0;
@@ -154,9 +192,7 @@ export class Chessboard {
         this.translatePiece(move, false, animate);
     }
 
-    removePiece(square, p = null, fade = true) {
-
-        square = this.celle[square];
+    removePiece(square, fade = true) {
 
         let piece = square.getPiece();
 
@@ -172,25 +208,25 @@ export class Chessboard {
 
         return (event) => {
 
+            event.preventDefault();
+
             if (!this.config.draggable || !piece) return;
             if (!this.config.onDragStart(square, piece)) return;
 
             let prec;
             let from = square;
             let to = square;
-            let moved = false;
 
-            const img = piece.getElement();
+            const img = piece.element;
 
-            if (!this.canMove(from.id)) return;
-            if (!this.config.clickable) this.lastSquare = null;
-            if (this.onClick(from.id)) return;
+            if (!this.canMove(from)) return;
+            if (!this.config.clickable) this.clicked = null;
+            if (this.onClick(from)) return;
 
             img.style.position = 'absolute';
             img.style.zIndex = 100;
 
             const moveAt = (pageX, pageY) => {
-                moved = true;
                 const halfWidth = img.offsetWidth / 2;
                 const halfHeight = img.offsetHeight / 2;
                 img.style.left = `${pageX - halfWidth}px`;
@@ -210,59 +246,49 @@ export class Chessboard {
                 if (x >= 0 && x <= boardWidth && y >= 0 && y <= boardHeight) {
                     const col = Math.floor(x / (boardWidth / 8));
                     const row = Math.floor(y / (boardHeight / 8));
-                    newTo = this.celle[this.getSquareID(row, col)];
+                    newTo = this.squares[this.getSquareID(row, col)];
                 }
-                to = newTo;
 
+                to = newTo;
                 this.config.onDragMove(from, to, piece);
 
                 if (to !== prec) {
-                    this.highlight(to);
-                    this.dehighlight(prec);
+                    to?.highlight();
+                    prec?.dehighlight();
                     prec = to;
                 }
             };
 
             const onMouseUp = () => {
-                console.log('onMouseUp');
-                this.dehighlight(prec);
+                prec?.dehighlight();
                 document.removeEventListener('mousemove', onMouseMove);
-                img.onmouseup = null;
+                window.removeEventListener('mouseup', onMouseUp);
                 img.style.zIndex = 20;
 
                 const dropResult = this.config.onDrop(from, to, piece);
                 const isTrashDrop = !to && (this.config.dropOffBoard === 'trash' || dropResult === 'trash');
 
-                console.log(from, to); // zindex 99999 non so perchè
-
                 if (isTrashDrop) {
-                    this.unmoveAllSquares();
-                    this.dehintAllSquares();
-                    this.deselect(from);
-                    this.remove(from);
-                } else if (moved) {
-                    if (!to || !this.onClick(to.id, true)) {
-                        this.snapbackPiece(from, !this.promoting);
-                        this.config.onSnapbackEnd(from, piece);
-                    }
+                    this.allSquares("unmoved");
+                    this.allSquares("dehint");
+                    from.deselect();
+                    this.deletePiece(from);
+                } else if (!to || !this.onClick(to, true)) {
+                    this.snapbackPiece(from, !this.promoting);
+                    this.config.onSnapbackEnd(from, piece);
                 }
             };
 
+            window.addEventListener('mouseup', onMouseUp, { once: true });
             document.addEventListener('mousemove', onMouseMove);
             img.addEventListener('mouseup', onMouseUp, { once: true });
         }
     }
 
-    insert(square, pieceId, fade = this.config.fadeAnimation) {
+    addPiece(square, piece, fade = true) {
 
-        if (fade === 'none' || fade === 0) fade = false;
-
-        if (this.celle[square].getPiece()) this.removePiece(square);
-
-        square = this.celle[square];
-
-        let piece = new Piece(pieceId[1], pieceId[0], this.getPiecePath(pieceId), 0);
-        let img = piece.getElement();
+        if (square.getPiece())
+            throw new Error(this.error_messages['invalid_square'] + square.id);
 
         square.putPiece(piece);
         piece.setDrag(this.dragFunction(square, piece));
@@ -275,303 +301,305 @@ export class Chessboard {
         piece.visible();
     }
 
-    updatePieces(animation) {
-        let { ok, escaping, canEscape, toTranslate } = this.preparePieceUpdateData();
+    // Aggiorna tutte le posizioni dei pezzi sul board
+    updateBoardPieces(animation) {
+        console.log("updateBoardPieces called with animation:", animation);
+        // Prepara i dati per aggiornare i pezzi
+        let { updatedFlags, escapeFlags, movableFlags, pendingTranslations } = this.prepareBoardUpdateData();
+        console.log("Prepared board update data:", { updatedFlags, escapeFlags, movableFlags, pendingTranslations });
 
-        this.findTranslations(ok, escaping, canEscape, toTranslate);
-        this.applyTranslations(toTranslate, escaping, animation);
-        this.handleRemainingUpdates(ok, animation);
+        // Identifica le traduzioni (movimenti) da applicare
+        this.identifyPieceTranslations(updatedFlags, escapeFlags, movableFlags, pendingTranslations);
+        console.log("Identified pending translations:", pendingTranslations);
 
-        this.config.onChange(this.game.fen());
+        // Esegue le traduzioni rilevate
+        this.executePieceTranslations(pendingTranslations, escapeFlags, animation);
+        console.log("Executed piece translations");
+
+        // Gestisce eventuali aggiornamenti rimanenti
+        this.processRemainingPieceUpdates(updatedFlags, animation);
+        console.log("Processed remaining piece updates");
     }
 
-    preparePieceUpdateData() {
-        let ok = {};
-        let escaping = {};
-        let canEscape = {};
-        let toTranslate = [];
+    // Prepara i dati necessari per l'aggiornamento dei pezzi
+    prepareBoardUpdateData() {
+        let updatedFlags = {};   // Flag che indica se la cella è stata aggiornata
+        let escapeFlags = {};    // Flag per gestire il movimento "in fuga" dei pezzi
+        let movableFlags = {};   // Flag che indica se un pezzo può essere tradotto in un nuovo stato
+        let pendingTranslations = []; // Array per memorizzare le traduzioni da eseguire
 
-        for (let square in this.celle) {
-            let piece = this.celle[square].getPiece();
-            ok[square] = false;
-            escaping[square] = false;
-            canEscape[square] = piece && (this.piece(square) !== piece.getId());
+        for (let square in this.squares) {
+            let cellPiece = this.squares[square].getPiece();
+            updatedFlags[square] = false;
+            escapeFlags[square] = false;
+            // controlla se il pezzo presente nella cella è diverso da quello che dovrebbe esserci
+            movableFlags[square] = cellPiece && (this.piece(square) !== cellPiece.getId());
         }
 
-        return { ok, escaping, canEscape, toTranslate };
+        return { updatedFlags, escapeFlags, movableFlags, pendingTranslations };
     }
 
-    findTranslations(ok, escaping, canEscape, toTranslate) {
-        for (let square in this.celle) {
-            let pieceNew = this.piece(square);
-            let pieceOld = this.celle[square].getPiece() ? this.celle[square].getPiece().getId() : null;
+    // Identifica i movimenti di traslazione necessari per aggiornare le posizioni dei pezzi
+    identifyPieceTranslations(updatedFlags, escapeFlags, movableFlags, pendingTranslations) {
+        for (let targetSquareId in this.squares) {
+            let targetSquare = this.squares[targetSquareId];   
+            let newPieceId = this.piece(targetSquare.id);
+            let newPiece = null;
+            if (newPieceId) newPiece = new Piece(newPieceId[1], newPieceId[0], this.getPiecePath(newPieceId));
+            let currentPiece = targetSquare.getPiece();
+            let currentPieceId = currentPiece ? currentPiece.getId() : null;
 
-            if (pieceOld !== pieceNew && !ok[square]) {
-                this.checkTranslations(square, pieceNew, pieceOld, ok, escaping, canEscape, toTranslate);
+            if (currentPieceId !== newPieceId && !updatedFlags[targetSquare]) {
+                this.evaluateTranslationCandidates(targetSquare, newPiece, currentPiece, updatedFlags, escapeFlags, movableFlags, pendingTranslations);
             }
         }
     }
 
-    checkTranslations(square, pieceNew, pieceOld, ok, escaping, canEscape, toTranslate) {
-        for (let from in this.celle) {
-            let piece = this.celle[from].getPiece();
-            let coming = piece ? piece.getId() : null;
+    // Valuta se ci sono movimenti di traslazione candidati per una determinata cella del board
+    evaluateTranslationCandidates(targetSquare, newPiece, oldPiece, updatedFlags, escapeFlags, movableFlags, pendingTranslations) {
+        for (let sourceSquareId in this.squares) {
+            let sourceSquare = this.squares[sourceSquareId];
+            let sourcePiece = sourceSquare.getPiece();
 
-            if (coming && canEscape[from] && !ok[square] && from !== square && coming === pieceNew && !this.isPiece(pieceNew, from)) {
-                this.processTranslation(square, from, pieceOld, coming, ok, escaping, canEscape, toTranslate);
+            // Se il pezzo nella cella di partenza corrisponde al nuovo pezzo da posizionare
+            if (sourcePiece && movableFlags[sourceSquare] && !updatedFlags[targetSquare] && sourceSquare.id !== targetSquare.id && sourcePiece.id === newPiece.id && !this.isPiece(newPiece.id, sourceSquare.id)) {
+                this.handleTranslationMovement(targetSquare, sourceSquare, oldPiece, sourcePiece, updatedFlags, escapeFlags, movableFlags, pendingTranslations);
                 break;
             }
         }
     }
 
-    processTranslation(square, from, pieceOld, coming, ok, escaping, canEscape, toTranslate) {
-        // check for en passant
+    // Gestisce il movimento di traslazione da una cella all'altra, compreso il caso speciale en passant
+    handleTranslationMovement(targetSquare, sourceSquare, oldPiece, currentSource, updatedFlags, escapeFlags, movableFlags, pendingTranslations) {
+        // Verifica il caso specifico "en passant"
         let lastMove = this.lastMove();
-        if (!pieceOld && lastMove && lastMove['captured'] === 'p') {
-            let captured = 'p' + (lastMove['color'] === 'w' ? 'b' : 'w');
-            this.removePiece(square[0] + from[1], captured);
+        if (!oldPiece && lastMove && lastMove['captured'] === 'p') {
+            this.removePiece(this.squares[targetSquare.id[0] + sourceSquare.id[1]]);
         }
 
-        toTranslate.push([coming, from, square]);
+        pendingTranslations.push([currentSource, sourceSquare, targetSquare]);
 
-        if (!this.piece(from)) ok[from] = true;
-        escaping[from] = true;
-        canEscape[from] = false;
+        if (!this.piece(sourceSquare.id)) updatedFlags[sourceSquare] = true;
+        escapeFlags[sourceSquare] = true;
+        movableFlags[sourceSquare] = false;
 
-        ok[square] = true;
+        updatedFlags[targetSquare] = true;
     }
 
-    applyTranslations(toTranslate, escaping, animation) {
-        for (let [piece, from, to] of toTranslate) {
-            let removeTo = !escaping[to] && this.celle[to].getPiece();
-            let move = new Move(this.celle[from], this.celle[to]);
-            this.translatePiece(move, removeTo, animation);
+    // Applica le traslazioni identificate per muovere i pezzi sul board
+    executePieceTranslations(pendingTranslations, escapeFlags, animation) {
+        for (let [piece, sourceSquare, targetSquare] of pendingTranslations) {
+            // Se targetSquare non è in stato "escape" ed esiste già un pezzo, lo rimuove
+            let removeTarget = !escapeFlags[targetSquare] && this.squares[targetSquare].getPiece();
+            let moveObj = new Move(this.squares[sourceSquare], this.squares[targetSquare]);
+            this.translatePiece(moveObj, removeTarget, animation);
         }
     }
 
-    handleRemainingUpdates(ok, animation) {
-        for (let square in this.celle) {
-            let pieceNew = this.piece(square);
-            let pieceOld = this.celle[square].getPiece() ? this.celle[square].getPiece().getId() : null;
+    // Gestisce gli aggiornamenti residui per ogni cella che non è ancora stata correttamente aggiornata
+    processRemainingPieceUpdates(updatedFlags, animation) {
+        for (let squareId in this.squares) {
+            let square = this.squares[squareId];
+            let newPieceId = this.piece(square.id);
+            let newPiece = newPieceId ? new Piece(newPieceId[1], newPieceId[0], this.getPiecePath(newPieceId)) : null;
+            let currentPiece = square.getPiece();
+            let currentPieceId = currentPiece ? currentPiece.getId() : null;
 
-            if (pieceOld !== pieceNew && !ok[square]) {
-                this.updatePiece(square, pieceNew, ok, animation);
+            console.log("Processing remaining piece updates for square", square.id, "with new piece", newPieceId, " and updated flags", updatedFlags[square]);
+
+            if (currentPieceId !== newPieceId && !updatedFlags[square]) {
+                this.updateSinglePiece(square, newPiece, updatedFlags, animation);
             }
         }
     }
 
-    updatePiece(square, pieceNew, ok, animation) {
-        if (!ok[square]) {
-            // check for promotion
-            let last_move = this.lastMove();
-            if (last_move?.promotion) {
-                if (last_move.to.id === square) {
-                    this.translatePiece(last_move, true, animation);
-                    ok[last_move.from.id] = true;
+    // Aggiorna il pezzo in una cella specifica. Gestisce anche il caso di promozione
+    updateSinglePiece(square, newPiece, updatedFlags, animation) {
+        if (!updatedFlags[square]) {
+            console.log("Updating single piece", square.id, "with new piece", newPiece);
+
+            let lastMove = this.lastMove();
+
+            if (lastMove?.promotion) {
+                if (lastMove['to'] === square.id) {
+
+                    let move = new Move(this.squares[lastMove['from']], square);
+                    this.translatePiece(move, true, animation
+                        , () => {
+                            move.to.removePiece();
+                            this.addPiece(square, newPiece);
+                        });
                 }
             } else {
-                if (this.celle[square].hasPiece()) this.removePiece(square);
-                if (pieceNew) this.insert(square, pieceNew);
+                if (square.hasPiece()) this.removePiece(square);
+                if (newPiece) this.addPiece(square, newPiece);
             }
         }
-    }
-
-    opponentPiece(square) {
-        let piece = this.piece(square);
-        return piece && piece[1] !== this.config.orientation;
-    }
-
-    playerPiece(square) {
-        let piece = this.piece(square);
-        return piece && piece[1] === this.config.orientation;
     }
 
     isPiece(piece, square) {
         return this.piece(square) === piece;
     }
 
-    remove(square, animation = true) {
+    deletePiece(square, animation = true) {
         this.game.remove(square);
-        this.removePiece(square, null, animation);
+        this.removePiece(square, animation);
     }
 
 
     // Listeners
 
     addListeners() {
-        if (this.mosseIndietro.length > 0) return;
-        for (let square in this.celle) {
-            let elem = this.celle[square].getElement();
-            let piece = this.celle[square].getPiece();
-            elem.addEventListener("mouseover", () => {
-                if (!this.lastSquare) this.hintMoves(elem.id);
+        for (let squareId in this.squares) {
+
+            let square = this.squares[squareId];
+            let piece = square.getPiece();
+
+            square.element.addEventListener("mouseover", (e) => {
+                if (!this.clicked) this.hintMoves(square);
             });
-            elem.addEventListener("mouseout", () => {
-                if (!this.lastSquare) this.dehintMoves(elem.id);
+            square.element.addEventListener("mouseout", (e) => {
+                if (!this.clicked) this.dehintMoves(square);
             });
-            elem.addEventListener("click", () => {
-                if (this.config.clickable && (!piece || this.config.onlyLegalMoves)) this.onClick(elem.id)
-            });
-            elem.addEventListener("touch", () => {
-                if (this.config.clickable) this.onClick(elem.id)
-            });
+
+            const handleClick = (e) => {
+                e.stopPropagation();
+                if (this.config.clickable && (!piece || this.config.onlyLegalMoves)) this.onClick(square)
+            }
+
+            square.element.addEventListener("click", handleClick);
+            square.element.addEventListener("touch", handleClick);
         }
     }
 
     onClick(square, animation = this.config.moveAnimation) {
 
-        console.log('onClick', square);
+        if (square.id === this.clicked?.id) return false;
 
-        if (!square || square === this.lastSquare) return;
+        let from = this.clicked;
+        this.clicked = null;
 
-        if (animation === 'none') {
-            animation = false;
-        }
+        let promotion = null
 
         if (this.promoting) {
-            this.depromoteAllSquares();
-            this.removeAllCovers();
-            this.promoting = false;
-            if (square.length === 2) {
-                this.lastSquare = null;
-            }
-        }
+            if (this.promoting === 'none') from = null
+            else promotion = this.promoting;
 
-        let from = this.lastSquare;
-        this.lastSquare = null;
+            this.promoting = false;
+            this.allSquares("removePromotion");
+            this.allSquares("removeCover");
+        }
 
         if (!from) {
-            if (!this.canMove(square)) return;
-            this.select(square);
-            this.hintMoves(square);
-            this.lastSquare = square;
-            return;
+
+            if (this.canMove(square)) {
+                square.select();
+                this.hintMoves(square);
+                this.clicked = square;
+            }
+            
+            return false;
         }
 
+        if (!this.canMove(from)) return false;
 
-        this.deselect(this.celle[from]);
-        this.dehintAllSquares();
+        let move = new Move(from, square, promotion);
 
-        if (!this.canMove(from)) return;
+        move.from.deselect();
+        this.allSquares("removeHint");
 
-        let move = new Move(this.celle[from], this.celle[square]);
+        if (this.config.onlyLegalMoves && !move.isLegal(this.game)) return false;
 
-        if (this.config.onlyLegalMoves && !this.legalMove(move)) return;
-
-        if (!move.hasPromotion() && this.promote(move)) return;
-
-        console.log('move', move);
+        if (!move.hasPromotion() && this.promote(move)) return false;
 
         if (this.config.onMove(move)) {
             this.move(move, animation);
             return true;
         }
+
+        return false;
     }
 
     // Hint
 
     hint(square) {
-        if (!this.config.hints || !this.celle[square]) return;
-        this.celle[square].putHint(this.colorPiece(square) && this.colorPiece(square) !== this.turn());
-
+        if (!this.config.hints || !this.squares[square]) return;
+        this.squares[square].putHint(this.colorPiece(square) && this.colorPiece(square) !== this.turn());
     }
 
     hintMoves(square) {
+        console.log("hintMoves", square.id);
         if (!this.canMove(square)) return;
-        let mosse = this.game.moves({ square: square, verbose: true });
+        console.log("hintMoves", square.id);
+        let mosse = this.game.moves({ square: square.id, verbose: true });
         for (let mossa of mosse) {
             if (mossa['to'].length === 2) this.hint(mossa['to']);
         }
     }
 
     dehintMoves(square) {
-        let mosse = this.game.moves({ square: square, verbose: true });
+        let mosse = this.game.moves({ square: square.id, verbose: true });
         for (let mossa of mosse) {
-            if (mossa['to'].length === 2) this.dehint(mossa['to']);
-        }
-    }
-
-    dehint(square) {
-        if (square.length !== 2) return;
-        if (this.config.hints) {
-            this.celle[square].removeHint();
-        }
-    }
-
-    dehintAllSquares() {
-        for (let casella in this.celle) {
-            this.celle[casella].removeHint();
-        }
-    }
-
-    // Select
-
-    select(square) {
-        if (!this.config.clickable) return;
-        this.celle[square].select();
-    }
-
-    deselect(square) {
-        square.deselect();
-    }
-
-    deselectAllSquares() {
-        for (let casella in this.celle) {
-            this.deselect(this.celle[casella]);
+            let to = this.squares[mossa['to']];
+            to.removeHint();
         }
     }
 
     // Moves
 
     canMove(square) {
-        if (!this.piece(square)) return false;
+        if (!square.piece) return false;
         if (this.config.movableColors === 'none') return false;
-        if (this.config.movableColors === 'w' && this.colorPiece(square) === 'b') return false;
-        if (this.config.movableColors === 'b' && this.colorPiece(square) === 'w') return false;
+        if (this.config.movableColors === 'w' && square.piece.color === 'b') return false;
+        if (this.config.movableColors === 'b' && square.piece.color === 'w') return false;
         if (!this.config.onlyLegalMoves) return true;
-        if (this.colorPiece(square) !== this.turn()) return false;
-        return true;
+        return square.piece.color == this.turn();
     }
 
     move(move, animation) {
 
-        let from = move.from
-        let to = move.to
+        let from = move.from;
+        let to = move.to;
 
         if (!this.config.onlyLegalMoves) {
+
             let piece = this.piece(from.id);
             this.game.remove(from.id);
             this.game.remove(to.id);
             this.game.put({ type: move[4] ? move[4] : piece[0], color: piece[1] }, to.id);
-            return this.updatePosition(false, false);
+            this.updatePosition(false, false);
+
+        } else {
+
+            this.allSquares("unmoved");
+
+            move = this.game.move({
+                from: from.id,
+                to: to.id,
+                promotion: move.promotion
+            });
+
+
+            this.history.push(move);
+
+            this.updatePosition(false, animation);
+
+            from.moved();
+            to.moved();
+            this.allSquares("removeHint");
+
+            this.config.onMoveEnd(move);
         }
-
-        this.unmoveAllSquares();
-
-        move = this.game.move({
-            from: from.id,
-            to: to.id,
-            promotion: move.promotion
-        });
-
-
-        this.history.push(move);
-
-        this.updatePosition(false, animation);
-
-        from.moved();
-        to.moved();
-
-        this.dehintAllSquares();
-
-        this.config.onMoveEnd(move);
-
-        return true;
     }
 
-    unmoveAllSquares() {
-        for (let casella in this.celle) {
-            this.celle[casella].unmoved();
+    updatePosition(change_color = false, animation = this.config.moveAnimation) {
+        if (change_color) this.allSquares("opposite");
+        this.updateBoardPieces(animation);
+    }
+
+    allSquares(method) {
+        for (let casella in this.squares) {
+            this.squares[casella][method]();
         }
     }
 
@@ -592,6 +620,10 @@ export class Chessboard {
         return this.game.moves({ verbose: verb });
     }
 
+    isLegalMove(move) {
+        return this.game.move(move) !== null;
+    }
+
     lastMove() {
         return this.history[this.history.length - 1];
     }
@@ -610,13 +642,9 @@ export class Chessboard {
         return null;
     }
 
-    turn() {
-        return this.game.turn();
-    }
+    turn() { return this.game.turn() }
 
-    getOrientation() {
-        return this.config.orientation;
-    }
+    getOrientation() { return this.config.orientation }
 
     orientation(color) {
         if ((color === 'w' || color === 'b') && color !== this.config.orientation) this.flip();
@@ -632,9 +660,9 @@ export class Chessboard {
 
     position(position, color = null) {
         this.initParams();
-        this.dehintAllSquares();
-        this.deselectAllSquares();
-        this.unmoveAllSquares();
+        this.allSquares("dehint");
+        this.allSquares("deselect");
+        this.allSquares("unmoved");
         if (!color) color = position.split(' ')[1];
         let change_color = this.config.orientation !== color;
         this.config.setOrientation(color);
@@ -647,56 +675,14 @@ export class Chessboard {
         this.position(position, this.config.orientation === 'w' ? 'b' : 'w');
     }
 
-    playerTurn() { // Restituisce true se è il turno del giocatore
-        return this.config.orientation === this.game.turn();
+    playerTurn() { return this.getOrientation() == this.game.turn()
     }
 
-    isWhiteSquare(square) {
-        let letters = 'abcdefgh';
-        return (letters.indexOf(square[0]) + parseInt(square[1])) % 2 === 0;
-    }
+    isWhiteOriented() { return this.config.orientation === 'w' }
 
-    isWhiteOriented() {
-        return this.config.orientation === 'w';
-    }
-
-    updatePosition(change_color = false, animation = this.config.moveAnimation) {
-        if (change_color) {
-            this.renameSquares();
-        }
-        this.updatePieces(animation);
-    }
-
-    renameSquares() {
-        let new_pieces = {};
-        for (let elem in this.celle) {
-            let square = this.celle[elem]
-            square.opposite();
-            let piece = square.getPiece();
-            let new_id = this.celle[elem].getId();
-            new_pieces[piece.getId()][new_id] = piece;
-
-        }
-        this.p = new_pieces;
-    }
-
-    fen() {
-        return this.game.fen();
-    }
+    fen() { return this.game.fen() }
 
     // Squares
-
-    getSquareCoord(coord) {
-        let letters = 'abcdefgh';
-        if (this.isWhiteOriented()) {
-            return [8 - parseInt(coord[1]), letters.indexOf(coord[0])];
-        }
-        return [parseInt(coord[1]) - 1, 7 - letters.indexOf(coord[0])];
-    }
-
-    resetSquare(square) {
-        this.celle[square].resetElement();
-    }
 
     getSquareID(row, col) {
         row = parseInt(row);
@@ -714,12 +700,12 @@ export class Chessboard {
     }
 
     removeSquares() { // Rimuove le caselle dalla Chessboard
-        for (let casella in this.celle) {
-            this.board.removeChild(this.celle[casella].getElement());
-            this.celle[casella].remove();
+        for (let casella in this.squares) {
+            this.board.removeChild(this.squares[casella].element);
+            this.squares[casella].remove();
 
         }
-        this.celle = {};
+        this.squares = {};
     }
 
     clear(animation = true) {
@@ -727,79 +713,45 @@ export class Chessboard {
         this.updatePosition(null, animation);
     }
 
-    // Highlight
-
-    highlight(square) {
-        if (!square || !this.celle[square] || !this.config.overHighlight) return;
-        this.celle[square].highlight();
-    }
-
-    dehighlight(square) {
-        if (!square || !this.celle[square] || !this.config.overHighlight) return;
-        this.celle[square].dehighlight();
-    }
-
-
     // Promotion
-
-    coverSquare(square) {
-        this.celle[square].putCover();
-    }
-
-    removeAllCovers() {
-        for (let casella in this.celle) {
-            this.celle[casella].removeCover();
-        }
-    }
-
-    promoteSquare(square, piece) {
-        this.celle[square].putPromotion();
-        let choice = this.celle[square].getElement();
-
-        let img = document.createElement("img");
-        img.className = "piece choicable";
-        img.src = this.getPiecePath(piece);
-        choice.appendChild(img);
-
-        return choice;
-    }
-
-    depromoteAllSquares() {
-        for (let casella in this.celle) {
-            this.celle[casella].removePromotion();
-        }
-    }
 
     promote(move) {
 
         if (!this.config.onlyLegalMoves) return false;
 
-        let to = move.to.id;
-        let from = move.from.id;
-        let pezzo = this.game.get(from);
-        let [row, col] = this.getSquareCoord(to);
-        let choices = ['q', 'r', 'b', 'n']
+        let to = move.to;
+        let from = move.from;
+        let pezzo = this.game.get(from.id);
+        let choichable = ['q', 'r', 'b', 'n']
 
-        if (pezzo['type'] !== 'p' || !(row === 0 || row === 7)) return false;
+        if (pezzo['type'] !== 'p' || !(to.row === 1 || to.row === 8)) return false;
 
-        this.promoting = true;
+        for (let casella in this.squares) {
+            let square = this.squares[casella];
+            let distance = Math.abs(to.row - square.row);
 
-        for (let casella in this.celle) {
-            let [rowCurr, colCurr] = this.getSquareCoord(casella);
+            if (to.col === square.col && distance <= 3) {
 
-            if (col === colCurr && Math.abs(row - rowCurr) <= 3) {
+                let pieceId = choichable[distance] + pezzo['color'];
 
-                let choice = this.promoteSquare(casella, choices[Math.abs(row - rowCurr)] + pezzo['color']);
-                choice.addEventListener('click', () => {
-                    this.onClick(to + choices[Math.abs(row - rowCurr)]);
-                });
-
-            } else {
-                this.coverSquare(casella);
-            }
+                square.putPromotion(
+                    this.getPiecePath(pieceId),
+                    () => {
+                        this.promoting = pieceId[0]
+                        this.clicked = from;
+                        console.log("promoting", this.promoting, "and clicked", this.clicked);
+                        this.onClick(to);
+                    }
+                );
+            } else
+                square.putCover(
+                    () => {
+                        this.promoting = 'none';
+                        this.onClick(square);
+                    });
         }
 
-        this.lastSquare = from;
+        this.clicked = from.id;
 
         return true;
     }
@@ -822,3 +774,5 @@ export class Chessboard {
         }
     }
 }
+
+export default Chessboard;

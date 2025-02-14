@@ -8,17 +8,7 @@ class Piece {
         this.check();
     }
 
-    getId() {
-        return this.type + this.color;
-    }
-
-    getType() {
-        return this.type;
-    }
-
-    getColor() {
-        return this.color;
-    }
+    getId() { return this.type + this.color }
 
     createElement(src, opacity) {
         let element = document.createElement("img");

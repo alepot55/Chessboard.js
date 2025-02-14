@@ -79,7 +79,7 @@ class Chessboard {
             Object.entries(position).forEach(([square, [type, color]]) => {
                 this.game.put({ type, color }, square);
             });
-        } else if (Object.keys(this.standard_positions).includes(position)) {
+        } else if (Object.values(this.standard_positions).includes(position)) {
             if (position === 'start') this.game = new Chess();
             else this.game = new Chess(this.standard_positions[position]);
         } else if (validateFen(position)) {
@@ -303,22 +303,16 @@ class Chessboard {
 
     // Aggiorna tutte le posizioni dei pezzi sul board
     updateBoardPieces(animation) {
-        console.log("updateBoardPieces called with animation:", animation);
         // Prepara i dati per aggiornare i pezzi
         let { updatedFlags, escapeFlags, movableFlags, pendingTranslations } = this.prepareBoardUpdateData();
-        console.log("Prepared board update data:", { updatedFlags, escapeFlags, movableFlags, pendingTranslations });
 
         // Identifica le traduzioni (movimenti) da applicare
         this.identifyPieceTranslations(updatedFlags, escapeFlags, movableFlags, pendingTranslations);
-        console.log("Identified pending translations:", pendingTranslations);
-
         // Esegue le traduzioni rilevate
         this.executePieceTranslations(pendingTranslations, escapeFlags, animation);
-        console.log("Executed piece translations");
 
         // Gestisce eventuali aggiornamenti rimanenti
         this.processRemainingPieceUpdates(updatedFlags, animation);
-        console.log("Processed remaining piece updates");
     }
 
     // Prepara i dati necessari per l'aggiornamento dei pezzi
@@ -328,12 +322,12 @@ class Chessboard {
         let movableFlags = {};   // Flag che indica se un pezzo può essere tradotto in un nuovo stato
         let pendingTranslations = []; // Array per memorizzare le traduzioni da eseguire
 
-        for (let square in this.squares) {
-            let cellPiece = this.squares[square].getPiece();
+        for (const square of Object.values(this.squares)) {
+            let cellPiece = square.getPiece();
             updatedFlags[square] = false;
             escapeFlags[square] = false;
             // controlla se il pezzo presente nella cella è diverso da quello che dovrebbe esserci
-            movableFlags[square] = cellPiece && (this.piece(square) !== cellPiece.getId());
+            movableFlags[square] = cellPiece ? this.piece(square) !== cellPiece.getId() : false;
         }
 
         return { updatedFlags, escapeFlags, movableFlags, pendingTranslations };
@@ -341,11 +335,9 @@ class Chessboard {
 
     // Identifica i movimenti di traslazione necessari per aggiornare le posizioni dei pezzi
     identifyPieceTranslations(updatedFlags, escapeFlags, movableFlags, pendingTranslations) {
-        for (let targetSquareId in this.squares) {
-            let targetSquare = this.squares[targetSquareId];   
+        for (const targetSquare of Object.values(this.squares)) {
             let newPieceId = this.piece(targetSquare.id);
-            let newPiece = null;
-            if (newPieceId) newPiece = new Piece(newPieceId[1], newPieceId[0], this.getPiecePath(newPieceId));
+            let newPiece = newPieceId ? new Piece(newPieceId[1], newPieceId[0], this.getPiecePath(newPieceId)) : null;
             let currentPiece = targetSquare.getPiece();
             let currentPieceId = currentPiece ? currentPiece.getId() : null;
 
@@ -357,12 +349,12 @@ class Chessboard {
 
     // Valuta se ci sono movimenti di traslazione candidati per una determinata cella del board
     evaluateTranslationCandidates(targetSquare, newPiece, oldPiece, updatedFlags, escapeFlags, movableFlags, pendingTranslations) {
-        for (let sourceSquareId in this.squares) {
-            let sourceSquare = this.squares[sourceSquareId];
+        for (const sourceSquare of Object.values(this.squares)) {
             let sourcePiece = sourceSquare.getPiece();
+            let newPieceId = newPiece ? newPiece.getId() : null;
 
             // Se il pezzo nella cella di partenza corrisponde al nuovo pezzo da posizionare
-            if (sourcePiece && movableFlags[sourceSquare] && !updatedFlags[targetSquare] && sourceSquare.id !== targetSquare.id && sourcePiece.id === newPiece.id && !this.isPiece(newPiece.id, sourceSquare.id)) {
+            if (sourcePiece && movableFlags[sourceSquare] && !updatedFlags[targetSquare] && sourceSquare.id !== targetSquare.id && sourcePiece.id === newPieceId && !this.isPiece(newPieceId, sourceSquare.id)) {
                 this.handleTranslationMovement(targetSquare, sourceSquare, oldPiece, sourcePiece, updatedFlags, escapeFlags, movableFlags, pendingTranslations);
                 break;
             }
@@ -390,22 +382,19 @@ class Chessboard {
     executePieceTranslations(pendingTranslations, escapeFlags, animation) {
         for (let [piece, sourceSquare, targetSquare] of pendingTranslations) {
             // Se targetSquare non è in stato "escape" ed esiste già un pezzo, lo rimuove
-            let removeTarget = !escapeFlags[targetSquare] && this.squares[targetSquare].getPiece();
-            let moveObj = new Move(this.squares[sourceSquare], this.squares[targetSquare]);
+            let removeTarget = !escapeFlags[targetSquare] && targetSquare.getPiece();
+            let moveObj = new Move(sourceSquare, targetSquare);
             this.translatePiece(moveObj, removeTarget, animation);
         }
     }
 
     // Gestisce gli aggiornamenti residui per ogni cella che non è ancora stata correttamente aggiornata
     processRemainingPieceUpdates(updatedFlags, animation) {
-        for (let squareId in this.squares) {
-            let square = this.squares[squareId];
+        for (const square of Object.values(this.squares)) {
             let newPieceId = this.piece(square.id);
             let newPiece = newPieceId ? new Piece(newPieceId[1], newPieceId[0], this.getPiecePath(newPieceId)) : null;
             let currentPiece = square.getPiece();
             let currentPieceId = currentPiece ? currentPiece.getId() : null;
-
-            console.log("Processing remaining piece updates for square", square.id, "with new piece", newPieceId, " and updated flags", updatedFlags[square]);
 
             if (currentPieceId !== newPieceId && !updatedFlags[square]) {
                 this.updateSinglePiece(square, newPiece, updatedFlags, animation);
@@ -416,7 +405,6 @@ class Chessboard {
     // Aggiorna il pezzo in una cella specifica. Gestisce anche il caso di promozione
     updateSinglePiece(square, newPiece, updatedFlags, animation) {
         if (!updatedFlags[square]) {
-            console.log("Updating single piece", square.id, "with new piece", newPiece);
 
             let lastMove = this.lastMove();
 
@@ -450,9 +438,8 @@ class Chessboard {
     // Listeners
 
     addListeners() {
-        for (let squareId in this.squares) {
+        for (const square of Object.values(this.squares)) {
 
-            let square = this.squares[squareId];
             let piece = square.getPiece();
 
             square.element.addEventListener("mouseover", (e) => {
@@ -528,9 +515,7 @@ class Chessboard {
     }
 
     hintMoves(square) {
-        console.log("hintMoves", square.id);
         if (!this.canMove(square)) return;
-        console.log("hintMoves", square.id);
         let mosse = this.game.moves({ square: square.id, verbose: true });
         for (let mossa of mosse) {
             if (mossa['to'].length === 2) this.hint(mossa['to']);
@@ -598,8 +583,8 @@ class Chessboard {
     }
 
     allSquares(method) {
-        for (let casella in this.squares) {
-            this.squares[casella][method]();
+        for (const square of Object.values(this.squares)) {
+            square[method]();
         }
     }
 
@@ -699,10 +684,10 @@ class Chessboard {
         return letter + row;
     }
 
-    removeSquares() { // Rimuove le caselle dalla Chessboard
-        for (let casella in this.squares) {
-            this.board.removeChild(this.squares[casella].element);
-            this.squares[casella].remove();
+    removeSquares() { 
+        for (const square of Object.values(this.squares)) {
+            this.board.removeChild(square.element);
+            square.remove();
 
         }
         this.squares = {};
@@ -726,8 +711,7 @@ class Chessboard {
 
         if (pezzo['type'] !== 'p' || !(to.row === 1 || to.row === 8)) return false;
 
-        for (let casella in this.squares) {
-            let square = this.squares[casella];
+        for (const square of Object.values(this.squares)) {
             let distance = Math.abs(to.row - square.row);
 
             if (to.col === square.col && distance <= 3) {
@@ -739,7 +723,6 @@ class Chessboard {
                     () => {
                         this.promoting = pieceId[0]
                         this.clicked = from;
-                        console.log("promoting", this.promoting, "and clicked", this.clicked);
                         this.onClick(to);
                     }
                 );

@@ -114,8 +114,6 @@ class ChessboardConfig {
         } else if (this.mode === 'normal') {
             this.onlyLegalMoves = true;
         }
-
-        Object.freeze(this); // Make config immutable
     }
 
     setCSSProperty(property, value) {

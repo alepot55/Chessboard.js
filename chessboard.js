@@ -60,7 +60,7 @@ class Chessboard {
         this.buildBoard();
         this.buildSquares();
         this.addListeners();
-        this.updatePosition();
+        this.updateBoardPieces();
     }
 
     initParams() {
@@ -118,30 +118,10 @@ class Chessboard {
         }
     }
 
-    resize(value) {
-        if (value === 'auto') {
-            let size;
-            if (this.board.offsetWidth === 0) {
-                size = this.board.offsetHeight;
-            } else if (this.board.offsetHeight === 0) {
-                size = this.board.offsetWidth;
-            } else {
-                size = Math.min(this.board.offsetWidth, this.board.offsetHeight);
-            }
-            this.resize(size);
-        } else if (typeof value !== 'number') {
-            throw new Error(this.error_messages['invalid_value'] + value);
-        } else {
-            document.documentElement.style.setProperty('--dimBoard', value + 'px');
-            this.updatePosition();
-        }
-    }
+    removeBoard() {
 
-    destroy() {
         this.board.innerHTML = '';
-        this.board.className = '';
     }
-
 
     // Pieces
 
@@ -156,11 +136,6 @@ class Chessboard {
             throw new Error(this.error_messages['invalid_piecesPath']);
     }
 
-    piece(square) {
-        let piece = this.game.get(square);
-        return piece ? piece['type'] + piece['color'] : null;
-    }
-
     colorPiece(square) {
         let piece = this.piece(square);
         return piece ? piece[1] : null;
@@ -172,7 +147,7 @@ class Chessboard {
 
     translatePiece(move, removeTo, animate, callback = null) {
 
-        if (removeTo) this.removePiece(move.to, false);
+        if (removeTo) this.removePieceFromSquare(move.to, false);
 
         let change_square = () => {
             move.from.removePiece();
@@ -192,9 +167,20 @@ class Chessboard {
         this.translatePiece(move, false, animate);
     }
 
-    removePiece(square, fade = true) {
+    convertSquare(square) {
+        if (square instanceof Square) return square;
+        if (typeof square === 'string' && this.squares[square]) return this.squares[square];
+        throw new Error('Invalid square value');
+    }
 
-        let piece = square.getPiece();
+    removePieceFromSquare(square, fade = true) {
+
+        square = this.convertSquare(square);
+        square.check();
+
+        let piece = square.piece;
+
+        if (!piece) throw Error('Square has no piece to remove.')
 
         if (fade) piece.fadeOut(
             this.config.fadeTime,
@@ -202,6 +188,8 @@ class Chessboard {
             this.transitionTimingFunction);
 
         square.removePiece();
+
+        return piece;
     }
 
     dragFunction(square, piece) {
@@ -270,9 +258,9 @@ class Chessboard {
 
                 if (isTrashDrop) {
                     this.allSquares("unmoved");
-                    this.allSquares("dehint");
+                    this.allSquares('removeHint');
                     from.deselect();
-                    this.deletePiece(from);
+                    this.remove(from);
                 } else if (!to || !this.onClick(to, true)) {
                     this.snapbackPiece(from, !this.promoting);
                     this.config.onSnapbackEnd(from, piece);
@@ -285,10 +273,16 @@ class Chessboard {
         }
     }
 
-    addPiece(square, piece, fade = true) {
+    convertPiece(piece) {
+        if (piece instanceof Piece) return piece;
+        if (typeof piece === 'string') {
+            let [type, color] = piece.split('');
+            return new Piece(color, type, this.getPiecePath(piece));
+        }
+        throw new Error(this.error_messages['invalid_piece'] + piece);
+    }
 
-        if (square.getPiece())
-            throw new Error(this.error_messages['invalid_square'] + square.id);
+    addPieceOnSquare(square, piece, fade = true) {
 
         square.putPiece(piece);
         piece.setDrag(this.dragFunction(square, piece));
@@ -296,12 +290,13 @@ class Chessboard {
         if (fade) piece.fadeIn(
             this.config.fadeTime,
             this.config.fadeAnimation,
-            this.transitionTimingFunction);
+            this.transitionTimingFunction
+        );
 
         piece.visible();
     }
 
-    updateBoardPieces(animation) {
+    updateBoardPieces(animation = false) {
         let { updatedFlags, escapeFlags, movableFlags, pendingTranslations } = this.prepareBoardUpdateData();
 
         this.identifyPieceTranslations(updatedFlags, escapeFlags, movableFlags, pendingTranslations);
@@ -312,16 +307,17 @@ class Chessboard {
     }
 
     prepareBoardUpdateData() {
-        let updatedFlags = {};   
-        let escapeFlags = {};    
-        let movableFlags = {};   
-        let pendingTranslations = []; 
+        let updatedFlags = {};
+        let escapeFlags = {};
+        let movableFlags = {};
+        let pendingTranslations = [];
 
-        for (const square of Object.values(this.squares)) {
-            let cellPiece = square.getPiece();
-            updatedFlags[square] = false;
-            escapeFlags[square] = false;
-            movableFlags[square] = cellPiece ? this.piece(square) !== cellPiece.getId() : false;
+        for (let squareId in this.squares) {
+            let cellPiece = this.squares[squareId].piece;
+            let cellPieceId = cellPiece ? cellPiece.getId() : null;
+            updatedFlags[squareId] = this.piece(squareId) === cellPieceId;
+            escapeFlags[squareId] = false;
+            movableFlags[squareId] = cellPiece ? this.piece(squareId) !== cellPieceId : false;
         }
 
         return { updatedFlags, escapeFlags, movableFlags, pendingTranslations };
@@ -330,11 +326,11 @@ class Chessboard {
     identifyPieceTranslations(updatedFlags, escapeFlags, movableFlags, pendingTranslations) {
         Object.values(this.squares).forEach(targetSquare => {
             const newPieceId = this.piece(targetSquare.id);
-            const newPiece = newPieceId && new Piece(newPieceId[1], newPieceId[0], this.getPiecePath(newPieceId));
-            const currentPiece = targetSquare.getPiece();
+            const newPiece = newPieceId && this.convertPiece(newPieceId);
+            const currentPiece = targetSquare.piece;
             const currentPieceId = currentPiece ? currentPiece.getId() : null;
 
-            if (currentPieceId === newPieceId || updatedFlags[targetSquare]) return;
+            if (currentPieceId === newPieceId || updatedFlags[targetSquare.id]) return;
 
             this.evaluateTranslationCandidates(
                 targetSquare,
@@ -353,10 +349,10 @@ class Chessboard {
         const newPieceId = newPiece.getId();
 
         for (const sourceSquare of Object.values(this.squares)) {
-            if (sourceSquare.id === targetSquare.id || updatedFlags[targetSquare]) continue;
+            if (sourceSquare.id === targetSquare.id || updatedFlags[targetSquare.id]) continue;
 
-            const sourcePiece = sourceSquare.getPiece();
-            if (!sourcePiece || !movableFlags[sourceSquare] || this.isPiece(newPieceId, sourceSquare.id)) continue;
+            const sourcePiece = sourceSquare.piece;
+            if (!sourcePiece || !movableFlags[sourceSquare.id] || this.isPiece(newPieceId, sourceSquare.id)) continue;
 
             if (sourcePiece.id === newPieceId) {
                 this.handleTranslationMovement(targetSquare, sourceSquare, oldPiece, sourcePiece, updatedFlags, escapeFlags, movableFlags, pendingTranslations);
@@ -369,21 +365,21 @@ class Chessboard {
         // Verifica il caso specifico "en passant"
         let lastMove = this.lastMove();
         if (!oldPiece && lastMove && lastMove['captured'] === 'p') {
-            this.removePiece(this.squares[targetSquare.id[0] + sourceSquare.id[1]]);
+            this.removePieceFromSquare(this.squares[targetSquare.id[0] + sourceSquare.id[1]]);
         }
 
         pendingTranslations.push([currentSource, sourceSquare, targetSquare]);
 
-        if (!this.piece(sourceSquare.id)) updatedFlags[sourceSquare] = true;
-        escapeFlags[sourceSquare] = true;
-        movableFlags[sourceSquare] = false;
+        if (!this.piece(sourceSquare.id)) updatedFlags[sourceSquare.id] = true;
 
-        updatedFlags[targetSquare] = true;
+        escapeFlags[sourceSquare.id] = true;
+        movableFlags[sourceSquare.id] = false;
+        updatedFlags[targetSquare.id] = true;
     }
 
     executePieceTranslations(pendingTranslations, escapeFlags, animation) {
         for (let [_, sourceSquare, targetSquare] of pendingTranslations) {
-            let removeTarget = !escapeFlags[targetSquare] && targetSquare.getPiece();
+            let removeTarget = !escapeFlags[targetSquare.id] && targetSquare.piece;
             let moveObj = new Move(sourceSquare, targetSquare);
             this.translatePiece(moveObj, removeTarget, animation);
         }
@@ -393,11 +389,11 @@ class Chessboard {
     processRemainingPieceUpdates(updatedFlags, animation) {
         for (const square of Object.values(this.squares)) {
             let newPieceId = this.piece(square.id);
-            let newPiece = newPieceId ? new Piece(newPieceId[1], newPieceId[0], this.getPiecePath(newPieceId)) : null;
-            let currentPiece = square.getPiece();
+            let newPiece = newPieceId ? this.convertPiece(newPieceId) : null;
+            let currentPiece = square.piece;
             let currentPieceId = currentPiece ? currentPiece.getId() : null;
 
-            if (currentPieceId !== newPieceId && !updatedFlags[square]) {
+            if (currentPieceId !== newPieceId && !updatedFlags[square.id]) {
                 this.updateSinglePiece(square, newPiece, updatedFlags, animation);
             }
         }
@@ -405,8 +401,7 @@ class Chessboard {
 
     // Aggiorna il pezzo in una cella specifica. Gestisce anche il caso di promozione
     updateSinglePiece(square, newPiece, updatedFlags, animation) {
-        if (!updatedFlags[square]) {
-
+        if (!updatedFlags[square.id]) {
             let lastMove = this.lastMove();
 
             if (lastMove?.promotion) {
@@ -416,30 +411,24 @@ class Chessboard {
                     this.translatePiece(move, true, animation
                         , () => {
                             move.to.removePiece();
-                            this.addPiece(square, newPiece);
+                            this.addPieceOnSquare(square, newPiece);
                         });
                 }
             } else {
-                if (square.hasPiece()) this.removePiece(square);
-                if (newPiece) this.addPiece(square, newPiece);
+                if (square.piece) this.removePieceFromSquare(square);
+                if (newPiece) this.addPieceOnSquare(square, newPiece);
             }
         }
     }
 
     isPiece(piece, square) { return this.piece(square) === piece }
 
-    deletePiece(square, animation = true) {
-        this.game.remove(square);
-        this.removePiece(square, animation);
-    }
-
-
     // Listeners
 
     addListeners() {
         for (const square of Object.values(this.squares)) {
 
-            let piece = square.getPiece();
+            let piece = square.piece;
 
             square.element.addEventListener("mouseover", (e) => {
                 if (!this.clicked) this.hintMoves(square);
@@ -483,7 +472,7 @@ class Chessboard {
                 this.hintMoves(square);
                 this.clicked = square;
             }
-            
+
             return false;
         }
 
@@ -540,50 +529,21 @@ class Chessboard {
         return square.piece.color == this.turn();
     }
 
-    move(move, animation) {
-
-        let from = move.from;
-        let to = move.to;
-
-        if (!this.config.onlyLegalMoves) {
-
-            let piece = this.piece(from.id);
-            this.game.remove(from.id);
-            this.game.remove(to.id);
-            this.game.put({ type: move[4] ? move[4] : piece[0], color: piece[1] }, to.id);
-            this.updatePosition(false, false);
-
-        } else {
-
-            this.allSquares("unmoved");
-
-            move = this.game.move({
-                from: from.id,
-                to: to.id,
-                promotion: move.promotion
-            });
-
-
-            this.history.push(move);
-
-            this.updatePosition(false, animation);
-
-            from.moved();
-            to.moved();
-            this.allSquares("removeHint");
-
-            this.config.onMoveEnd(move);
+    convertMove(move) {
+        if (move instanceof Move) return move;
+        if (typeof move == 'string') {
+            let fromId = move.slice(0, 2);
+            let toId = move.slice(2, 4);
+            let promotion = move.slice(4, 5) ? move.slice(4, 5) : null;
+            return new Move(this.squares[fromId], this.squares[toId], promotion);
         }
-    }
-
-    updatePosition(change_color = false, animation = this.config.moveAnimation) {
-        if (change_color) this.allSquares("opposite");
-        this.updateBoardPieces(animation);
+        throw new Error("Invalid move format");
     }
 
     allSquares(method) {
         for (const square of Object.values(this.squares)) {
             square[method]();
+            this.squares[square.id] = square;
         }
     }
 
@@ -608,32 +568,6 @@ class Chessboard {
         return this.game.move(move) !== null;
     }
 
-    lastMove() {
-        return this.history[this.history.length - 1];
-    }
-
-    history() {
-        return this.history;
-    }
-
-    // State
-
-    isGameOver() {
-        if (this.game.game_over()) {
-            if (this.game.in_checkmate()) return this.game.turn() === 'w' ? 'b' : 'w';
-            return 'd';
-        }
-        return null;
-    }
-
-    turn() { return this.game.turn() }
-
-    getOrientation() { return this.config.orientation }
-
-    orientation(color) {
-        if ((color === 'w' || color === 'b') && color !== this.config.orientation) this.flip();
-    }
-
     // Position
 
     chageFenTurn(fen, color) {
@@ -642,29 +576,17 @@ class Chessboard {
         return parts.join(' ');
     }
 
-    position(position, color = null) {
-        this.initParams();
-        this.allSquares("dehint");
-        this.allSquares("deselect");
-        this.allSquares("unmoved");
-        if (!color) color = position.split(' ')[1];
-        let change_color = this.config.orientation !== color;
-        this.config.setOrientation(color);
-        this.game = new Chess(position);
-        this.updatePosition(change_color);
+    changeFenColor(fen) {
+        let parts = fen.split(' ');
+        parts[1] = parts[1] === 'w' ? 'b' : 'w';
+        return parts.join(' ');
     }
 
-    flip() {
-        let position = this.game.fen();
-        this.position(position, this.config.orientation === 'w' ? 'b' : 'w');
-    }
-
-    playerTurn() { return this.getOrientation() == this.game.turn()
+    playerTurn() {
+        return this.getOrientation() == this.game.turn()
     }
 
     isWhiteOriented() { return this.config.orientation === 'w' }
-
-    fen() { return this.game.fen() }
 
     // Squares
 
@@ -683,21 +605,14 @@ class Chessboard {
         return letter + row;
     }
 
-    removeSquares() { 
+    removeSquares() {
         for (const square of Object.values(this.squares)) {
             this.board.removeChild(square.element);
-            square.remove();
+            square.destroy();
 
         }
         this.squares = {};
     }
-
-    clear(animation = true) {
-        this.game.clear();
-        this.updatePosition(null, animation);
-    }
-
-    // Promotion
 
     promote(move) {
 
@@ -738,8 +653,6 @@ class Chessboard {
         return true;
     }
 
-    // Other
-
     transitionTimingFunction(elapsed, duration, type = 'ease') {
         let x = elapsed / duration;
         switch (type) {
@@ -755,6 +668,181 @@ class Chessboard {
                 return (x < 0.5) ? 2 * x ** 2 : 4 * x - 2 * x ** 2 - 1;
         }
     }
+
+    // user
+
+    turn() {
+        return this.game.turn();
+    }
+
+    getOrientation() {
+        return this.config.orientation;
+    }
+
+    fen() {
+        return this.game.fen();
+    }
+
+    lastMove() {
+        return this.history[this.history.length - 1];
+    }
+
+    history() {
+        return this.history;
+    }
+
+    get(square) {
+        square = this.convertSquare(square);
+        square.check();
+        return this.squares[square.id].piece.id;
+    }
+
+    position(position, color = null) {
+        this.allSquares('removeHint');
+        this.allSquares("deselect");
+        this.allSquares("unmoved");
+        if (color && color !== this.config.orientation) {
+            position = this.changeFenColor(position);
+            this.config.orientation = color;
+            this.destroy();
+            this.init();
+        } else {
+            this.buildGame(this.config.position);
+            this.updateBoardPieces();
+        }
+    }
+
+    flip() {
+        let position = this.game.fen();
+        this.position(position, this.config.orientation === 'w' ? 'b' : 'w');
+    }
+
+    build() {
+        this.destroy();
+        this.init();
+    }
+
+    move(move, animation) {
+        move = this.convertMove(move);
+        move.check();
+
+        let from = move.from;
+        let to = move.to;
+
+        if (!this.config.onlyLegalMoves) {
+            let piece = this.piece(from.id);
+            this.game.remove(from.id);
+            this.game.remove(to.id);
+            this.game.put({ type: move.hasPromotion() ? move.promotion : piece[0], color: piece[1] }, to.id);
+            this.updateBoardPieces(animation);
+        } else {
+            this.allSquares("unmoved");
+
+            move = this.game.move({
+                from: from.id,
+                to: to.id,
+                promotion: move.hasPromotion() ? move.promotion : undefined
+            });
+
+            if (move === null) {
+                throw new Error("Invalid move: move could not be executed");
+            }
+
+            this.history.push(move);
+
+            this.updateBoardPieces(animation);
+
+            from.moved();
+            to.moved();
+            this.allSquares("removeHint");
+
+            this.config.onMoveEnd(move);
+        }
+    }
+
+    clear(animation = true) {
+        this.game.clear();
+        this.updateBoardPieces(animation);
+    }
+
+    insert(square, piece) {
+        square = this.convertSquare(square);
+        piece = this.convertPiece(piece);
+        square.check();
+        piece.check();
+        if (square.piece) this.remove(square);
+        this.game.put({ type: piece.type, color: piece.color }, square.id);
+        this.updateBoardPieces();
+    }
+
+    isGameOver() {
+        if (this.game.game_over()) {
+            if (this.game.in_checkmate()) return this.game.turn() === 'w' ? 'b' : 'w';
+            return 'd';
+        }
+        return null;
+    }
+
+    orientation(color) {
+        if ((color === 'w' || color === 'b') && color !== this.config.orientation) this.flip();
+    }
+
+    resize(value) {
+        if (value === 'auto') {
+            let size;
+            if (this.board.offsetWidth === 0) {
+                size = this.board.offsetHeight;
+            } else if (this.board.offsetHeight === 0) {
+                size = this.board.offsetWidth;
+            } else {
+                size = Math.min(this.board.offsetWidth, this.board.offsetHeight);
+            }
+            this.resize(size);
+        } else if (typeof value !== 'number') {
+            throw new Error(this.error_messages['invalid_value'] + value);
+        } else {
+            document.documentElement.style.setProperty('--dimBoard', value + 'px');
+            this.updateBoardPieces();
+        }
+    }
+
+    destroy() {
+        this.removeSquares();
+        this.removeBoard();
+        this.game = null;
+        this.clicked = null;
+        this.history = [];
+        this.mosseIndietro = [];
+        this.clicked = null;
+        this.board = null;
+    }
+
+    remove(square, animation = true) {
+        square = this.convertSquare(square);
+        square.check();
+        this.game.remove(square.id);
+        let piece = square.piece;
+        this.updateBoardPieces(animation);
+        return piece;
+    }
+
+    piece(square) {
+        let piece = this.game.get(square);
+        return piece ? piece['type'] + piece['color'] : null;
+    }
+
+    highlight(square) {
+        square = this.convertSquare(square);
+        square.check();
+        square.highlight();
+    }
+
+    dehighlight(square) {
+        square = this.convertSquare(square);
+        square.check();
+        square.dehighlight();
+    }
+
 }
 
 export default Chessboard;

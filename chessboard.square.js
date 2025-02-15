@@ -55,8 +55,10 @@ class Square {
     }
 
     removePiece() {
-        this.element.removeChild(this.piece.getElement());
+        this.element.removeChild(this.piece.element);
+        const piece = this.piece;
         this.piece = null;
+        return piece;
     }
 
     addEventListener(event, callback) {
@@ -65,7 +67,7 @@ class Square {
 
     putPiece(piece) {
         this.piece = piece;
-        this.element.appendChild(piece.getElement());
+        this.element.appendChild(piece.element);
     }
 
     putHint(catchable) {
@@ -168,7 +170,15 @@ class Square {
         return this.piece.getColor();
     }
 
-
+    check() {
+        if (this.row < 1 || this.row > 8) {
+            throw new Error("Invalid square: row is out of bounds");
+        }
+        if (this.col < 1 || this.col > 8) {
+            throw new Error("Invalid square: col is out of bounds");
+        }
+        
+    }
 }
 
 export default Square;

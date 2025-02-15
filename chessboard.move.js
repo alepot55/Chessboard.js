@@ -3,13 +3,13 @@ import Square from "./chessboard.square.js";
 
 class Move {
 
-    constructor(from, to, promotion = null) {
+    constructor(from, to, promotion = null, check = false) {
         this.piece = from.getPiece();
         this.from = from;
         this.to = to;
         this.promotion = promotion;
 
-        this.check();
+        if (check) this.check();
     }
 
     hasPromotion() {
@@ -22,22 +22,30 @@ class Move {
 
     check() {
         if (this.piece === null) {
-            throw new Error('Move: no piece to move');
-        } else if (['q', 'r', 'b', 'n', null].indexOf(this.promotion) === -1) {
-            throw new Error('Move: invalid promotion');
-        } 
-
-        if (!(this.from instanceof Square) || !(this.to instanceof Square)) {
-            throw new Error('Move: from and to must be Square objects');
+            throw new Error("Invalid move: piece is null");
         }
-
         if (!(this.piece instanceof Piece)) {
-            throw new Error('Move: piece must be a Piece object');
+            throw new Error("Invalid move: piece is not an instance of Piece");
+        }
+        if (['q', 'r', 'b', 'n', null].indexOf(this.promotion) === -1) {
+            throw new Error("Invalid move: promotion is not valid");
+        }
+        if (!(this.from instanceof Square)) {
+            throw new Error("Invalid move: from is not an instance of Square");
+        }
+        if (!(this.to instanceof Square)) {
+            throw new Error("Invalid move: to is not an instance of Square");
+        }
+        if (!this.to) {
+            throw new Error("Invalid move: to is null or undefined");
+        }
+        if (!this.from) {
+            throw new Error("Invalid move: from is null or undefined");
         }
     }
 
     isLegal(game) {
-        let destinations = game.moves({square: this.from.id, verbose: true}).map(move => move.to);
+        let destinations = game.moves({ square: this.from.id, verbose: true }).map(move => move.to);
         return destinations.indexOf(this.to.id) !== -1;
     }
 

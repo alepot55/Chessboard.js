@@ -3,6 +3,7 @@ class Piece {
         this.color = color;
         this.type = type;
         this.id = this.getId();
+        this.src = src;
         this.element = this.createElement(src, opacity);
 
         this.check();
@@ -10,22 +11,18 @@ class Piece {
 
     getId() { return this.type + this.color }
 
-    createElement(src, opacity) {
+    createElement(opacity) {
         let element = document.createElement("img");
         element.classList.add("piece");
         element.id = this.id;
-        element.src = src;
+        element.src = this.src;
         element.style.opacity = opacity;
         return element;
     }
 
-    visible() {
-        this.element.style.opacity = 1;
-    }
+    visible() { this.element.style.opacity = 1 }
 
-    invisible() {
-        this.element.style.opacity = 0;
-    }
+    invisible() { this.element.style.opacity = 0 }
 
     fadeIn(duration, speed, transition_f) {
         let start = performance.now();
@@ -60,10 +57,6 @@ class Piece {
         }
     }
 
-    getElement() {
-        return this.element;
-    }
-
     setDrag(f) {
         this.element.ondragstart = () => false;
         this.element.onmousedown = f;
@@ -89,19 +82,26 @@ class Piece {
             { transform: `translate(${dx}px, ${dy}px)` }
         ];
 
-        let animation = this.element.animate(keyframes, {
-            duration: duration,
-            easing: 'ease',
-            fill: 'none'
-        });
+        if (this.element.animate) {
+            let animation = this.element.animate(keyframes, {
+                duration: duration,
+                easing: 'ease',
+                fill: 'none'
+            });
 
-        animation.onfinish = () => {
-            this.element.style.transform = '';
-            // left and right are not set 
-            this.element.style.left = `${x_end - sourceRect.width / 2}px`;
-            this.element.style.top = `${y_end - sourceRect.height / 2}px`;
-            if (callback) callback();
-        };
+            animation.onfinish = () => {
+                if (callback) callback();
+                this.element.style = '';
+            };
+        } else {
+            // Fallback using CSS transition if animate is not supported
+            this.element.style.transition = `transform ${duration}ms ease`;
+            this.element.style.transform = `translate(${dx}px, ${dy}px)`;
+            setTimeout(() => {
+                if (callback) callback();
+                this.element.style = '';
+            }, duration);
+        }
     }
 
     check() {

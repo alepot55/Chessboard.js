@@ -66,7 +66,7 @@ class ChessboardConfig {
 
         const config = Object.assign({}, defaults, settings);
 
-        this.id_div = config.id_div;
+        this.id_div = config.id;
         this.position = config.position;
         this.orientation = config.orientation;
         this.mode = config.mode;

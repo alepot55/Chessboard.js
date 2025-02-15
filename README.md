@@ -1,36 +1,142 @@
-# Chessboard.js: Interactive and Customizable Chessboard for Web Applications
+# Chessboard.js: Interactive and Customizable Chessboard Library
 
-**Chessboard.js** is a lightweight and versatile **NPM package** designed to effortlessly integrate a fully interactive and customizable chessboard into your web projects. Whether you're building a chess learning platform, a game analysis tool, or simply need a visual chessboard display, Chessboard.js provides the tools and flexibility you need.
+Chessboard.js is a lightweight and versatile NPM package that lets you easily integrate an interactive, customizable chessboard into your web applications. Use it for game displays, chess lessons, analysis tools, or any project that needs a visual chess interface.
 
-This library is built with ease of use and customization in mind, offering a range of configuration options and a powerful API to tailor the chessboard to your specific application requirements.
+## Overview
+Chessboard.js is designed with simplicity and flexibility in mind. Configure board appearance, piece sets, orientation, highlighting, animations, and more through a rich API. The board updates dynamically with user interactions and programmatic moves.
 
-**Key Features:**
+## Installation
+```bash
+npm install chessboardjs
+```
 
-*   **Interactive Drag and Drop:** Users can intuitively move pieces by dragging and dropping them across the chessboard, providing a natural and engaging user experience.
-*   **Highly Customizable:**  Control every aspect of the chessboard's appearance and behavior through a rich set of configuration options:
-    *   **Piece Sets:** Choose from various built-in piece sets or easily integrate your own custom piece designs.
-    *   **Board Themes:**  Customize the board colors and styles to match your website's design.
-    *   **Orientation:**  Flip the board orientation (white or black at the bottom) with a simple setting.
-    *   **Square Highlighting:**  Visually highlight squares to indicate legal moves, selected pieces, or other relevant information.
-    *   **Piece Animations:**  Enable smooth animations for piece movements to enhance visual feedback.
-*   **Programmatic Control via API:**  A comprehensive JavaScript API allows developers to:
-    *   **Set up Board Positions:**  Load any valid FEN (Forsyth-Edwards Notation) string to represent any chess position.
-    *   **Make and Undo Moves:**  Programmatically control piece movements on the board.
-    *   **Get Board State:**  Retrieve the current board position in FEN or as a JavaScript object.
-    *   **Handle User Interactions:**  Easily capture and respond to user actions like piece moves and clicks on squares.
-    *   **Integrate with Chess Engines:**  Connect Chessboard.js to chess engines to provide move suggestions, analysis, and game play functionality (example integration is mentioned in the original prompt).
-*   **Lightweight and Fast:**  Designed for performance, Chessboard.js has a small footprint and ensures a smooth and responsive user experience even on less powerful devices.
-*   **Pure JavaScript:**  No external dependencies beyond jQuery (which is often already included in web projects), making integration straightforward.
-*   **NPM Package:**  Easy installation and management using npm or yarn.
+## Usage
+Import and initialize the chessboard into your project:
+```javascript
+import Chessboard from 'chessboardjs';
 
-**Who is Chessboard.js for?**
+const config = {
+    id: 'board',          // HTML element id for the board
+    piecesPath: 'path/to/pieces', // Path or object/function returning piece image paths
+    position: 'start',        // Valid FEN string or predefined position ('start' for initial setup)
+    size: 400,                // Board size in pixels or 'auto'
+    orientation: 'w',         // Board orientation: 'w' for white at bottom, 'b' for black at bottom
+    draggable: true,          // Enable drag and drop for pieces
+    clickable: true,          // Allow clickable moves and interactions
+    onlyLegalMoves: true,     // Restrict piece moves to legal moves only
+    onMove: (move) => {       // Callback when a move is attempted
+        console.log('Move attempted:', move);
+        return true;        // Accept the move
+    },
+    onMoveEnd: (move) => {
+        console.log('Move executed:', move);
+    },
+    // ...other configuration options...
+};
 
-Chessboard.js is ideal for developers building:
+const board = new Chessboard(config);
+```
 
-*   **Chess Learning and Training Websites:**  Visualize positions for lessons, exercises, and puzzles.
-*   **Chess Game Analysis Tools:**  Display game positions for review and analysis.
-*   **Online Chess Games:**  Provide a visual interface for playing chess online (requires backend logic for game rules and engine integration).
-*   **Educational Applications:**  Use chess as a visual aid in educational software.
-*   **Any Web Application Requiring a Chessboard Display:**  Flexibility makes it suitable for a wide range of projects.
+## API Documentation
 
-For detailed documentation, examples, and further information, please visit the [Chessboard.js website](https://sites.google.com/view/chessboard-js/home).
+### Constructor
+- **new Chessboard(config)**
+  - Initializes a new chessboard using the provided configuration object.
+
+### Public Functions for Users
+
+- **move(move, animation)**
+  - Moves a piece from one square to another.
+  - Example:
+    ```javascript
+    board.move('e2e4', true);
+    ```
+
+- **clear(animation)**
+  - Clears the board of all pieces.
+  - Example:
+    ```javascript
+    board.clear();
+    ```
+
+- **insert(square, piece)**
+  - Inserts a piece on a given square.
+  - Example:
+    ```javascript
+    board.insert('d4', 'qw');
+    ```
+
+- **get(square)**
+  - Returns the identifier of the piece at the given square.
+  - Example:
+    ```javascript
+    const pieceId = board.get('e4');
+    console.log('Piece at e4:', pieceId);
+    ```
+
+- **position(position, color)**
+  - Updates the board position. Optionally, flips orientation if a color parameter is provided.
+  - Example:
+    ```javascript
+    board.position('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    ```
+
+- **flip()**
+  - Flips the board orientation between white and black.
+  - Example:
+    ```javascript
+    board.flip();
+    ```
+
+- **build()**
+  - Rebuilds or initializes the board and its elements.
+  - Example:
+    ```javascript
+    board.build();
+    ```
+
+- **resize(value)**
+  - Dynamically resizes the board. Accepts a number (pixels) or 'auto'.
+  - Example:
+    ```javascript
+    board.resize(500);
+    ```
+
+- **destroy()**
+  - Destroys the board, removes all event listeners, and cleans up the DOM.
+  - Example:
+    ```javascript
+    board.destroy();
+    ```
+
+- **piece(square)**
+  - Returns the piece identifier at the specified square.
+  - Example:
+    ```javascript
+    const currentPiece = board.piece('f6');
+    ```
+
+- **highlight(square) and dehighlight(square)**
+  - Highlights or removes highlight from a given square.
+  - Example:
+    ```javascript
+    board.highlight('e4');
+    board.dehighlight('e4');
+    ```
+
+- **turn() and fen()**
+  - `turn()` returns the color whose turn it is ('w' or 'b').
+  - `fen()` returns the current board state in FEN notation.
+  - Example:
+    ```javascript
+    console.log('Current turn:', board.turn());
+    console.log('FEN:', board.fen());
+    ```
+
+For further details, refer to the full API documentation at the project website or within the source code.
+
+## Publishing Updates
+After updating the README or making changes to the package, run:
+```bash
+npm version patch
+npm publish

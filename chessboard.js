@@ -68,7 +68,7 @@ class Chessboard {
         this.squares = {};
         this.promoting = false;
         this.clicked = null;
-        this.history = [];
+        this.movesHistory = [];
         this.mosseIndietro = [];
         this.clicked = null;
     }
@@ -564,10 +564,6 @@ class Chessboard {
         return this.game.moves({ verbose: verb });
     }
 
-    isLegalMove(move) {
-        return this.game.move(move) !== null;
-    }
-
     // Position
 
     chageFenTurn(fen, color) {
@@ -684,11 +680,15 @@ class Chessboard {
     }
 
     lastMove() {
-        return this.history[this.history.length - 1];
+        return this.movesHistory[this.movesHistory.length - 1];
+    }
+
+    get history() {
+        return this.movesHistory;
     }
 
     history() {
-        return this.history;
+        return this.movesHistory;
     }
 
     get(square) {
@@ -718,7 +718,7 @@ class Chessboard {
     }
 
     build() {
-        this.destroy();
+        if (this.board) this.destroy();
         this.init();
     }
 
@@ -748,7 +748,7 @@ class Chessboard {
                 throw new Error("Invalid move: move could not be executed");
             }
 
-            this.history.push(move);
+            this.movesHistory.push(move);
 
             this.updateBoardPieces(animation);
 
@@ -811,7 +811,7 @@ class Chessboard {
         this.removeBoard();
         this.game = null;
         this.clicked = null;
-        this.history = [];
+        this.movesHistory = [];
         this.mosseIndietro = [];
         this.clicked = null;
         this.board = null;

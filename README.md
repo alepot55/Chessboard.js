@@ -7,7 +7,7 @@ Chessboard.js is designed with simplicity and flexibility in mind. Configure boa
 
 ## Installation
 ```bash
-npm install chessboardjs
+npm i @alepot55/chessboardjs
 ```
 
 ## Usage

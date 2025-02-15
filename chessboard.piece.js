@@ -94,13 +94,10 @@ class Piece {
                 this.element.style = '';
             };
         } else {
-            // Fallback using CSS transition if animate is not supported
             this.element.style.transition = `transform ${duration}ms ease`;
             this.element.style.transform = `translate(${dx}px, ${dy}px)`;
-            setTimeout(() => {
-                if (callback) callback();
-                this.element.style = '';
-            }, duration);
+            if (callback) callback();
+            this.element.style = '';
         }
     }
 

@@ -379,6 +379,7 @@ class Chessboard {
 
     executePieceTranslations(pendingTranslations, escapeFlags, animation) {
         for (let [_, sourceSquare, targetSquare] of pendingTranslations) {
+            console.log('executing translation: ', sourceSquare.id, targetSquare.id);
             let removeTarget = !escapeFlags[targetSquare.id] && targetSquare.piece;
             let moveObj = new Move(sourceSquare, targetSquare);
             this.translatePiece(moveObj, removeTarget, animation);
@@ -694,7 +695,8 @@ class Chessboard {
     get(square) {
         square = this.convertSquare(square);
         square.check();
-        return this.squares[square.id].piece.id;
+        let piece = square.piece;
+        return piece ? piece.id : null;
     }
 
     position(position, color = null) {
@@ -776,8 +778,8 @@ class Chessboard {
     }
 
     isGameOver() {
-        if (this.game.game_over()) {
-            if (this.game.in_checkmate()) return this.game.turn() === 'w' ? 'b' : 'w';
+        if (this.game.isGameOver()) {
+            if (this.game.inCheck()) return this.game.turn() === 'w' ? 'b' : 'w';
             return 'd';
         }
         return null;

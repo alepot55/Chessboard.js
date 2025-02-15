@@ -25,7 +25,7 @@ const transitionFunctions = {
 class ChessboardConfig {
     constructor(settings) {
         const defaults = {
-            id_div: 'board',
+            id: 'board',
             position: 'start',
             orientation: 'w',
             mode: 'normal',

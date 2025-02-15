@@ -3,7 +3,7 @@
     "chess.js": "^1.0.0"
   },
   "name": "@alepot55/chessboardjs",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "main": "chessboard.js",
   "type": "module",
   "scripts": {

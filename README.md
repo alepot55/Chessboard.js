@@ -134,9 +134,3 @@ const board = new Chessboard(config);
     ```
 
 For further details, refer to the full API documentation at the project website or within the source code.
-
-## Publishing Updates
-After updating the README or making changes to the package, run:
-```bash
-npm version patch
-npm publish

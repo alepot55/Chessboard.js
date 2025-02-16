@@ -22,7 +22,6 @@ class Move {
 
     check() {
         if (this.piece === null) {
-            console.log(this);
             throw new Error("Invalid move: piece is null");
         }
         if (!(this.piece instanceof Piece)) {

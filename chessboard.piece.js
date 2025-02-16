@@ -58,7 +58,7 @@ class Piece {
     }
 
     setDrag(f) {
-        this.element.ondragstart = () => false;
+        this.element.ondragstart = (e) => { e.preventDefault() };
         this.element.onmousedown = f;
     }
 

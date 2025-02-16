@@ -21,27 +21,15 @@ class Move {
     }
 
     check() {
-        if (this.piece === null) {
-            throw new Error("Invalid move: piece is null");
-        }
-        if (!(this.piece instanceof Piece)) {
-            throw new Error("Invalid move: piece is not an instance of Piece");
-        }
-        if (['q', 'r', 'b', 'n', null].indexOf(this.promotion) === -1) {
-            throw new Error("Invalid move: promotion is not valid");
-        }
-        if (!(this.from instanceof Square)) {
-            throw new Error("Invalid move: from is not an instance of Square");
-        }
-        if (!(this.to instanceof Square)) {
-            throw new Error("Invalid move: to is not an instance of Square");
-        }
-        if (!this.to) {
-            throw new Error("Invalid move: to is null or undefined");
-        }
-        if (!this.from) {
-            throw new Error("Invalid move: from is null or undefined");
-        }
+        if (this.piece === null) return false;
+        if (!(this.piece instanceof Piece)) return false;
+        if (['q', 'r', 'b', 'n', null].indexOf(this.promotion) === -1) return false;
+        if (!(this.from instanceof Square)) return false;
+        if (!(this.to instanceof Square)) return false;
+        if (!this.to) return false;
+        if (!this.from) return false;
+        if (this.from === this.to) return false;
+        return true;
     }
 
     isLegal(game) {

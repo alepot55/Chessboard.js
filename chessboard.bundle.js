@@ -2587,6 +2587,7 @@ var Chessboard = (function () {
         // -------------------
         convertFen(position) {
             if (typeof position === 'string') {
+                
                 if (this.validateFen(position)) return position;
                 else if (this.standard_positions[position]) return this.standard_positions[position];
                 else throw new Error('Invalid position -' + position);
@@ -2620,8 +2621,10 @@ var Chessboard = (function () {
         }
 
         setGame(position) {
+            console.log(position);
             const fen = this.convertFen(position);
-            this.game = new Chess(fen);
+            console.log(fen);
+            this.game = new Chess(fen === 'start' ? this.standard_positions['default'] : null);
         }
 
         // -------------------
@@ -2816,11 +2819,9 @@ var Chessboard = (function () {
         updateSinglePiece(square, newPiece, updatedFlags, animation) {
             if (!updatedFlags[square.id]) {
                 let lastMove = this.lastMove();
-                console.log(lastMove);
 
                 if (lastMove?.promotion) {
                     if (lastMove['to'] === square.id) {
-                        console.log('Promotion detected');
 
                         let move = new Move(this.squares[lastMove['from']], square);
                         this.translatePiece(move, true, animation
@@ -3214,15 +3215,21 @@ var Chessboard = (function () {
             return moves[moves.length - 1];
         }
 
-        flip(animation = true) {
-            this.clearSquares();
-            this.allSquares('opposite');
-            this.updateBoardPieces(animation);
+        flip() {
+            this.config.orientation = this.config.orientation === 'w' ? 'b' : 'w';
+            this.destroy();
+            this.initParams();
+            this.build();
         }
 
         build() {
-            if (this.board) throw new Error('Board already built');
+            if (this.board) this.destroy();
             this.init();
+        }
+
+        destroy() {
+            this.removeSquares();
+            this.removeBoard();
         }
 
         ascii() {
@@ -3317,7 +3324,8 @@ var Chessboard = (function () {
         }
 
         put(pieceId, squareId, animation = true) {
-            const success = this.game.put(pieceId, squareId);
+            const [type, color] = pieceId.split('');
+            const success = this.game.put({ type: type, color: color }, squareId);
             if (success) this.updateBoardPieces(animation);
             return success;
         }
@@ -3397,4 +3405,5 @@ var Chessboard = (function () {
     return Chessboard;
 
 })();
+
 window.Chessboard.Chessboard = Chessboard;

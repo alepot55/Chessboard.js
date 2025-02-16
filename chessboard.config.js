@@ -19,7 +19,8 @@ const transitionFunctions = {
     'linear': 'linear',
     'ease-in': 'ease-in',
     'ease-out': 'ease-out',
-    'ease-in-out': 'ease-in-out'
+    'ease-in-out': 'ease-in-out',
+    'none': null
 };
 
 class ChessboardConfig {
@@ -73,9 +74,6 @@ class ChessboardConfig {
         this.dropOffBoard = config.dropOffBoard;
         this.size = config.size;
         this.movableColors = config.movableColors;
-        this.moveAnimation = config.moveAnimation;
-        this.snapbackAnimation = config.snapbackAnimation;
-        this.fadeAnimation = config.fadeAnimation;
         this.piecesPath = config.piecesPath;
         this.onMove = config.onMove;
         this.onMoveEnd = config.onMoveEnd;
@@ -84,6 +82,10 @@ class ChessboardConfig {
         this.onDragMove = config.onDragMove;
         this.onDrop = config.onDrop;
         this.onSnapbackEnd = config.onSnapbackEnd;
+
+        this.moveAnimation = this.setTransitionFunction(config.moveAnimation);
+        this.snapbackAnimation = this.setTransitionFunction(config.snapbackAnimation);
+        this.fadeAnimation = this.setTransitionFunction(config.fadeAnimation);
 
         this.hints = this.setBoolean(config.hints);
         this.clickable = this.setBoolean(config.clickable);
@@ -137,7 +139,7 @@ class ChessboardConfig {
     }
 
     setTransitionFunction(value) {
-        if (transitionFunctions[value]) return transitionFunctions[value];
+        if (Object.keys(transitionFunctions).indexOf(value) !== -1) return transitionFunctions[value];
         throw new Error('Invalid transition function');
     }
 }

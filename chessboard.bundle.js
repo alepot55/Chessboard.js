@@ -1997,7 +1997,8 @@ var Chessboard = (function () {
         'linear': 'linear',
         'ease-in': 'ease-in',
         'ease-out': 'ease-out',
-        'ease-in-out': 'ease-in-out'
+        'ease-in-out': 'ease-in-out',
+        'none': null
     };
 
     class ChessboardConfig {
@@ -2051,9 +2052,6 @@ var Chessboard = (function () {
             this.dropOffBoard = config.dropOffBoard;
             this.size = config.size;
             this.movableColors = config.movableColors;
-            this.moveAnimation = config.moveAnimation;
-            this.snapbackAnimation = config.snapbackAnimation;
-            this.fadeAnimation = config.fadeAnimation;
             this.piecesPath = config.piecesPath;
             this.onMove = config.onMove;
             this.onMoveEnd = config.onMoveEnd;
@@ -2062,6 +2060,10 @@ var Chessboard = (function () {
             this.onDragMove = config.onDragMove;
             this.onDrop = config.onDrop;
             this.onSnapbackEnd = config.onSnapbackEnd;
+
+            this.moveAnimation = this.setTransitionFunction(config.moveAnimation);
+            this.snapbackAnimation = this.setTransitionFunction(config.snapbackAnimation);
+            this.fadeAnimation = this.setTransitionFunction(config.fadeAnimation);
 
             this.hints = this.setBoolean(config.hints);
             this.clickable = this.setBoolean(config.clickable);
@@ -2115,7 +2117,7 @@ var Chessboard = (function () {
         }
 
         setTransitionFunction(value) {
-            if (transitionFunctions[value]) return transitionFunctions[value];
+            if (Object.keys(transitionFunctions).indexOf(value) !== -1) return transitionFunctions[value];
             throw new Error('Invalid transition function');
         }
     }
@@ -2168,7 +2170,7 @@ var Chessboard = (function () {
         }
 
         setDrag(f) {
-            this.element.ondragstart = () => false;
+            this.element.ondragstart = (e) => { e.preventDefault(); };
             this.element.onmousedown = f;
         }
 
@@ -2423,27 +2425,15 @@ var Chessboard = (function () {
         }
 
         check() {
-            if (this.piece === null) {
-                throw new Error("Invalid move: piece is null");
-            }
-            if (!(this.piece instanceof Piece)) {
-                throw new Error("Invalid move: piece is not an instance of Piece");
-            }
-            if (['q', 'r', 'b', 'n', null].indexOf(this.promotion) === -1) {
-                throw new Error("Invalid move: promotion is not valid");
-            }
-            if (!(this.from instanceof Square)) {
-                throw new Error("Invalid move: from is not an instance of Square");
-            }
-            if (!(this.to instanceof Square)) {
-                throw new Error("Invalid move: to is not an instance of Square");
-            }
-            if (!this.to) {
-                throw new Error("Invalid move: to is null or undefined");
-            }
-            if (!this.from) {
-                throw new Error("Invalid move: from is null or undefined");
-            }
+            if (this.piece === null) return false;
+            if (!(this.piece instanceof Piece)) return false;
+            if (['q', 'r', 'b', 'n', null].indexOf(this.promotion) === -1) return false;
+            if (!(this.from instanceof Square)) return false;
+            if (!(this.to instanceof Square)) return false;
+            if (!this.to) return false;
+            if (!this.from) return false;
+            if (this.from === this.to) return false;
+            return true;
         }
 
         isLegal(game) {
@@ -2515,7 +2505,7 @@ var Chessboard = (function () {
         }
 
         initParams() {
-            this.board = null;
+            this.element = null;
             this.squares = {};
             this.promoting = false;
             this.clicked = null;
@@ -2527,12 +2517,12 @@ var Chessboard = (function () {
         // Board Setup
         // -------------------
         buildBoard() {
-            this.board = document.getElementById(this.config.id_div);
-            if (!this.board) {
+            this.element = document.getElementById(this.config.id_div);
+            if (!this.element) {
                 throw new Error(this.error_messages['invalid_id_div'] + this.config.id_div);
             }
             this.resize(this.config.size);
-            this.board.className = "board";
+            this.element.className = "board";
         }
 
         buildSquares() {
@@ -2544,19 +2534,19 @@ var Chessboard = (function () {
                     let square = new Square(square_row, square_col);
                     this.squares[square.getId()] = square;
 
-                    this.board.appendChild(square.element);
+                    this.element.appendChild(square.element);
                 }
             }
         }
 
         removeBoard() {
 
-            this.board.innerHTML = '';
+            this.element.innerHTML = '';
         }
 
         removeSquares() {
             for (const square of Object.values(this.squares)) {
-                this.board.removeChild(square.element);
+                this.element.removeChild(square.element);
                 square.destroy();
 
             }
@@ -2566,12 +2556,12 @@ var Chessboard = (function () {
         resize(value) {
             if (value === 'auto') {
                 let size;
-                if (this.board.offsetWidth === 0) {
-                    size = this.board.offsetHeight;
-                } else if (this.board.offsetHeight === 0) {
-                    size = this.board.offsetWidth;
+                if (this.element.offsetWidth === 0) {
+                    size = this.element.offsetHeight;
+                } else if (this.element.offsetHeight === 0) {
+                    size = this.element.offsetWidth;
                 } else {
-                    size = Math.min(this.board.offsetWidth, this.board.offsetHeight);
+                    size = Math.min(this.element.offsetWidth, this.element.offsetHeight);
                 }
                 this.resize(size);
             } else if (typeof value !== 'number') {
@@ -2587,7 +2577,7 @@ var Chessboard = (function () {
         // -------------------
         convertFen(position) {
             if (typeof position === 'string') {
-                
+                if (position == 'start') return 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
                 if (this.validateFen(position)) return position;
                 else if (this.standard_positions[position]) return this.standard_positions[position];
                 else throw new Error('Invalid position -' + position);
@@ -2614,17 +2604,15 @@ var Chessboard = (function () {
                     if (empty > 0) rowParts.push(empty);
                     parts.push(rowParts.join(''));
                 }
-                return parts.join('/');
-            } else {
+                return parts.join('/') + ' w KQkq - 0 1';        } else {
                 throw new Error('Invalid position -' + position);
             }
         }
 
-        setGame(position) {
-            console.log(position);
+        setGame(position, options = undefined) {
             const fen = this.convertFen(position);
-            console.log(fen);
-            this.game = new Chess(fen === 'start' ? this.standard_positions['default'] : null);
+            if (this.game) this.game.load(fen, options);
+            else this.game = new Chess(fen);
         }
 
         // -------------------
@@ -2704,7 +2692,7 @@ var Chessboard = (function () {
 
         }
 
-        snapbackPiece(square, animate) {
+        snapbackPiece(square, animate = this.config.snapbackAnimation) {
             let move = new Move(square, square);
             this.translatePiece(move, false, animate);
         }
@@ -2715,11 +2703,15 @@ var Chessboard = (function () {
         updateBoardPieces(animation = false) {
             let { updatedFlags, escapeFlags, movableFlags, pendingTranslations } = this.prepareBoardUpdateData();
 
+            let change = Object.values(updatedFlags).some(flag => !flag);
+
             this.identifyPieceTranslations(updatedFlags, escapeFlags, movableFlags, pendingTranslations);
 
             this.executePieceTranslations(pendingTranslations, escapeFlags, animation);
 
             this.processRemainingPieceUpdates(updatedFlags, animation);
+
+            if (change) this.config.onChange(this.fen());
         }
 
         prepareBoardUpdateData() {
@@ -2847,7 +2839,6 @@ var Chessboard = (function () {
                 event.preventDefault();
 
                 if (!this.config.draggable || !piece) return;
-                if (!this.config.onDragStart(square, piece)) return;
 
                 let prec;
                 let from = square;
@@ -2857,7 +2848,7 @@ var Chessboard = (function () {
 
                 if (!this.canMove(from)) return;
                 if (!this.config.clickable) this.clicked = null;
-                if (this.onClick(from)) return;
+                if (this.onClick(from, true, true)) return;
 
                 img.style.position = 'absolute';
                 img.style.zIndex = 100;
@@ -2871,10 +2862,11 @@ var Chessboard = (function () {
                 };
 
                 const onMouseMove = (event) => {
+                    if (!this.config.onDragStart(square, piece)) return;
                     if (!moveAt(event.pageX, event.pageY)) ;
 
-                    const boardRect = this.board.getBoundingClientRect();
-                    const { offsetWidth: boardWidth, offsetHeight: boardHeight } = this.board;
+                    const boardRect = this.element.getBoundingClientRect();
+                    const { offsetWidth: boardWidth, offsetHeight: boardHeight } = this.element;
                     const x = event.clientX - boardRect.left;
                     const y = event.clientY - boardRect.top;
 
@@ -2909,9 +2901,9 @@ var Chessboard = (function () {
                         this.allSquares('removeHint');
                         from.deselect();
                         this.remove(from);
-                    } else if (!to || !this.onClick(to, true)) {
-                        this.snapbackPiece(from, !this.promoting);
-                        this.config.onSnapbackEnd(from, piece);
+                    } else if (!to || !this.onClick(to, true, true)) {
+                        this.snapbackPiece(from);
+                        if (to !== from) this.config.onSnapbackEnd(from, piece);
                     }
                 };
 
@@ -2938,14 +2930,14 @@ var Chessboard = (function () {
                     if (this.config.clickable && (!piece || this.config.onlyLegalMoves)) this.onClick(square);
                 };
 
-                square.element.addEventListener("click", handleClick);
+                square.element.addEventListener("mousedown", handleClick);
                 square.element.addEventListener("touch", handleClick);
             }
         }
 
-        onClick(square, animation = this.config.moveAnimation) {
-
-            if (square.id === this.clicked?.id) return false;
+        onClick(square, animation = this.config.moveAnimation, dragged = false) {
+            
+            if (this.clicked === square) return false;
 
             let from = this.clicked;
             this.clicked = null;
@@ -2964,19 +2956,22 @@ var Chessboard = (function () {
             if (!from) {
 
                 if (this.canMove(square)) {
-                    square.select();
-                    this.hintMoves(square);
+                    if (this.config.clickable) {
+                        square.select();
+                        this.hintMoves(square);
+                    }
                     this.clicked = square;
                 }
 
                 return false;
             }
 
-            if (!this.canMove(from)) return false;
-
             let move = new Move(from, square, promotion);
 
             move.from.deselect();
+
+            if (!move.check()) return false;
+
             this.allSquares("removeHint");
 
             if (this.config.onlyLegalMoves && !move.isLegal(this.game)) return false;
@@ -3031,7 +3026,7 @@ var Chessboard = (function () {
             return this.game.moves({ verbose: verb });
         }
 
-        move(move, animation) {
+        move(move, animation = true) {
             move = this.convertMove(move);
             move.check();
 
@@ -3202,12 +3197,25 @@ var Chessboard = (function () {
         }
 
         setOrientation(color, animation = true) {
-            if (!['w', 'b'].includes(color)) {
-                this.config.orientation = color;
-                this.flip(animation);
+            if (['w', 'b'].includes(color)) {
+                if (color !== this.config.orientation) {
+                    this.flip(animation);
+                }
             } else {
                 throw new Error(this.error_messages['invalid_orientation'] + color);
             }
+        }
+
+        highlight(squareId) {
+            let square = this.convertSquare(squareId);
+            square.check();
+            square.highlight();
+        }
+
+        dehighlight(squareId) {
+            let square = this.convertSquare(squareId);
+            square.check();
+            square.dehighlight();
         }
 
         lastMove() {
@@ -3223,7 +3231,7 @@ var Chessboard = (function () {
         }
 
         build() {
-            if (this.board) this.destroy();
+            if (this.element) this.destroy();
             this.init();
         }
 
@@ -3237,7 +3245,12 @@ var Chessboard = (function () {
         }
 
         board() {
-            return this.game.board();
+            let dict = {};
+            for (let squareId in this.squares) {
+                let piece = this.getGamePieceId(squareId);
+                if (piece) dict[squareId] = piece;
+            }
+            return dict;
         }
 
         clear(options = {}, animation = true) {
@@ -3252,7 +3265,7 @@ var Chessboard = (function () {
         get(squareId) {
             const square = this.convertSquare(squareId);
             square.check();
-            return square.piece;        
+            return square.piece;
         }
 
         getCastlingRights(color) {
@@ -3299,9 +3312,9 @@ var Chessboard = (function () {
             return this.game.isThreefoldRepetition();
         }
 
-        load(fen, options = {}, animation = true) {
+        load(position, options = {}, animation = true) {
             this.clearSquares();
-            this.game.load(fen, options);
+            this.setGame(position, options);
             this.updateBoardPieces(animation);
         }
 
@@ -3364,7 +3377,7 @@ var Chessboard = (function () {
         setHeader(key, value) {
             return this.game.setHeader(key, value);
         }
-        
+
         squareColor(squareId) {
             return this.game.squareColor(squareId);
         }

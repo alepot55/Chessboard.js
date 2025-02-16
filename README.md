@@ -1,9 +1,9 @@
 # Chessboard.js: Interactive and Customizable Chessboard Library
 
-Chessboard.js is a lightweight and versatile NPM package that lets you easily integrate an interactive, customizable chessboard into your web applications. Use it for game displays, chess lessons, analysis tools, or any project that needs a visual chess interface.
+[Chessboard.js](https://sites.google.com/view/chessboard-js/home) is a lightweight and versatile NPM package that lets you easily integrate an interactive, customizable chessboard into your web applications. Use it for game displays, chess lessons, analysis tools, or any project that needs a visual chess interface.
 
 ## Overview
-Chessboard.js is designed with simplicity and flexibility in mind. Configure board appearance, piece sets, orientation, highlighting, animations, and more through a rich API. The board updates dynamically with user interactions and programmatic moves.
+[Chessboard.js](https://sites.google.com/view/chessboard-js/home) is designed with simplicity and flexibility in mind. Configure board appearance, piece sets, orientation, highlighting, animations, and more through a rich API. The board updates dynamically with user interactions and programmatic moves.
 
 ## Installation
 ```bash
@@ -384,7 +384,7 @@ This document details the functions available to users for interacting with the 
   Places a piece on the board.  
   _Example:_  
   ```js
-  board.put({ type: 'p', color: 'w' }, 'd4');
+  board.put('pw', 'd4');
   ```
 
 - **remove(squareId, animation = true)**  

@@ -172,7 +172,6 @@ class Chessboard {
 
     setGame(position, options = undefined) {
         const fen = this.convertFen(position);
-        console.log(fen);
         if (this.game) this.game.load(fen, options);
         else this.game = new Chess(fen);
     }
@@ -786,7 +785,6 @@ class Chessboard {
     }
 
     flip() {
-        console.log(this.config.position);
         this.config.orientation = this.config.orientation === 'w' ? 'b' : 'w';
         this.destroy();
         this.initParams();

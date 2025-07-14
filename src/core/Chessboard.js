@@ -259,7 +259,11 @@ class Chessboard {
             return;
         }
 
-        if (removeTo) this.removePieceFromSquare(move.to, false);
+        if (removeTo) {
+            // Deselect the captured piece before removing it
+            move.to.deselect();
+            this.removePieceFromSquare(move.to, false);
+        }
 
         let change_square = () => {
             // Check if piece still exists and is on the source square
@@ -282,59 +286,17 @@ class Chessboard {
 
     snapbackPiece(square, animate = this.config.snapbackAnimation) {
         if (!square || !square.piece) {
-            console.warn('snapbackPiece: square or piece is null', square);
             return;
         }
         
-        let piece = square.piece;
+        const piece = square.piece;
         
-        if (!animate) {
-            // No animation, just reset the piece position immediately
-            piece.element.style.transform = '';
-            piece.element.style.transition = '';
-            return;
-        }
+        // Use the piece's translate method to properly animate back to the square
+        const duration = animate ? this.config.snapbackTime : 0;
         
-        // For snapback animation, we need to smoothly return the piece to its square
-        // First, get the current visual position and target position
-        let currentRect = piece.element.getBoundingClientRect();
-        let targetRect = square.element.getBoundingClientRect();
-        
-        let dx = targetRect.left - currentRect.left + (targetRect.width - currentRect.width) / 2;
-        let dy = targetRect.top - currentRect.top + (targetRect.height - currentRect.height) / 2;
-        
-        // Only animate if there's actually a visual displacement
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-            let duration = this.config.moveTime;
-            
-            if (piece.element.animate) {
-                let animation = piece.element.animate([
-                    { transform: piece.element.style.transform || 'translate(0, 0)' },
-                    { transform: 'translate(0, 0)' }
-                ], {
-                    duration: duration,
-                    easing: 'ease-out',
-                    fill: 'forwards'
-                });
-                
-                animation.onfinish = () => {
-                    piece.element.style.transform = '';
-                    piece.element.style.transition = '';
-                };
-            } else {
-                piece.element.style.transition = `transform ${duration}ms ease-out`;
-                piece.element.style.transform = 'translate(0, 0)';
-                
-                setTimeout(() => {
-                    piece.element.style.transform = '';
-                    piece.element.style.transition = '';
-                }, duration);
-            }
-        } else {
-            // No visual displacement, just reset immediately
-            piece.element.style.transform = '';
-            piece.element.style.transition = '';
-        }
+        // The translate method will calculate the proper distance from current visual position 
+        // back to the square's position
+        piece.translate(square, duration, this.transitionTimingFunction, animate);
     }
 
     // -------------------
@@ -505,28 +467,23 @@ class Chessboard {
 
             if (!this.config.draggable || !piece) return;
 
+            // Store the original from square for the entire drag operation
+            const originalFrom = square;
             let prec, moved;
-            let from = square;
+            let from = originalFrom;
             let to = square;
 
             const img = piece.element;
 
             if (!this.canMove(from)) return;
-            if (!this.config.clickable) this.clicked = null;
             
-            // For drag operations, select the source square first
-            console.log('Drag started from:', from.id, 'piece:', piece.getId());
-            const clickResult = this.onClick(from, true, true);
-            console.log('onClick result for drag start:', clickResult);
+            // Track if this is actually a drag operation or just a click
+            let isDragging = false;
+            let startX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0);
+            let startY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0);
             
-            // If onClick returns true, it means the move was completed, so don't continue drag
-            if (clickResult) return;
-
-            img.style.position = 'absolute';
-            img.style.zIndex = 100;
-            img.classList.add('dragging'); // Add dragging class for CSS optimization
-            
-            DragOptimizations.enableForDrag(img);
+            // Don't interfere with click system immediately
+            console.log('dragFunction: mousedown detected, waiting to see if it becomes drag');
 
             const moveAt = (event) => {
                 const squareSize = this.element.offsetWidth / 8;
@@ -558,6 +515,41 @@ class Chessboard {
             };
 
             const onMouseMove = (event) => {
+                // Check if mouse has moved enough to be considered a drag
+                let currentX = event.clientX;
+                let currentY = event.clientY;
+                let deltaX = Math.abs(currentX - startX);
+                let deltaY = Math.abs(currentY - startY);
+                
+                // Only start dragging if mouse moved more than 3 pixels
+                if (!isDragging && (deltaX > 3 || deltaY > 3)) {
+                    console.log('dragFunction: starting actual drag operation');
+                    isDragging = true;
+                    
+                    // Now set up drag state
+                    if (!this.config.clickable) {
+                        this.clicked = null;
+                        this.clicked = from;
+                    } else if (!this.clicked) {
+                        this.clicked = from;
+                    }
+                    console.log('dragFunction: clicked state after drag activation =', this.clicked ? this.clicked.id : 'none');
+                    
+                    // Highlight the source square and show hints
+                    if (this.config.clickable) {
+                        from.select();
+                        this.hintMoves(from);
+                    }
+
+                    img.style.position = 'absolute';
+                    img.style.zIndex = 100;
+                    img.classList.add('dragging');
+                    
+                    DragOptimizations.enableForDrag(img);
+                }
+                
+                if (!isDragging) return;
+                
                 if (!this.config.onDragStart(square, piece)) return;
                 if (!moveAt(event)) return;
 
@@ -587,34 +579,42 @@ class Chessboard {
                 prec?.dehighlight();
                 document.removeEventListener('mousemove', onMouseMove);
                 window.removeEventListener('mouseup', onMouseUp);
+                
+                // If this was just a click (not a drag), don't interfere
+                if (!isDragging) {
+                    console.log('dragFunction: was just a click, not interfering');
+                    return;
+                }
+                
+                console.log('dragFunction: ending drag operation');
                 img.style.zIndex = 20;
-                img.classList.remove('dragging'); // Remove dragging class
-                img.style.willChange = 'auto'; // Reset will-change hint
+                img.classList.remove('dragging');
+                img.style.willChange = 'auto';
 
-                const dropResult = this.config.onDrop(from, to, piece);
+                const dropResult = this.config.onDrop(originalFrom, to, piece);
                 const isTrashDrop = !to && (this.config.dropOffBoard === 'trash' || dropResult === 'trash');
 
                 if (isTrashDrop) {
                     this.allSquares("unmoved");
                     this.allSquares('removeHint');
-                    from.deselect();
-                    this.remove(from);
+                    originalFrom.deselect();
+                    this.remove(originalFrom);
                 } else if (!to) {
-                    console.log('Snapback triggered - no target square');
-                    // Only perform snapback if the piece still exists on the from square
-                    if (from && from.piece) {
-                        this.snapbackPiece(from);
-                        if (to !== from) this.config.onSnapbackEnd(from, piece);
+                    // No target square - snapback
+                    if (originalFrom && originalFrom.piece) {
+                        this.snapbackPiece(originalFrom);
+                        if (to !== originalFrom) this.config.onSnapbackEnd(originalFrom, piece);
                     }
                 } else {
+                    // Set clicked to originalFrom before attempting move
+                    this.clicked = originalFrom;
+                    // Try to make the move
                     const onClickResult = this.onClick(to, true, true);
-                    console.log('onClick result:', onClickResult, 'for target:', to.id);
                     if (!onClickResult) {
-                        console.log('Snapback triggered - onClick failed');
-                        // Only perform snapback if the piece still exists on the from square
-                        if (from && from.piece) {
-                            this.snapbackPiece(from);
-                            if (to !== from) this.config.onSnapbackEnd(from, piece);
+                        // Move failed - snapback
+                        if (originalFrom && originalFrom.piece) {
+                            this.snapbackPiece(originalFrom);
+                            if (to !== originalFrom) this.config.onSnapbackEnd(originalFrom, piece);
                         }
                     }
                 }
@@ -645,27 +645,22 @@ class Chessboard {
 
             const handleClick = (e) => {
                 e.stopPropagation();
-                if (this.config.clickable && (!piece || this.config.onlyLegalMoves)) this.onClick(square)
+                if (this.config.clickable) {
+                    this.onClick(square);
+                }
             }
 
-            square.element.addEventListener("mousedown", handleClick);
+            square.element.addEventListener("click", handleClick);
             square.element.addEventListener("touch", handleClick);
         }
     }
 
     onClick(square, animation = this.config.moveAnimation, dragged = false) {
-        console.log('onClick called:', {
-            square: square?.id,
-            clicked: this.clicked?.id,
-            dragged: dragged,
-            squarePiece: square?.piece?.getId()
-        });
         
-        if (this.clicked === square) return false;
-
+        console.log('onClick START: square =', square.id, 'clicked =', this.clicked ? this.clicked.id : 'none');
+        
         let from = this.clicked;
-        this.clicked = null;
-
+        
         let promotion = null
 
         if (this.promoting) {
@@ -677,48 +672,75 @@ class Chessboard {
             this.allSquares("removeCover");
         }
 
+        console.log('onClick: from =', from ? from.id : 'none');
+
         if (!from) {
-            console.log('onClick: No from square');
+            console.log('onClick: no from, trying to select piece');
             if (this.canMove(square)) {
+                console.log('onClick: canMove = true, selecting');
                 if (this.config.clickable) {
                     square.select();
                     this.hintMoves(square);
                 }
                 this.clicked = square;
+                console.log('onClick: *** CLICKED SET TO ***', square.id);
+                console.log('onClick: set clicked to', square.id);
+            } else {
+                console.log('onClick: canMove = false');
             }
-
             return false;
         }
 
-        let move = new Move(from, square, promotion);
-        console.log('onClick: Created move from', from.id, 'to', square.id, 'piece:', move.piece?.getId());
+        // If clicking on the same square that's already selected, deselect it
+        if (this.clicked === square) {
+            console.log('onClick: deselecting same square');
+            square.deselect();
+            this.allSquares("removeHint");
+            this.clicked = null;
+            console.log('onClick: *** CLICKED RESET TO NULL (deselect) ***');
+            return false;
+        }
 
-        move.from.deselect();
+        console.log('onClick: attempting move from', from.id, 'to', square.id);
+        let move = new Move(from, square, promotion);
 
         if (!move.check()) {
-            console.log('onClick: Move check failed');
+            console.log('onClick: move check FAILED');
+            from.deselect();
+            this.allSquares("removeHint");
+            this.clicked = null;
             return false;
         }
 
-        this.allSquares("removeHint");
-
         if (this.config.onlyLegalMoves && !move.isLegal(this.game)) {
-            console.log('onClick: Move is not legal');
+            console.log('onClick: move is NOT LEGAL');
+            from.deselect();
+            this.allSquares("removeHint");
+            this.clicked = null;
             return false;
         }
 
         if (!move.hasPromotion() && this.promote(move)) {
-            console.log('onClick: Promotion required');
+            console.log('onClick: promotion required');
             return false;
         }
 
+        console.log('onClick: calling onMove');
         if (this.config.onMove(move)) {
-            console.log('onClick: onMove callback approved, executing move');
+            console.log('onClick: SUCCESS - move executed');
+            // Clean up UI state
+            from.deselect();
+            this.allSquares("removeHint");
+            this.clicked = null;
+            console.log('onClick: *** CLICKED RESET TO NULL (success) ***');
             this.move(move, animation);
             return true;
         }
 
-        console.log('onClick: onMove callback rejected move');
+        console.log('onClick: onMove returned FALSE');
+        from.deselect();
+        this.allSquares("removeHint");
+        this.clicked = null;
         return false;
     }
 

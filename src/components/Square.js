@@ -1,4 +1,4 @@
-import Piece from "./chessboard.piece.js";
+import Piece from "./Piece.js";
 
 class Square {
 
@@ -55,6 +55,9 @@ class Square {
     }
 
     removePiece() {
+        if (!this.piece) {
+            return null;
+        }
         this.element.removeChild(this.piece.element);
         const piece = this.piece;
         this.piece = null;

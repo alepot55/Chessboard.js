@@ -45,7 +45,7 @@ class ChessboardConfig {
             fadeTime: 'fast',
             fadeAnimation: 'ease',
             ratio: 0.9,
-            piecesPath: 'https://cdn.jsdelivr.net/npm/@alepot55/chessboardjs/default_pieces',
+            piecesPath: '../assets/themes/default',
             onMove: () => true,
             onMoveEnd: () => true,
             onChange: () => true,
@@ -135,11 +135,26 @@ class ChessboardConfig {
 
     setBoolean(value) {
         if (typeof value === 'boolean') return value;
+        if (value in boolValues) return boolValues[value];
         throw new Error('Invalid boolean value');
     }
 
     setTransitionFunction(value) {
-        if (Object.keys(transitionFunctions).indexOf(value) !== -1) return transitionFunctions[value];
+        // Handle boolean values - true means use default 'ease', false/null means no animation
+        if (typeof value === 'boolean') {
+            return value ? transitionFunctions['ease'] : null;
+        }
+        
+        // Handle string values
+        if (typeof value === 'string' && value in transitionFunctions) {
+            return transitionFunctions[value];
+        }
+        
+        // Handle null/undefined
+        if (value === null || value === undefined) {
+            return null;
+        }
+        
         throw new Error('Invalid transition function');
     }
 }

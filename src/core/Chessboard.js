@@ -1,8 +1,10 @@
-import { Chess, validateFen } from './chess.js';
-import ChessboardConfig from './chessboard.config.js';
-import Square from './chessboard.square.js';
-import Piece from './chessboard.piece.js';
-import Move from './chessboard.move.js';
+import { Chess, validateFen } from '../utils/chess.js';
+import ChessboardConfig from './ChessboardConfig.js';
+import Square from '../components/Square.js';
+import Piece from '../components/Piece.js';
+import Move from '../components/Move.js';
+import { rafThrottle, setTransform, resetTransform } from '../utils/performance.js';
+import { MouseTracker, DragOptimizations } from '../utils/cross-browser.js';
 
 class Chessboard {
 
@@ -51,7 +53,10 @@ class Chessboard {
     // Initialization
     // -------------------
     constructor(config) {
+        // Debug: log the config to see what we're receiving
+        console.log('Chessboard constructor received config:', config);
         this.config = new ChessboardConfig(config);
+        console.log('Processed config.id_div:', this.config.id_div);
         this.init();
     }
 
@@ -71,12 +76,17 @@ class Chessboard {
         this.clicked = null;
         this.mosseIndietro = [];
         this.clicked = null;
+        this._updateTimeout = null; // For debouncing board updates
+        this._movesCache = new Map(); // Cache per le mosse per migliorare le prestazioni
+        this._cacheTimeout = null; // Timeout per pulire la cache
+        this._isAnimating = false; // Flag to track if animations are in progress
     }
 
     // -------------------
     // Board Setup
     // -------------------
     buildBoard() {
+        console.log('buildBoard: Looking for element with ID:', this.config.id_div, 'Type:', typeof this.config.id_div);
         this.element = document.getElementById(this.config.id_div);
         if (!this.element) {
             throw new Error(this.error_messages['invalid_id_div'] + this.config.id_div);
@@ -233,17 +243,34 @@ class Chessboard {
     }
 
     movePiece(piece, to, duration, callback) {
+        if (!piece) {
+            console.warn('movePiece: piece is null, skipping animation');
+            if (callback) callback();
+            return;
+        }
+        
         piece.translate(to, duration, this.transitionTimingFunction, this.config.moveAnimation, callback);
     }
 
     translatePiece(move, removeTo, animate, callback = null) {
+        if (!move.piece) {
+            console.warn('translatePiece: move.piece is null, skipping translation');
+            if (callback) callback();
+            return;
+        }
 
         if (removeTo) this.removePieceFromSquare(move.to, false);
 
         let change_square = () => {
-            move.from.removePiece();
-            move.to.putPiece(move.piece);
-            move.piece.setDrag(this.dragFunction(move.to, move.piece));
+            // Check if piece still exists and is on the source square
+            if (move.from.piece === move.piece) {
+                move.from.removePiece();
+            }
+            // Only put piece if destination square doesn't already have it
+            if (move.to.piece !== move.piece) {
+                move.to.putPiece(move.piece);
+                move.piece.setDrag(this.dragFunction(move.to, move.piece));
+            }
             if (callback) callback();
         }
 
@@ -254,14 +281,91 @@ class Chessboard {
     }
 
     snapbackPiece(square, animate = this.config.snapbackAnimation) {
-        let move = new Move(square, square);
-        this.translatePiece(move, false, animate);
+        if (!square || !square.piece) {
+            console.warn('snapbackPiece: square or piece is null', square);
+            return;
+        }
+        
+        let piece = square.piece;
+        
+        if (!animate) {
+            // No animation, just reset the piece position immediately
+            piece.element.style.transform = '';
+            piece.element.style.transition = '';
+            return;
+        }
+        
+        // For snapback animation, we need to smoothly return the piece to its square
+        // First, get the current visual position and target position
+        let currentRect = piece.element.getBoundingClientRect();
+        let targetRect = square.element.getBoundingClientRect();
+        
+        let dx = targetRect.left - currentRect.left + (targetRect.width - currentRect.width) / 2;
+        let dy = targetRect.top - currentRect.top + (targetRect.height - currentRect.height) / 2;
+        
+        // Only animate if there's actually a visual displacement
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+            let duration = this.config.moveTime;
+            
+            if (piece.element.animate) {
+                let animation = piece.element.animate([
+                    { transform: piece.element.style.transform || 'translate(0, 0)' },
+                    { transform: 'translate(0, 0)' }
+                ], {
+                    duration: duration,
+                    easing: 'ease-out',
+                    fill: 'forwards'
+                });
+                
+                animation.onfinish = () => {
+                    piece.element.style.transform = '';
+                    piece.element.style.transition = '';
+                };
+            } else {
+                piece.element.style.transition = `transform ${duration}ms ease-out`;
+                piece.element.style.transform = 'translate(0, 0)';
+                
+                setTimeout(() => {
+                    piece.element.style.transform = '';
+                    piece.element.style.transition = '';
+                }, duration);
+            }
+        } else {
+            // No visual displacement, just reset immediately
+            piece.element.style.transform = '';
+            piece.element.style.transition = '';
+        }
     }
 
     // -------------------
     // Board Update Functions
     // -------------------
     updateBoardPieces(animation = false) {
+        // Clear any pending update to avoid duplicate calls
+        if (this._updateTimeout) {
+            clearTimeout(this._updateTimeout);
+            this._updateTimeout = null;
+        }
+
+        // Pulisce la cache delle mosse quando la posizione cambia
+        this._movesCache.clear();
+        if (this._cacheTimeout) {
+            clearTimeout(this._cacheTimeout);
+            this._cacheTimeout = null;
+        }
+
+        // For click-to-move, add a small delay to avoid lag
+        if (animation && this.clicked === null) {
+            this._updateTimeout = setTimeout(() => {
+                this._doUpdateBoardPieces(animation);
+                this._updateTimeout = null;
+            }, 10);
+        } else {
+            this._doUpdateBoardPieces(animation);
+        }
+    }
+
+    _doUpdateBoardPieces(animation = false) {
         let { updatedFlags, escapeFlags, movableFlags, pendingTranslations } = this.prepareBoardUpdateData();
 
         let change = Object.values(updatedFlags).some(flag => !flag);
@@ -409,22 +513,53 @@ class Chessboard {
 
             if (!this.canMove(from)) return;
             if (!this.config.clickable) this.clicked = null;
-            if (this.onClick(from, true, true)) return;
+            
+            // For drag operations, select the source square first
+            console.log('Drag started from:', from.id, 'piece:', piece.getId());
+            const clickResult = this.onClick(from, true, true);
+            console.log('onClick result for drag start:', clickResult);
+            
+            // If onClick returns true, it means the move was completed, so don't continue drag
+            if (clickResult) return;
 
             img.style.position = 'absolute';
             img.style.zIndex = 100;
+            img.classList.add('dragging'); // Add dragging class for CSS optimization
+            
+            DragOptimizations.enableForDrag(img);
 
-            const moveAt = (pageX, pageY) => {
-                const halfWidth = img.offsetWidth / 2;
-                const halfHeight = img.offsetHeight / 2;
-                img.style.left = `${pageX - halfWidth}px`;
-                img.style.top = `${pageY - halfHeight}px`;
+            const moveAt = (event) => {
+                const squareSize = this.element.offsetWidth / 8;
+                
+                // Get mouse coordinates - use clientX/Y for better Chrome compatibility
+                let clientX, clientY;
+                if (event.touches && event.touches[0]) {
+                    clientX = event.touches[0].clientX;
+                    clientY = event.touches[0].clientY;
+                } else {
+                    clientX = event.clientX;
+                    clientY = event.clientY;
+                }
+                
+                // Get board position using getBoundingClientRect for accuracy
+                const boardRect = this.element.getBoundingClientRect();
+                
+                // Calculate position relative to board with piece centered on cursor
+                // Add window scroll offset for correct positioning
+                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                const x = clientX - boardRect.left - (squareSize / 2);
+                const y = clientY - boardRect.top - (squareSize / 2);
+                
+                img.style.left = x + 'px';
+                img.style.top = y + 'px';
                 return true;
             };
 
             const onMouseMove = (event) => {
                 if (!this.config.onDragStart(square, piece)) return;
-                if (!moveAt(event.pageX, event.pageY)) return;
+                if (!moveAt(event)) return;
 
                 const boardRect = this.element.getBoundingClientRect();
                 const { offsetWidth: boardWidth, offsetHeight: boardHeight } = this.element;
@@ -453,6 +588,8 @@ class Chessboard {
                 document.removeEventListener('mousemove', onMouseMove);
                 window.removeEventListener('mouseup', onMouseUp);
                 img.style.zIndex = 20;
+                img.classList.remove('dragging'); // Remove dragging class
+                img.style.willChange = 'auto'; // Reset will-change hint
 
                 const dropResult = this.config.onDrop(from, to, piece);
                 const isTrashDrop = !to && (this.config.dropOffBoard === 'trash' || dropResult === 'trash');
@@ -462,9 +599,24 @@ class Chessboard {
                     this.allSquares('removeHint');
                     from.deselect();
                     this.remove(from);
-                } else if (!to || !this.onClick(to, true, true)) {
-                    this.snapbackPiece(from);
-                    if (to !== from) this.config.onSnapbackEnd(from, piece);
+                } else if (!to) {
+                    console.log('Snapback triggered - no target square');
+                    // Only perform snapback if the piece still exists on the from square
+                    if (from && from.piece) {
+                        this.snapbackPiece(from);
+                        if (to !== from) this.config.onSnapbackEnd(from, piece);
+                    }
+                } else {
+                    const onClickResult = this.onClick(to, true, true);
+                    console.log('onClick result:', onClickResult, 'for target:', to.id);
+                    if (!onClickResult) {
+                        console.log('Snapback triggered - onClick failed');
+                        // Only perform snapback if the piece still exists on the from square
+                        if (from && from.piece) {
+                            this.snapbackPiece(from);
+                            if (to !== from) this.config.onSnapbackEnd(from, piece);
+                        }
+                    }
                 }
             };
 
@@ -479,12 +631,17 @@ class Chessboard {
 
             let piece = square.piece;
 
-            square.element.addEventListener("mouseover", (e) => {
-                if (!this.clicked) this.hintMoves(square);
+            // Applica throttling ai listener di mouseover e mouseout per migliori prestazioni
+            const throttledHintMoves = rafThrottle((e) => {
+                if (!this.clicked && this.config.hints) this.hintMoves(square);
             });
-            square.element.addEventListener("mouseout", (e) => {
-                if (!this.clicked) this.dehintMoves(square);
+
+            const throttledDehintMoves = rafThrottle((e) => {
+                if (!this.clicked && this.config.hints) this.dehintMoves(square);
             });
+
+            square.element.addEventListener("mouseover", throttledHintMoves);
+            square.element.addEventListener("mouseout", throttledDehintMoves);
 
             const handleClick = (e) => {
                 e.stopPropagation();
@@ -497,6 +654,12 @@ class Chessboard {
     }
 
     onClick(square, animation = this.config.moveAnimation, dragged = false) {
+        console.log('onClick called:', {
+            square: square?.id,
+            clicked: this.clicked?.id,
+            dragged: dragged,
+            squarePiece: square?.piece?.getId()
+        });
         
         if (this.clicked === square) return false;
 
@@ -515,7 +678,7 @@ class Chessboard {
         }
 
         if (!from) {
-
+            console.log('onClick: No from square');
             if (this.canMove(square)) {
                 if (this.config.clickable) {
                     square.select();
@@ -528,22 +691,34 @@ class Chessboard {
         }
 
         let move = new Move(from, square, promotion);
+        console.log('onClick: Created move from', from.id, 'to', square.id, 'piece:', move.piece?.getId());
 
         move.from.deselect();
 
-        if (!move.check()) return false;
+        if (!move.check()) {
+            console.log('onClick: Move check failed');
+            return false;
+        }
 
         this.allSquares("removeHint");
 
-        if (this.config.onlyLegalMoves && !move.isLegal(this.game)) return false;
+        if (this.config.onlyLegalMoves && !move.isLegal(this.game)) {
+            console.log('onClick: Move is not legal');
+            return false;
+        }
 
-        if (!move.hasPromotion() && this.promote(move)) return false;
+        if (!move.hasPromotion() && this.promote(move)) {
+            console.log('onClick: Promotion required');
+            return false;
+        }
 
         if (this.config.onMove(move)) {
+            console.log('onClick: onMove callback approved, executing move');
             this.move(move, animation);
             return true;
         }
 
+        console.log('onClick: onMove callback rejected move');
         return false;
     }
 
@@ -594,12 +769,14 @@ class Chessboard {
         let from = move.from;
         let to = move.to;
 
+        // Store the current state to avoid unnecessary recalculations
+        const gameStateBefore = this.game.fen();
+
         if (!this.config.onlyLegalMoves) {
             let piece = this.getGamePieceId(from.id);
             this.game.remove(from.id);
             this.game.remove(to.id);
             this.game.put({ type: move.hasPromotion() ? move.promotion : piece[0], color: piece[1] }, to.id);
-            this.updateBoardPieces(animation);
         } else {
             this.allSquares("unmoved");
 
@@ -613,12 +790,18 @@ class Chessboard {
                 throw new Error("Invalid move: move could not be executed");
             }
 
-            this.updateBoardPieces(animation);
-
             from.moved();
             to.moved();
             this.allSquares("removeHint");
+        }
 
+        // Only update the board if the game state actually changed
+        const gameStateAfter = this.game.fen();
+        if (gameStateBefore !== gameStateAfter) {
+            this.updateBoardPieces(animation);
+        }
+
+        if (this.config.onlyLegalMoves) {
             this.config.onMoveEnd(move);
         }
     }
@@ -634,14 +817,37 @@ class Chessboard {
 
     hintMoves(square) {
         if (!this.canMove(square)) return;
-        let mosse = this.game.moves({ square: square.id, verbose: true });
+        
+        // Usa la cache per evitare calcoli ripetuti delle mosse
+        const cacheKey = `${square.id}-${this.game.fen()}`;
+        let mosse = this._movesCache.get(cacheKey);
+        
+        if (!mosse) {
+            mosse = this.game.moves({ square: square.id, verbose: true });
+            this._movesCache.set(cacheKey, mosse);
+            
+            // Pulisci la cache dopo un breve ritardo per evitare accumulo di memoria
+            if (this._cacheTimeout) clearTimeout(this._cacheTimeout);
+            this._cacheTimeout = setTimeout(() => {
+                this._movesCache.clear();
+            }, 1000);
+        }
+        
         for (let mossa of mosse) {
             if (mossa['to'].length === 2) this.hint(mossa['to']);
         }
     }
 
     dehintMoves(square) {
-        let mosse = this.game.moves({ square: square.id, verbose: true });
+        // Usa la cache anche per dehint per coerenza
+        const cacheKey = `${square.id}-${this.game.fen()}`;
+        let mosse = this._movesCache.get(cacheKey);
+        
+        if (!mosse) {
+            mosse = this.game.moves({ square: square.id, verbose: true });
+            this._movesCache.set(cacheKey, mosse);
+        }
+        
         for (let mossa of mosse) {
             let to = this.squares[mossa['to']];
             to.removeHint();

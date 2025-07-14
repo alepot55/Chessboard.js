@@ -1,0 +1,4 @@
+/* Main stylesheet for Chessboard.js */
+@import './board.css';
+@import './pieces.css';
+@import './animations.css';

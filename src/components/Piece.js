@@ -55,6 +55,7 @@ class Piece {
                 piece.element.style.opacity = 0;
             }
         }
+        fade();
     }
 
     setDrag(f) {

@@ -1,0 +1,40 @@
+/* Piece-specific styles */
+.piece {
+  position: absolute;
+  cursor: pointer;
+  /* Solo transizioni specifiche, non "all" */
+  transition: opacity var(--fade-time, 150ms) var(--fade-animation, ease);
+  z-index: 10;
+  /* Hint al browser per ottimizzazioni */
+  will-change: auto;
+}
+
+.piece.dragging {
+  z-index: 100;
+  /* Disabilita completamente le transizioni durante il drag */
+  transition: none !important;
+  /* Hint per ottimizzazione durante drag */
+  will-change: left, top;
+  /* Rimuovo l'ingrandimento che causava problemi visivi */
+}
+
+.piece.fading {
+  opacity: 0;
+  transition: opacity var(--fade-time, 150ms) var(--fade-animation, ease);
+}
+
+.piece.moving {
+  /* Solo transizione per transform, non position */
+  transition: transform var(--move-time, 200ms) var(--move-animation, ease);
+}
+
+/* Piece sizing */
+.piece img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Previene conflitti di drag dell'immagine */
+  pointer-events: none;
+  /* Migliore rendering */
+  image-rendering: crisp-edges;
+}

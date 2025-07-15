@@ -28,6 +28,32 @@
   transition: transform var(--move-time, 200ms) var(--move-animation, ease);
 }
 
+/* Piece replacement during promotion - no transitions to avoid flickering */
+.piece.replacing {
+  transition: none !important;
+  opacity: 1;
+  transform: none;
+}
+
+/* Piece transformation during promotion - smooth scaling animation */
+.piece.transforming {
+  transition: none !important;
+  transform-origin: center center;
+  will-change: transform, opacity;
+  z-index: 50;
+}
+
+/* Subtle bounce effect after transformation */
+.piece.transform-complete {
+  animation: transformBounce 0.4s ease-out;
+}
+
+@keyframes transformBounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
 /* Piece sizing */
 .piece img {
   width: 100%;

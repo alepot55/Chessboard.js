@@ -1,187 +1,178 @@
 /**
- * Animation service for handling piece animations and transitions
- * @module AnimationService
+ * Service for managing animations and transitions
+ * @module services/AnimationService
+ * @since 2.0.0
  */
 
-import { Z_INDEX } from '../core/constants.js';
-
 /**
- * Service for managing animations and transitions
- * @class AnimationService
+ * Service responsible for coordinating animations and transitions
+ * @class
  */
 export class AnimationService {
     /**
-     * Creates a new AnimationService
-     * @param {object} config - Configuration object
+     * Creates a new AnimationService instance
+     * @param {ChessboardConfig} config - Board configuration
      */
     constructor(config) {
         this.config = config;
-        this.activeAnimations = new Set();
+        this.activeAnimations = new Map();
+        this.animationId = 0;
     }
 
     /**
-     * Animates a piece movement
-     * @param {object} piece - The piece to animate
-     * @param {object} targetSquare - Target square
-     * @param {number} duration - Animation duration
-     * @param {Function} callback - Callback function
-     * @param {Function} timingFunction - Timing function
-     * @returns {Promise<void>}
+     * Creates a timing function for animations
+     * @param {string} [type='ease'] - Animation type
+     * @returns {Function} Timing function
      */
-    async animatePieceMovement(piece, targetSquare, duration, callback, timingFunction) {
-        if (!piece) {
-            console.warn('AnimationService: piece is null, skipping animation');
-            if (callback) callback();
-            return;
-        }
+    createTimingFunction(type = 'ease') {
+        return (elapsed, duration) => {
+            const x = elapsed / duration;
+            
+            switch (type) {
+                case 'linear':
+                    return x;
+                case 'ease':
+                    return (x ** 2) * (3 - 2 * x);
+                case 'ease-in':
+                    return x ** 2;
+                case 'ease-out':
+                    return -1 * (x - 1) ** 2 + 1;
+                case 'ease-in-out':
+                    return (x < 0.5) ? 2 * x ** 2 : 4 * x - 2 * x ** 2 - 1;
+                default:
+                    return x;
+            }
+        };
+    }
 
-        const animationId = this._generateAnimationId();
-        this.activeAnimations.add(animationId);
+    /**
+     * Animates an element with given properties
+     * @param {HTMLElement} element - Element to animate
+     * @param {Object} properties - Properties to animate
+     * @param {number} duration - Animation duration in milliseconds
+     * @param {string} [easing='ease'] - Easing function
+     * @param {Function} [callback] - Callback when animation completes
+     * @returns {number} Animation ID
+     */
+    animate(element, properties, duration, easing = 'ease', callback) {
+        const animationId = ++this.animationId;
+        const timingFunction = this.createTimingFunction(easing);
+        const startTime = performance.now();
+        const startValues = {};
+        
+        // Store initial values
+        Object.keys(properties).forEach(prop => {
+            startValues[prop] = this._getInitialValue(element, prop);
+        });
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = timingFunction(elapsed, duration);
+            
+            // Apply animated values
+            Object.keys(properties).forEach(prop => {
+                const startValue = startValues[prop];
+                const endValue = properties[prop];
+                const currentValue = this._interpolateValue(startValue, endValue, easedProgress);
+                this._applyValue(element, prop, currentValue);
+            });
+            
+            if (progress < 1 && this.activeAnimations.has(animationId)) {
+                requestAnimationFrame(animate);
+            } else {
+                this.activeAnimations.delete(animationId);
+                if (callback) callback();
+            }
+        };
+        
+        this.activeAnimations.set(animationId, { element, animate, callback });
+        requestAnimationFrame(animate);
+        
+        return animationId;
+    }
 
-        try {
-            await piece.translate(
-                targetSquare,
-                duration,
-                timingFunction,
-                this.config.moveAnimation,
-                () => {
-                    this.activeAnimations.delete(animationId);
-                    if (callback) callback();
-                }
-            );
-        } catch (error) {
-            console.error('Animation error:', error);
+    /**
+     * Cancels an animation
+     * @param {number} animationId - Animation ID to cancel
+     */
+    cancel(animationId) {
+        if (this.activeAnimations.has(animationId)) {
             this.activeAnimations.delete(animationId);
-            if (callback) callback();
         }
     }
 
     /**
-     * Animates piece fade in
-     * @param {object} piece - The piece to fade in
-     * @param {Function} timingFunction - Timing function
-     * @returns {Promise<void>}
+     * Cancels all animations
      */
-    async animateFadeIn(piece, timingFunction) {
-        if (!piece) return;
-
-        return piece.fadeIn(
-            this.config.fadeTime,
-            this.config.fadeAnimation,
-            timingFunction
-        );
-    }
-
-    /**
-     * Animates piece fade out
-     * @param {object} piece - The piece to fade out
-     * @param {Function} timingFunction - Timing function
-     * @returns {Promise<void>}
-     */
-    async animateFadeOut(piece, timingFunction) {
-        if (!piece) return;
-
-        return piece.fadeOut(
-            this.config.fadeTime,
-            this.config.fadeAnimation,
-            timingFunction
-        );
-    }
-
-    /**
-     * Animates piece snapback
-     * @param {object} piece - The piece to snapback
-     * @param {object} square - Original square
-     * @param {Function} timingFunction - Timing function
-     * @param {boolean} animate - Whether to animate
-     * @returns {Promise<void>}
-     */
-    async animateSnapback(piece, square, timingFunction, animate = true) {
-        if (!square || !square.piece) {
-            return;
-        }
-
-        const duration = animate ? this.config.snapbackTime : 0;
-        
-        return piece.translate(
-            square,
-            duration,
-            timingFunction,
-            animate
-        );
-    }
-
-    /**
-     * Sets up drag visual effects
-     * @param {HTMLElement} element - Element to set up
-     */
-    setupDragVisuals(element) {
-        element.style.position = 'absolute';
-        element.style.zIndex = Z_INDEX.DRAGGING;
-        element.classList.add('dragging');
-    }
-
-    /**
-     * Resets drag visual effects
-     * @param {HTMLElement} element - Element to reset
-     */
-    resetDragVisuals(element) {
-        element.style.position = '';
-        element.style.left = '';
-        element.style.top = '';
-        element.style.zIndex = Z_INDEX.PIECE;
-        element.style.pointerEvents = '';
-        element.classList.remove('dragging');
-        element.style.willChange = 'auto';
-    }
-
-    /**
-     * Gets transition timing function
-     * @param {number} elapsed - Elapsed time
-     * @param {number} duration - Total duration
-     * @param {string} type - Timing function type
-     * @returns {number} Calculated value
-     */
-    getTimingFunction(elapsed, duration, type = 'ease') {
-        const x = elapsed / duration;
-        
-        switch (type) {
-            case 'linear':
-                return x;
-            case 'ease':
-                return (x ** 2) * (3 - 2 * x);
-            case 'ease-in':
-                return x ** 2;
-            case 'ease-out':
-                return -1 * (x - 1) ** 2 + 1;
-            case 'ease-in-out':
-                return (x < 0.5) ? 2 * x ** 2 : 4 * x - 2 * x ** 2 - 1;
-            default:
-                return x;
-        }
-    }
-
-    /**
-     * Checks if animations are currently running
-     * @returns {boolean} True if animations are active
-     */
-    hasActiveAnimations() {
-        return this.activeAnimations.size > 0;
-    }
-
-    /**
-     * Cancels all active animations
-     */
-    cancelAllAnimations() {
+    cancelAll() {
         this.activeAnimations.clear();
     }
 
     /**
-     * Generates a unique animation ID
+     * Gets initial value for a property
      * @private
-     * @returns {string} Unique ID
+     * @param {HTMLElement} element - Element
+     * @param {string} property - Property name
+     * @returns {number} Initial value
      */
-    _generateAnimationId() {
-        return `anim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    _getInitialValue(element, property) {
+        switch (property) {
+            case 'opacity':
+                return parseFloat(getComputedStyle(element).opacity) || 1;
+            case 'left':
+                return parseFloat(element.style.left) || 0;
+            case 'top':
+                return parseFloat(element.style.top) || 0;
+            case 'scale':
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
+    /**
+     * Interpolates between two values
+     * @private
+     * @param {number} start - Start value
+     * @param {number} end - End value
+     * @param {number} progress - Progress (0-1)
+     * @returns {number} Interpolated value
+     */
+    _interpolateValue(start, end, progress) {
+        return start + (end - start) * progress;
+    }
+
+    /**
+     * Applies animated value to element
+     * @private
+     * @param {HTMLElement} element - Element
+     * @param {string} property - Property name
+     * @param {number} value - Value to apply
+     */
+    _applyValue(element, property, value) {
+        switch (property) {
+            case 'opacity':
+                element.style.opacity = value;
+                break;
+            case 'left':
+                element.style.left = value + 'px';
+                break;
+            case 'top':
+                element.style.top = value + 'px';
+                break;
+            case 'scale':
+                element.style.transform = `scale(${value})`;
+                break;
+            default:
+                element.style[property] = value;
+        }
+    }
+
+    /**
+     * Cleans up resources
+     */
+    destroy() {
+        this.cancelAll();
     }
 }

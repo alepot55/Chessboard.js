@@ -42,6 +42,8 @@ class ChessboardConfig {
             dropOffBoard: 'snapback',
             snapbackTime: 'fast',
             snapbackAnimation: 'ease',
+            dropCenterTime: 'veryFast',
+            dropCenterAnimation: 'ease',
             fadeTime: 'fast',
             fadeAnimation: 'ease',
             ratio: 0.9,
@@ -85,6 +87,7 @@ class ChessboardConfig {
 
         this.moveAnimation = this.setTransitionFunction(config.moveAnimation);
         this.snapbackAnimation = this.setTransitionFunction(config.snapbackAnimation);
+        this.dropCenterAnimation = this.setTransitionFunction(config.dropCenterAnimation);
         this.fadeAnimation = this.setTransitionFunction(config.fadeAnimation);
 
         this.hints = this.setBoolean(config.hints);
@@ -95,6 +98,7 @@ class ChessboardConfig {
 
         this.moveTime = this.setTime(config.moveTime)
         this.snapbackTime = this.setTime(config.snapbackTime);
+        this.dropCenterTime = this.setTime(config.dropCenterTime);
         this.fadeTime = this.setTime(config.fadeTime);
 
         this.setCSSProperty('pieceRatio', config.ratio);

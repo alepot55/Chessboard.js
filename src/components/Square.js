@@ -58,10 +58,48 @@ class Square {
         if (!this.piece) {
             return null;
         }
-        this.element.removeChild(this.piece.element);
+        
+        // Remove the piece element from DOM
+        if (this.piece.element && this.piece.element.parentNode === this.element) {
+            this.element.removeChild(this.piece.element);
+        }
+        
         const piece = this.piece;
         this.piece = null;
         return piece;
+    }
+
+    /**
+     * Forcefully removes all pieces from this square
+     */
+    forceRemoveAllPieces() {
+        // Remove all img elements with class 'piece'
+        const pieceElements = this.element.querySelectorAll('img.piece');
+        pieceElements.forEach(element => {
+            if (element.parentNode === this.element) {
+                this.element.removeChild(element);
+            }
+        });
+        
+        // Clear the piece reference
+        this.piece = null;
+    }
+
+    /**
+     * Replaces the current piece with a new one efficiently
+     * @param {Piece} newPiece - The new piece to place
+     */
+    replacePiece(newPiece) {
+        // If there's an existing piece, remove it first
+        if (this.piece) {
+            this.removePiece();
+        }
+        
+        // Add the new piece
+        this.putPiece(newPiece);
+        
+        // Ensure the piece is properly displayed
+        newPiece.element.style.opacity = '1';
     }
 
     addEventListener(event, callback) {
@@ -69,8 +107,15 @@ class Square {
     }
 
     putPiece(piece) {
+        // If there's already a piece, remove it first
+        if (this.piece) {
+            this.removePiece();
+        }
+        
         this.piece = piece;
-        this.element.appendChild(piece.element);
+        if (piece && piece.element) {
+            this.element.appendChild(piece.element);
+        }
     }
 
     putHint(catchable) {
@@ -151,6 +196,10 @@ class Square {
             callback();
         });
 
+    }
+
+    hasPromotion() {
+        return this.element.querySelector('.choice') !== null;
     }
 
     removePromotion() {

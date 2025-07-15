@@ -1,20 +1,22 @@
 /**
- * Board management service for handling board layout and squares
- * @module BoardService
+ * Service for managing board setup and DOM operations
+ * @module services/BoardService
+ * @since 2.0.0
  */
 
-import { BOARD } from '../core/constants.js';
-import { ValidationService } from './ValidationService.js';
+import { BOARD_SIZE } from '../constants/positions.js';
+import { DOMError, ValidationError } from '../errors/ChessboardError.js';
+import { ERROR_MESSAGES } from '../errors/messages.js';
 import Square from '../components/Square.js';
 
 /**
- * Service for managing board layout and square operations
- * @class BoardService
+ * Service responsible for board DOM manipulation and setup
+ * @class
  */
 export class BoardService {
     /**
-     * Creates a new BoardService
-     * @param {object} config - Configuration object
+     * Creates a new BoardService instance
+     * @param {ChessboardConfig} config - Board configuration
      */
     constructor(config) {
         this.config = config;
@@ -23,24 +25,29 @@ export class BoardService {
     }
 
     /**
-     * Builds the board DOM structure
-     * @throws {Error} If board element not found
+     * Builds the board DOM element and attaches it to the configured container
+     * @throws {DOMError} When the container element cannot be found
      */
     buildBoard() {
-        ValidationService.validateElementId(this.config.id_div);
+        console.log('BoardService.buildBoard: Looking for element with ID:', this.config.id_div);
         
         this.element = document.getElementById(this.config.id_div);
+        if (!this.element) {
+            throw new DOMError(ERROR_MESSAGES.invalid_id_div + this.config.id_div, this.config.id_div);
+        }
+        
         this.resize(this.config.size);
         this.element.className = "board";
     }
 
     /**
-     * Builds all squares on the board
+     * Creates all 64 squares and adds them to the board
+     * @param {Function} coordConverter - Function to convert row/col to real coordinates
      */
-    buildSquares() {
-        for (let row = 0; row < BOARD.ROWS; row++) {
-            for (let col = 0; col < BOARD.COLS; col++) {
-                const [squareRow, squareCol] = this._getRealCoordinates(row, col);
+    buildSquares(coordConverter) {
+        for (let row = 0; row < BOARD_SIZE.ROWS; row++) {
+            for (let col = 0; col < BOARD_SIZE.COLS; col++) {
+                const [squareRow, squareCol] = coordConverter(row, col);
                 const square = new Square(squareRow, squareCol);
                 
                 this.squares[square.getId()] = square;
@@ -50,7 +57,7 @@ export class BoardService {
     }
 
     /**
-     * Removes the board content
+     * Removes all content from the board element
      */
     removeBoard() {
         if (this.element) {
@@ -59,11 +66,11 @@ export class BoardService {
     }
 
     /**
-     * Removes all squares from the board
+     * Removes all squares from the board and cleans up their resources
      */
     removeSquares() {
         for (const square of Object.values(this.squares)) {
-            if (this.element && square.element.parentNode === this.element) {
+            if (this.element && square.element) {
                 this.element.removeChild(square.element);
             }
             square.destroy();
@@ -72,33 +79,52 @@ export class BoardService {
     }
 
     /**
-     * Resizes the board
-     * @param {number|string} value - Size value or 'auto'
+     * Resizes the board to the specified size
+     * @param {number|string} value - Size in pixels or 'auto'
+     * @throws {ValidationError} When size value is invalid
      */
     resize(value) {
         if (value === 'auto') {
             const size = this._calculateAutoSize();
             this.resize(size);
-        } else if (typeof value === 'number') {
-            document.documentElement.style.setProperty('--dimBoard', value + 'px');
+        } else if (typeof value !== 'number') {
+            throw new ValidationError(ERROR_MESSAGES.invalid_value + value, 'size', value);
         } else {
-            ValidationService.validateNumericValue(value);
+            document.documentElement.style.setProperty('--dimBoard', value + 'px');
         }
     }
 
     /**
-     * Gets a square by ID
-     * @param {string} squareId - Square identifier
-     * @returns {object} Square object
+     * Calculates the optimal size when 'auto' is specified
+     * @private
+     * @returns {number} Calculated size in pixels
+     */
+    _calculateAutoSize() {
+        if (!this.element) return 400; // Default fallback
+        
+        const { offsetWidth, offsetHeight } = this.element;
+        
+        if (offsetWidth === 0) {
+            return offsetHeight || 400;
+        } else if (offsetHeight === 0) {
+            return offsetWidth;
+        } else {
+            return Math.min(offsetWidth, offsetHeight);
+        }
+    }
+
+    /**
+     * Gets a square by its ID
+     * @param {string} squareId - Square identifier (e.g., 'e4')
+     * @returns {Square|null} The square or null if not found
      */
     getSquare(squareId) {
-        ValidationService.validateSquareId(squareId);
-        return this.squares[squareId];
+        return this.squares[squareId] || null;
     }
 
     /**
      * Gets all squares
-     * @returns {object} All squares
+     * @returns {Object.<string, Square>} All squares indexed by ID
      */
     getAllSquares() {
         return { ...this.squares };
@@ -106,134 +132,24 @@ export class BoardService {
 
     /**
      * Applies a method to all squares
-     * @param {string} method - Method name to call on each square
+     * @param {string} methodName - Name of the method to call on each square
+     * @param {...*} args - Arguments to pass to the method
      */
-    applyToAllSquares(method) {
+    applyToAllSquares(methodName, ...args) {
         for (const square of Object.values(this.squares)) {
-            if (typeof square[method] === 'function') {
-                square[method]();
+            if (typeof square[methodName] === 'function') {
+                square[methodName](...args);
             }
         }
     }
 
     /**
-     * Gets square ID from row and column coordinates
-     * @param {number} row - Row number
-     * @param {number} col - Column number
-     * @returns {string} Square ID
-     */
-    getSquareID(row, col) {
-        row = parseInt(row);
-        col = parseInt(col);
-        
-        if (this._isWhiteOriented()) {
-            row = 8 - row;
-            col = col + 1;
-        } else {
-            row = row + 1;
-            col = 8 - col;
-        }
-        
-        const letters = 'abcdefgh';
-        const letter = letters[col - 1];
-        return letter + row;
-    }
-
-    /**
-     * Converts square notation to Square object
-     * @param {string|object} square - Square identifier or Square object
-     * @returns {object} Square object
-     */
-    convertSquare(square) {
-        if (square instanceof Square) {
-            return square;
-        }
-        
-        if (typeof square === 'string' && this.squares[square]) {
-            return this.squares[square];
-        }
-        
-        throw new Error(`Invalid square: ${square}`);
-    }
-
-    /**
-     * Gets the board DOM element
-     * @returns {HTMLElement} Board element
-     */
-    getElement() {
-        return this.element;
-    }
-
-    /**
-     * Destroys the board service
+     * Cleans up all resources
      */
     destroy() {
         this.removeSquares();
         this.removeBoard();
         this.element = null;
-    }
-
-    /**
-     * Calculates auto size based on container dimensions
-     * @private
-     * @returns {number} Calculated size
-     */
-    _calculateAutoSize() {
-        if (!this.element) return 400; // Default size
-
-        let size;
-        if (this.element.offsetWidth === 0) {
-            size = this.element.offsetHeight;
-        } else if (this.element.offsetHeight === 0) {
-            size = this.element.offsetWidth;
-        } else {
-            size = Math.min(this.element.offsetWidth, this.element.offsetHeight);
-        }
-        
-        return size || 400; // Default fallback
-    }
-
-    /**
-     * Gets real coordinates based on orientation
-     * @private
-     * @param {number} row - Row number
-     * @param {number} col - Column number
-     * @returns {Array<number>} Real coordinates
-     */
-    _getRealCoordinates(row, col) {
-        if (this._isWhiteOriented()) {
-            row = 7 - row;
-        } else {
-            col = 7 - col;
-        }
-        return [row + 1, col + 1];
-    }
-
-    /**
-     * Checks if board is white-oriented
-     * @private
-     * @returns {boolean} True if white-oriented
-     */
-    _isWhiteOriented() {
-        return this.config.orientation === 'w';
-    }
-
-    /**
-     * Gets the DOM element for a specific square
-     * @param {string} squareId - The square ID (e.g., 'e4')
-     * @returns {HTMLElement|null} The square element or null if not found
-     */
-    getSquareElement(squareId) {
-        const square = this.squares[squareId];
-        return square ? square.element : null;
-    }
-
-    /**
-     * Flips the board orientation
-     */
-    flip() {
-        if (this.element) {
-            this.element.classList.toggle('flipped');
-        }
+        this.squares = {};
     }
 }

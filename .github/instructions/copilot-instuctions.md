@@ -1,3 +1,7 @@
+---
+applyTo: "**/Chessboardjs/**"
+---
+
 # 🏗️ Chessboard.js - Guida Completa per Ingegneri Esperti
 
 ## 📋 Panoramica del Progetto

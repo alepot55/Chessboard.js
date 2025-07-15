@@ -15,6 +15,24 @@ export { default as Square } from './components/Square.js';
 export { default as Piece } from './components/Piece.js';
 export { default as Move } from './components/Move.js';
 
+// Service exports for advanced usage
+export { 
+    AnimationService,
+    BoardService,
+    CoordinateService,
+    EventService,
+    MoveService,
+    PieceService,
+    PositionService,
+    ValidationService
+} from './services/index.js';
+
+// Constants exports
+export * from './constants/index.js';
+
+// Error handling exports
+export { ChessboardError, ValidationError } from './errors/index.js';
+
 // Utility exports
 export { Chess, validateFen } from './utils/chess.js';
 export * from './utils/performance.js';

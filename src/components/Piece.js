@@ -151,7 +151,7 @@ class Piece {
         }
     }
 
-    fadeIn(duration, speed, transition_f) {
+    fadeIn(duration, speed, transition_f, callback) {
         let start = performance.now();
         let opacity = 0;
         let piece = this;
@@ -163,12 +163,13 @@ class Piece {
                 requestAnimationFrame(fade);
             } else {
                 piece.element.style.opacity = 1;
+                if (callback) callback();
             }
         }
         fade();
     }
 
-    fadeOut(duration, speed, transition_f) {
+    fadeOut(duration, speed, transition_f, callback) {
         let start = performance.now();
         let opacity = 1;
         let piece = this;
@@ -180,6 +181,7 @@ class Piece {
                 requestAnimationFrame(fade);
             } else {
                 piece.element.style.opacity = 0;
+                if (callback) callback();
             }
         }
         fade();

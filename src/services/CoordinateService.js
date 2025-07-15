@@ -255,6 +255,41 @@ export class CoordinateService {
     }
 
     /**
+     * Gets the current orientation
+     * @returns {string} Current orientation ('w' or 'b')
+     */
+    getOrientation() {
+        return this.config.orientation;
+    }
+
+    /**
+     * Sets the orientation
+     * @param {string} orientation - New orientation ('w', 'b', 'white', 'black')
+     */
+    setOrientation(orientation) {
+        // Normalize orientation
+        const normalizedOrientation = orientation === 'white' ? 'w' : 
+                                     orientation === 'black' ? 'b' : orientation;
+        
+        if (normalizedOrientation !== 'w' && normalizedOrientation !== 'b') {
+            throw new ValidationError(
+                ERROR_MESSAGES.invalid_orientation + orientation,
+                'orientation',
+                orientation
+            );
+        }
+        
+        this.config.orientation = normalizedOrientation;
+    }
+
+    /**
+     * Flips the board orientation
+     */
+    flipOrientation() {
+        this.config.orientation = this.isWhiteOriented() ? 'b' : 'w';
+    }
+
+    /**
      * Gets all square IDs in order
      * @returns {Array<string>} Array of all square IDs
      */

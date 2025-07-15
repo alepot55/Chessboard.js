@@ -67,20 +67,24 @@ export class PieceService {
      * @param {Piece} piece - Piece to add
      * @param {boolean} [fade=true] - Whether to fade in the piece
      * @param {Function} dragFunction - Function to handle drag events
+     * @param {Function} [callback] - Callback when animation completes
      */
-    addPieceOnSquare(square, piece, fade = true, dragFunction) {
+    addPieceOnSquare(square, piece, fade = true, dragFunction, callback) {
         square.putPiece(piece);
         
         if (dragFunction) {
             piece.setDrag(dragFunction(square, piece));
         }
 
-        if (fade) {
+        if (fade && this.config.fadeTime > 0) {
             piece.fadeIn(
                 this.config.fadeTime,
                 this.config.fadeAnimation,
-                this._getTransitionTimingFunction()
+                this._getTransitionTimingFunction(),
+                callback
             );
+        } else {
+            if (callback) callback();
         }
 
         piece.visible();
@@ -90,23 +94,28 @@ export class PieceService {
      * Removes a piece from a square with optional fade-out animation
      * @param {Square} square - Source square
      * @param {boolean} [fade=true] - Whether to fade out the piece
+     * @param {Function} [callback] - Callback when animation completes
      * @returns {Piece} The removed piece
      * @throws {PieceError} When square has no piece to remove
      */
-    removePieceFromSquare(square, fade = true) {
+    removePieceFromSquare(square, fade = true, callback) {
         square.check();
         
         const piece = square.piece;
         if (!piece) {
+            if (callback) callback();
             throw new PieceError(ERROR_MESSAGES.square_no_piece, null, square.getId());
         }
 
-        if (fade) {
+        if (fade && this.config.fadeTime > 0) {
             piece.fadeOut(
                 this.config.fadeTime,
                 this.config.fadeAnimation,
-                this._getTransitionTimingFunction()
+                this._getTransitionTimingFunction(),
+                callback
             );
+        } else {
+            if (callback) callback();
         }
 
         square.removePiece();

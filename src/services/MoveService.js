@@ -447,6 +447,108 @@ export class MoveService {
     }
 
     /**
+     * Parses a move string into a move object
+     * @param {string} moveString - Move string (e.g., 'e2e4', 'e7e8q')
+     * @returns {Object|null} Move object or null if invalid
+     */
+    parseMove(moveString) {
+        if (typeof moveString !== 'string' || moveString.length < 4 || moveString.length > 5) {
+            return null;
+        }
+        
+        const from = moveString.slice(0, 2);
+        const to = moveString.slice(2, 4);
+        const promotion = moveString.slice(4, 5);
+        
+        // Basic validation
+        if (!/^[a-h][1-8]$/.test(from) || !/^[a-h][1-8]$/.test(to)) {
+            return null;
+        }
+        
+        if (promotion && !['q', 'r', 'b', 'n'].includes(promotion.toLowerCase())) {
+            return null;
+        }
+        
+        return {
+            from: from,
+            to: to,
+            promotion: promotion || null
+        };
+    }
+
+    /**
+     * Checks if a move is a castle move
+     * @param {Object} gameMove - Game move object from chess.js
+     * @returns {boolean} True if move is castle
+     */
+    isCastle(gameMove) {
+        return gameMove && (gameMove.isKingsideCastle() || gameMove.isQueensideCastle());
+    }
+
+    /**
+     * Gets the rook move for a castle move
+     * @param {Object} gameMove - Game move object from chess.js
+     * @returns {Object|null} Rook move object or null if not castle
+     */
+    getCastleRookMove(gameMove) {
+        if (!this.isCastle(gameMove)) {
+            return null;
+        }
+        
+        const isKingSide = gameMove.isKingsideCastle();
+        const isWhite = gameMove.color === 'w';
+        
+        if (isKingSide) {
+            // King side castle
+            if (isWhite) {
+                return { from: 'h1', to: 'f1' };
+            } else {
+                return { from: 'h8', to: 'f8' };
+            }
+        } else {
+            // Queen side castle
+            if (isWhite) {
+                return { from: 'a1', to: 'd1' };
+            } else {
+                return { from: 'a8', to: 'd8' };
+            }
+        }
+    }
+
+    /**
+     * Checks if a move is en passant
+     * @param {Object} gameMove - Game move object from chess.js
+     * @returns {boolean} True if move is en passant
+     */
+    isEnPassant(gameMove) {
+        return gameMove && gameMove.isEnPassant();
+    }
+
+    /**
+     * Gets the captured pawn square for en passant
+     * @param {Object} gameMove - Game move object from chess.js
+     * @returns {string|null} Square of captured pawn or null if not en passant
+     */
+    getEnPassantCapturedSquare(gameMove) {
+        if (!this.isEnPassant(gameMove)) {
+            return null;
+        }
+        
+        const toSquare = gameMove.to;
+        const rank = parseInt(toSquare[1]);
+        const file = toSquare[0];
+        
+        // The captured pawn is on the same file but different rank
+        if (gameMove.color === 'w') {
+            // White captures black pawn one rank below
+            return file + (rank - 1);
+        } else {
+            // Black captures white pawn one rank above
+            return file + (rank + 1);
+        }
+    }
+
+    /**
      * Clears the moves cache
      */
     clearCache() {

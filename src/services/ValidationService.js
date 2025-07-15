@@ -181,6 +181,15 @@ export class ValidationService {
     }
 
     /**
+     * Validates animation style
+     * @param {string} style - Animation style to validate
+     * @returns {boolean} True if valid
+     */
+    isValidAnimationStyle(style) {
+        return ['sequential', 'simultaneous'].includes(style);
+    }
+
+    /**
      * Validates and sanitizes a square identifier
      * @param {string} square - Square to validate
      * @returns {string} Sanitized square

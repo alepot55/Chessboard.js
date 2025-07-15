@@ -48,6 +48,9 @@ class ChessboardConfig {
             fadeAnimation: 'ease',
             ratio: 0.9,
             piecesPath: '../assets/themes/default',
+            // New animation style options
+            animationStyle: 'simultaneous', // 'sequential' or 'simultaneous'
+            simultaneousAnimationDelay: 100, // Delay between simultaneous animations in ms
             onMove: () => true,
             onMoveEnd: () => true,
             onChange: () => true,
@@ -100,6 +103,10 @@ class ChessboardConfig {
         this.snapbackTime = this.setTime(config.snapbackTime);
         this.dropCenterTime = this.setTime(config.dropCenterTime);
         this.fadeTime = this.setTime(config.fadeTime);
+        
+        // New animation style properties
+        this.animationStyle = config.animationStyle;
+        this.simultaneousAnimationDelay = config.simultaneousAnimationDelay;
 
         this.setCSSProperty('pieceRatio', config.ratio);
         this.setCSSProperty('whiteSquare', config.whiteSquare);

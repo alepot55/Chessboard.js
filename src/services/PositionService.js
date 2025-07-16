@@ -140,9 +140,8 @@ export class PositionService {
      */
     getGamePieceId(squareId) {
         if (!this.game) return null;
-        
         const piece = this.game.get(squareId);
-        return piece ? piece.type + piece.color : null;
+        return piece ? piece.color + piece.type : null;
     }
 
     /**

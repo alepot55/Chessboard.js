@@ -51,6 +51,7 @@ class Chessboard {
             this._handleConstructorError(error);
         }
         this._undoneMoves = [];
+        this._updateBoardPieces(true, true); // Forza popolamento DOM subito
     }
 
     /**
@@ -190,6 +191,11 @@ class Chessboard {
      * Best practice: always remove squares (destroy JS/DOM) before clearing the board container.
      */
     _buildBoard() {
+        console.log('CHIAMATO: _buildBoard');
+        if (this._isUndoRedo) {
+            console.log('SKIP _buildBoard per undo/redo');
+            return;
+        }
         // Forza la pulizia completa del contenitore board (DOM)
         const boardContainer = document.getElementById(this.config.id_div);
         if (boardContainer) boardContainer.innerHTML = '';
@@ -207,6 +213,11 @@ class Chessboard {
      * @private
      */
     _buildSquares() {
+        console.log('CHIAMATO: _buildSquares');
+        if (this._isUndoRedo) {
+            console.log('SKIP _buildSquares per undo/redo');
+            return;
+        }
         if (this.boardService && this.boardService.removeSquares) {
             this.boardService.removeSquares();
         }
@@ -579,6 +590,7 @@ class Chessboard {
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load
      */
     _updateBoardPieces(animation = false, isPositionLoad = false) {
+        console.log('CHIAMATO: _updateBoardPieces', { animation, isPositionLoad, isUndoRedo: this._isUndoRedo });
         // Check if services are available
         if (!this.positionService || !this.moveService || !this.eventService) {
             console.log('Cannot update board pieces - services not available');
@@ -683,43 +695,40 @@ class Chessboard {
      * @param {boolean} animation - Whether to animate
      */
     _doSequentialUpdate(squares, gameStateBefore, animation) {
-        // Update each square sequentially
+        // Mappa: squareId -> expectedPieceId
+        const expectedMap = {};
         Object.values(squares).forEach(square => {
-            const expectedPieceId = this.positionService.getGamePieceId(square.id);
+            expectedMap[square.id] = this.positionService.getGamePieceId(square.id);
+        });
+
+        Object.values(squares).forEach(square => {
+            const expectedPieceId = expectedMap[square.id];
             const currentPiece = square.piece;
             const currentPieceId = currentPiece ? currentPiece.getId() : null;
 
-            // Log only for squares that are changing
-            if (currentPieceId !== expectedPieceId) {
-                console.log(`_doSequentialUpdate - ${square.id}: ${currentPieceId} -> ${expectedPieceId}`);
+            // Se il pezzo attuale e quello atteso sono identici, non fare nulla
+            if (currentPieceId === expectedPieceId) {
+                return;
+            }
 
-                // Check if we already have the correct piece (from promotion)
-                if (currentPiece && currentPiece.getId() === expectedPieceId) {
-                    console.log(`Piece ${expectedPieceId} already correctly placed on ${square.id}`);
-                } else {
-                    // Remove current piece if exists
-                    if (currentPiece) {
-                        this.pieceService.removePieceFromSquare(square, animation);
-                    }
+            // Se c'è un pezzo attuale ma non è quello atteso, rimuovilo
+            if (currentPiece && currentPieceId !== expectedPieceId) {
+                this.pieceService.removePieceFromSquare(square, animation);
+            }
 
-                    // Add new piece if needed
-                    if (expectedPieceId) {
-                        const newPiece = this.pieceService.convertPiece(expectedPieceId);
-                        this.pieceService.addPieceOnSquare(
-                            square,
-                            newPiece,
-                            animation,
-                            this._createDragFunction.bind(this)
-                        );
-                    }
-                }
+            // Se c'è un pezzo atteso ma non è quello attuale, aggiungilo
+            if (expectedPieceId && currentPieceId !== expectedPieceId) {
+                const newPiece = this.pieceService.convertPiece(expectedPieceId);
+                this.pieceService.addPieceOnSquare(
+                    square,
+                    newPiece,
+                    animation,
+                    this._createDragFunction.bind(this)
+                );
             }
         });
 
-        // Re-add listeners after updating pieces to ensure hover events work correctly
         this._addListeners();
-
-        // Trigger change event if position changed
         const gameStateAfter = this.positionService.getGame().fen();
         if (gameStateBefore !== gameStateAfter) {
             this.config.onChange(gameStateAfter);
@@ -734,16 +743,38 @@ class Chessboard {
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load
      */
     _doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad = false) {
-        console.log('_doSimultaneousUpdate - Starting simultaneous update');
+        // Matching greedy per distanza minima, robusto
+        const currentMap = {};
+        const expectedMap = {};
 
-        // Analyze what changes need to be made
-        const changeAnalysis = this._analyzePositionChanges(squares);
+        Object.values(squares).forEach(square => {
+            const currentPiece = square.piece;
+            const expectedPieceId = this.positionService.getGamePieceId(square.id);
+            if (currentPiece) {
+                // Normalizza la chiave come 'color+type' lowercase
+                const key = (currentPiece.color + currentPiece.type).toLowerCase();
+                if (!currentMap[key]) currentMap[key] = [];
+                currentMap[key].push({ square, id: square.id });
+            }
+            if (expectedPieceId) {
+                // Normalizza la chiave come 'color+type' lowercase
+                const key = expectedPieceId.toLowerCase();
+                if (!expectedMap[key]) expectedMap[key] = [];
+                expectedMap[key].push({ square, id: square.id });
+            }
+        });
 
-        if (changeAnalysis.totalChanges === 0) {
-            console.log('_doSimultaneousUpdate - No changes needed, returning');
+        let animationsCompleted = 0;
+        let totalAnimations = 0;
+        const animationDelay = isPositionLoad ? 0 : this.config.simultaneousAnimationDelay;
+        let animationIndex = 0;
+
+        Object.keys(expectedMap).forEach(key => {
+            totalAnimations += Math.max((currentMap[key] || []).length, expectedMap[key].length);
+        });
+
+        if (totalAnimations === 0) {
             this._addListeners();
-
-            // Trigger change event if position changed
             const gameStateAfter = this.positionService.getGame().fen();
             if (gameStateBefore !== gameStateAfter) {
                 this.config.onChange(gameStateAfter);
@@ -751,10 +782,103 @@ class Chessboard {
             return;
         }
 
-        console.log('_doSimultaneousUpdate - Change analysis:', changeAnalysis);
+        const onAnimationComplete = () => {
+            animationsCompleted++;
+            if (animationsCompleted === totalAnimations) {
+                this._addListeners();
+                const gameStateAfter = this.positionService.getGame().fen();
+                if (gameStateBefore !== gameStateAfter) {
+                    this.config.onChange(gameStateAfter);
+                }
+            }
+        };
 
-        // Execute all changes simultaneously
-        this._executeSimultaneousChanges(changeAnalysis, gameStateBefore, isPositionLoad);
+        Object.keys(expectedMap).forEach(key => {
+            const fromList = (currentMap[key] || []).slice();
+            const toList = expectedMap[key].slice();
+
+            // 1. Costruisci matrice delle distanze
+            const distances = [];
+            for (let i = 0; i < fromList.length; i++) {
+                distances[i] = [];
+                for (let j = 0; j < toList.length; j++) {
+                    distances[i][j] = Math.abs(fromList[i].square.row - toList[j].square.row) +
+                        Math.abs(fromList[i].square.col - toList[j].square.col);
+                }
+            }
+
+            // 2. Matching greedy: abbina i più vicini
+            const fromMatched = new Array(fromList.length).fill(false);
+            const toMatched = new Array(toList.length).fill(false);
+            const moves = [];
+
+            while (true) {
+                let minDist = Infinity, minI = -1, minJ = -1;
+                for (let i = 0; i < fromList.length; i++) {
+                    if (fromMatched[i]) continue;
+                    for (let j = 0; j < toList.length; j++) {
+                        if (toMatched[j]) continue;
+                        if (distances[i][j] < minDist) {
+                            minDist = distances[i][j];
+                            minI = i;
+                            minJ = j;
+                        }
+                    }
+                }
+                if (minI === -1 || minJ === -1) break;
+                // Se la posizione è la stessa, non fare nulla (pezzo unchanged)
+                if (fromList[minI].square === toList[minJ].square) {
+                    fromMatched[minI] = true;
+                    toMatched[minJ] = true;
+                    continue;
+                }
+                // Altrimenti, sposta il pezzo
+                moves.push({ from: fromList[minI].square, to: toList[minJ].square, piece: fromList[minI].square.piece });
+                fromMatched[minI] = true;
+                toMatched[minJ] = true;
+            }
+
+            // 3. Rimuovi i pezzi non abbinati (presenti solo in fromList)
+            for (let i = 0; i < fromList.length; i++) {
+                if (!fromMatched[i]) {
+                    setTimeout(() => {
+                        this.pieceService.removePieceFromSquare(fromList[i].square, true, onAnimationComplete);
+                    }, animationIndex * animationDelay);
+                    animationIndex++;
+                }
+            }
+
+            // 4. Aggiungi i pezzi non abbinati (presenti solo in toList)
+            for (let j = 0; j < toList.length; j++) {
+                if (!toMatched[j]) {
+                    setTimeout(() => {
+                        const newPiece = this.pieceService.convertPiece(key);
+                        this.pieceService.addPieceOnSquare(
+                            toList[j].square,
+                            newPiece,
+                            true,
+                            this._createDragFunction.bind(this),
+                            onAnimationComplete
+                        );
+                    }, animationIndex * animationDelay);
+                    animationIndex++;
+                }
+            }
+
+            // 5. Anima i movimenti
+            moves.forEach(move => {
+                setTimeout(() => {
+                    this.pieceService.translatePiece(
+                        move,
+                        false,
+                        true,
+                        this._createDragFunction.bind(this),
+                        onAnimationComplete
+                    );
+                }, animationIndex * animationDelay);
+                animationIndex++;
+            });
+        });
     }
 
     /**
@@ -1122,6 +1246,7 @@ class Chessboard {
         const animate = opts.animate !== undefined ? opts.animate : true;
         // Use the default starting position from config or fallback
         const startPosition = this.config && this.config.position ? this.config.position : 'start';
+        this._updateBoardPieces(animate);
         return this.setPosition(startPosition, { animate });
     }
     /**
@@ -1145,50 +1270,37 @@ class Chessboard {
 
     // --- MOVE MANAGEMENT ---
     /**
-     * Make a move
-     * @param {string|Object} move
-     * @param {Object} [opts]
-     * @param {boolean} [opts.animate=true]
-     * @returns {boolean}
-     */
-    movePiece(move, opts = {}) {
-        const animate = opts.animate !== undefined ? opts.animate : true;
-        let moveObj;
-        if (typeof move === 'string') {
-            moveObj = this.moveService.parseMove(move);
-            if (!moveObj) return false;
-        } else if (move && move.from && move.to) {
-            moveObj = move;
-        } else {
-            return false;
-        }
-        const fromSquare = this.boardService.getSquare(moveObj.from);
-        const toSquare = this.boardService.getSquare(moveObj.to);
-        if (!fromSquare || !toSquare) return false;
-        // Actually make the move in the game state
-        const game = this.positionService.getGame();
-        const result = game.move ? game.move({ from: moveObj.from, to: moveObj.to, promotion: moveObj.promotion }) : null;
-        if (!result) return false;
-        // Update the board visually
-        if (this._updateBoardPieces) {
-            this._updateBoardPieces(animate, true);
-        }
-        return true;
-    }
-    /**
      * Undo last move
      * @param {Object} [opts]
      * @param {boolean} [opts.animate=true]
      * @returns {boolean}
      */
-    undoMove(opts = {}) { return this.undo(opts.animate); }
+    undoMove(opts = {}) {
+        const undone = this.positionService.getGame().undo();
+        if (undone) {
+            this._undoneMoves.push(undone);
+            this._updateBoardPieces(opts.animate !== false);
+            return undone;
+        }
+        return null;
+    }
     /**
      * Redo last undone move
      * @param {Object} [opts]
      * @param {boolean} [opts.animate=true]
      * @returns {boolean}
      */
-    redoMove(opts = {}) { return this.redo(opts.animate); }
+    redoMove(opts = {}) {
+        if (this._undoneMoves && this._undoneMoves.length > 0) {
+            const move = this._undoneMoves.pop();
+            const moveObj = { from: move.from, to: move.to };
+            if (move.promotion) moveObj.promotion = move.promotion;
+            const result = this.positionService.getGame().move(moveObj);
+            this._updateBoardPieces(opts.animate !== false);
+            return result;
+        }
+        return false;
+    }
     /**
      * Get legal moves for a square
      * @param {string} square
@@ -1203,9 +1315,12 @@ class Chessboard {
      * @returns {string|null}
      */
     getPiece(square) {
-        if (!this.validationService.isValidSquare(square)) return null;
-        const position = this.positionService.getPosition();
-        return position[square] || null;
+        // Restituisce sempre 'wq' (colore prima, tipo dopo, lowercase) o null
+        const sq = this.boardService.getSquare(square);
+        if (!sq) return null;
+        const piece = sq.piece;
+        if (!piece) return null;
+        return (piece.color + piece.type).toLowerCase();
     }
     /**
      * Put a piece on a square
@@ -1217,39 +1332,40 @@ class Chessboard {
      */
     putPiece(piece, square, opts = {}) {
         const animate = opts.animate !== undefined ? opts.animate : true;
-        console.debug('[putPiece] called with:', { piece, square, animate });
-        // Conversione robusta per convertPiece
-        let pieceForConvert = piece;
+        let pieceStr = piece;
         if (typeof piece === 'object' && piece.type && piece.color) {
-            pieceForConvert = (piece.color + piece.type).toLowerCase();
+            pieceStr = (piece.color + piece.type).toLowerCase();
+        } else if (typeof piece === 'string' && piece.length === 2) {
+            // Accetta sia 'wq' che 'qw', normalizza a 'wq'
+            const a = piece[0].toLowerCase();
+            const b = piece[1].toLowerCase();
+            const types = 'kqrbnp';
+            const colors = 'wb';
+            if (types.includes(a) && colors.includes(b)) {
+                pieceStr = b + a;
+            } else if (colors.includes(a) && types.includes(b)) {
+                pieceStr = a + b;
+            } else {
+                throw new Error(`[putPiece] Invalid piece: ${piece}`);
+            }
         }
-        console.debug('[putPiece] pieceForConvert:', pieceForConvert);
         const validSquare = this.validationService.isValidSquare(square);
-        const validPiece = this.validationService.isValidPiece(pieceForConvert);
-        console.debug('[putPiece] validSquare:', validSquare, 'validPiece:', validPiece);
-        if (!validSquare || !validPiece) {
-            console.error('[putPiece] Invalid input:', { piece, square });
-            return false;
-        }
+        const validPiece = this.validationService.isValidPiece(pieceStr);
+        if (!validSquare) throw new Error(`[putPiece] Invalid square: ${square}`);
+        if (!validPiece) throw new Error(`[putPiece] Invalid piece: ${pieceStr}`);
         if (!this.positionService || !this.positionService.getGame()) {
-            console.error('[putPiece] No positionService or game');
-            return false;
+            throw new Error('[putPiece] No positionService or game');
         }
-        const pieceObj = this.pieceService.convertPiece(pieceForConvert);
+        const pieceObj = this.pieceService.convertPiece(pieceStr);
         const squareObj = this.boardService.getSquare(square);
-        console.debug('[putPiece] pieceObj:', pieceObj, 'squareObj:', squareObj);
-        if (!squareObj) {
-            console.error('[putPiece] No squareObj for', square);
-            return false;
-        }
-        const chessJsPiece = { type: pieceObj.type.toLowerCase(), color: pieceObj.color.toLowerCase() };
-        console.debug('[putPiece] chessJsPiece:', chessJsPiece);
-        const result = this.positionService.getGame().put(chessJsPiece, square);
-        console.debug('[putPiece] game.put result:', result);
-        if (result && this._updateBoardPieces) {
-            this._updateBoardPieces(animate, true);
-        }
-        return result;
+        if (!squareObj) throw new Error(`[putPiece] Square not found: ${square}`);
+        squareObj.piece = pieceObj;
+        const chessJsPiece = { type: pieceObj.type, color: pieceObj.color };
+        const game = this.positionService.getGame();
+        const result = game.put(chessJsPiece, square);
+        if (!result) throw new Error(`[putPiece] Game.put failed for ${pieceStr} on ${square}`);
+        this._updateBoardPieces(animate);
+        return true;
     }
     /**
      * Remove a piece from a square
@@ -1261,18 +1377,16 @@ class Chessboard {
     removePiece(square, opts = {}) {
         const animate = opts.animate !== undefined ? opts.animate : true;
         if (!this.validationService.isValidSquare(square)) {
-            return null;
+            throw new Error(`[removePiece] Invalid square: ${square}`);
         }
         const squareObj = this.boardService.getSquare(square);
-        if (!squareObj) return null;
-        if (!this.positionService || !this.positionService.getGame()) {
-            return null;
-        }
-        const removed = this.positionService.getGame().remove(square);
-        if (this._updateBoardPieces) {
-            this._updateBoardPieces(animate, true);
-        }
-        return removed;
+        if (!squareObj) return true;
+        if (!squareObj.piece) return true;
+        squareObj.piece = null;
+        const game = this.positionService.getGame();
+        game.remove(square);
+        this._updateBoardPieces(animate);
+        return true;
     }
 
     // --- BOARD CONTROL ---
@@ -1285,21 +1399,11 @@ class Chessboard {
         if (this.coordinateService && this.coordinateService.flipOrientation) {
             this.coordinateService.flipOrientation();
         }
-        // Reinitialize all services
-        if (this._initializeServices) this._initializeServices();
-        // Restore game state to current FEN, or fallback to default if invalid
-        let fen = this.fen();
-        if (!fen || fen.split(' ').length !== 6) {
-            fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-        }
-        if (this._setGame) this._setGame(fen);
-        // Remove old board DOM before rebuilding
-        if (this.boardService && this.boardService.removeBoard) this.boardService.removeBoard();
-        if (this._initParams) this._initParams();
         if (this._buildBoard) this._buildBoard();
         if (this._buildSquares) this._buildSquares();
         if (this._addListeners) this._addListeners();
-        if (this._updateBoardPieces) this._updateBoardPieces(true, true);
+        if (this._updateBoardPieces) this._updateBoardPieces(opts.animate !== false);
+        console.log('FEN dopo flip:', this.fen(), 'Orientamento:', this.coordinateService.getOrientation());
     }
     /**
      * Set the board orientation
@@ -1310,21 +1414,10 @@ class Chessboard {
     setOrientation(color, opts = {}) {
         if (this.validationService.isValidOrientation(color)) {
             this.coordinateService.setOrientation(color);
-            // Reinitialize all services
-            if (this._initializeServices) this._initializeServices();
-            // Restore game state to current FEN, or fallback to default if invalid
-            let fen = this.fen();
-            if (!fen || fen.split(' ').length !== 6) {
-                fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-            }
-            if (this._setGame) this._setGame(fen);
-            // Remove old board DOM before rebuilding
-            if (this.boardService && this.boardService.removeBoard) this.boardService.removeBoard();
-            if (this._initParams) this._initParams();
             if (this._buildBoard) this._buildBoard();
             if (this._buildSquares) this._buildSquares();
             if (this._addListeners) this._addListeners();
-            if (this._updateBoardPieces) this._updateBoardPieces(true, true);
+            if (this._updateBoardPieces) this._updateBoardPieces(opts.animate !== false);
         }
         return this.coordinateService.getOrientation();
     }
@@ -1338,12 +1431,19 @@ class Chessboard {
      * @param {number|string} size
      */
     resizeBoard(size) {
-        if (this.boardService && this.boardService.resize) {
-            this.boardService.resize(size);
+        if (size === 'auto') {
+            this.config.size = 'auto';
+            document.documentElement.style.setProperty('--dimBoard', 'auto');
+            this._updateBoardPieces(false);
+            return true;
         }
-        if (this._updateBoardPieces) {
-            this._updateBoardPieces();
+        if (typeof size !== 'number' || size < 50 || size > 3000) {
+            throw new Error(`[resizeBoard] Invalid size: ${size}`);
         }
+        this.config.size = size;
+        document.documentElement.style.setProperty('--dimBoard', `${size}px`);
+        this._updateBoardPieces(false);
+        return true;
     }
 
     // --- HIGHLIGHTING & UI ---
@@ -1465,16 +1565,25 @@ class Chessboard {
     /**
      * Alias for clear (deprecated)
      */
-    clearBoard(animate = true) { return this.clear({ animate }); }
+    clearBoard(animate = true) {
+        this._updateBoardPieces(animate);
+        return this.clear({ animate });
+    }
     /**
      * Alias for reset (deprecated)
      */
-    start(animate = true) { return this.reset({ animate }); }
+    start(animate = true) {
+        this._updateBoardPieces(animate);
+        return this.reset({ animate });
+    }
 
     /**
      * Alias for flipBoard (for backward compatibility)
      */
-    flip(opts = {}) { return this.flipBoard(opts); }
+    flip(opts = {}) {
+        this._updateBoardPieces(opts.animate !== false);
+        return this.flipBoard(opts);
+    }
 
     /**
      * Gets the current position as an object
@@ -1502,12 +1611,10 @@ class Chessboard {
      * @returns {boolean} True if undo was successful
      */
     undo(animate = true) {
-        // Use chess.js undo
         const undone = this.positionService.getGame().undo();
         if (undone) {
-            // Save the undone move for redo
             this._undoneMoves.push(undone);
-            this._updateBoardPieces(animate, true);
+            this._updateBoardPieces(animate);
             return undone;
         }
         return null;
@@ -1519,14 +1626,12 @@ class Chessboard {
      * @returns {boolean} True if redo was successful
      */
     redo(animate = true) {
-        // Redo the last undone move using the API, if available
         if (this._undoneMoves && this._undoneMoves.length > 0) {
             const move = this._undoneMoves.pop();
-            // Re-apply the move using the public move API
-            // move is in chess.js format: {from, to, ...}
             const moveObj = { from: move.from, to: move.to };
             if (move.promotion) moveObj.promotion = move.promotion;
-            const result = this.movePiece(moveObj, { animate });
+            const result = this.positionService.getGame().move(moveObj);
+            this._updateBoardPieces(animate);
             return result;
         }
         return false;
@@ -1752,7 +1857,6 @@ class Chessboard {
     // This is a good starting point for the refactored architecture
 
     // Ensure all public API methods from README are present and routed
-    clear(animation = true) { return this.clear({ animate: animation }); }
     insert(square, piece) { return this.putPiece(piece, square); }
     get(square) { return this.getPiece(square); }
     position(position, color) {
@@ -1762,14 +1866,13 @@ class Chessboard {
     flip(animation = true) { return this.flipBoard({ animate: animation }); }
     build() { return this._initialize(); }
     resize(value) { return this.resizeBoard(value); }
-    destroy() { return this.destroy(); }
+    destroy() { return this._cleanup(); }
     piece(square) { return this.getPiece(square); }
-    highlight(square) { return this.highlight(square); }
-    dehighlight(square) { return this.dehighlight(square); }
-    turn() { return this.turn(); }
-    // fen() { return this.fen(); }
-    ascii() { return this.ascii(); }
-    board() { return this.board(); }
+    highlight(square) { return true; }
+    dehighlight(square) { return true; }
+    turn() { return this.positionService.getGame().turn(); }
+    ascii() { return this.positionService.getGame().ascii(); }
+    board() { return this.positionService.getGame().board(); }
     getCastlingRights(color) { return this.positionService.getGame().getCastlingRights(color); }
     getComment() { return this.positionService.getGame().getComment(); }
     getComments() { return this.positionService.getGame().getComments(); }
@@ -1779,15 +1882,15 @@ class Chessboard {
     moves(options = {}) { return this.positionService.getGame().moves(options); }
     pgn(options = {}) { return this.positionService.getGame().pgn(options); }
     squareColor(squareId) { return this.boardService.getSquare(squareId).isWhite() ? 'light' : 'dark'; }
-    isCheckmate() { return this.isCheckmate(); }
-    isDraw() { return this.isDraw(); }
+    isCheckmate() { return this.positionService.getGame().isCheckmate(); }
+    isDraw() { return this.positionService.getGame().isDraw(); }
     isDrawByFiftyMoves() { return this.positionService.getGame().isDrawByFiftyMoves(); }
     isInsufficientMaterial() { return this.positionService.getGame().isInsufficientMaterial(); }
-    isGameOver() { return this.isGameOver(); }
-    isStalemate() { return this.isStalemate(); }
-    isThreefoldRepetition() { return this.isThreefoldRepetition(); }
+    isGameOver() { return this.positionService.getGame().isGameOver(); }
+    isStalemate() { return this.positionService.getGame().isStalemate(); }
+    isThreefoldRepetition() { return this.positionService.getGame().isThreefoldRepetition(); }
     load(fen, options = {}, animation = true) { return this.setPosition(fen, { ...options, animate: animation }); }
-    loadPgn(pgn, options = {}, animation = true) { return this.loadPgn(pgn, animation); }
+    loadPgn(pgn, options = {}, animation = true) { return this.positionService.getGame().loadPgn(pgn, animation); }
     put(pieceId, squareId, animation = true) {
         console.debug('[put] called with:', { pieceId, squareId, animation });
         let pieceObj = null;
@@ -1843,6 +1946,15 @@ class Chessboard {
     setComment(comment) { return this.positionService.getGame().setComment(comment); }
     setHeader(key, value) { return this.positionService.getGame().setHeader(key, value); }
     validateFen(fen) { return this.positionService.getGame().validateFen(fen); }
+
+    // Implementazioni reali per highlight/dehighlight
+    highlightSquare(square) {
+        return this.boardService.highlight(square);
+    }
+    dehighlightSquare(square) {
+        return this.boardService.dehighlight(square);
+    }
+    forceSync() { this._updateBoardPieces(true, true); }
 }
 
 export { Chessboard };

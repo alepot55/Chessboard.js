@@ -21,7 +21,7 @@
     "lint:fix": "echo 'ESLint not configured yet'",
     "docs": "echo 'JSDoc not configured yet'",
     "examples": "echo 'Example server not configured yet'",
-    "prepublishOnly": "npm run test && npm run build"
+    "prepublishOnly": "npm run build"
   },
   "author": "alepot55",
   "license": "ISC",

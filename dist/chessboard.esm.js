@@ -7646,6 +7646,39 @@ let Chessboard$1 = class Chessboard {
         const squares = this.boardService.getAllSquares();
         const gameStateBefore = this.positionService.getGame().fen();
 
+        // PATCH ROBUSTA: se la board è completamente vuota, forza la rimozione di TUTTI i pezzi
+        if (/^8\/8\/8\/8\/8\/8\/8\/8/.test(gameStateBefore)) {
+            console.log('Board vuota rilevata - rimozione forzata di tutti i pezzi dal DOM');
+
+            // 1. Rimuovi tutti gli elementi DOM dei pezzi dal contenitore della board
+            const boardContainer = document.getElementById(this.config.id_div);
+            if (boardContainer) {
+                const pieceElements = boardContainer.querySelectorAll('.piece');
+                pieceElements.forEach(element => {
+                    console.log('Rimozione forzata elemento DOM pezzo:', element);
+                    element.remove();
+                });
+            }
+
+            // 2. Azzera tutti i riferimenti JS ai pezzi
+            Object.values(squares).forEach(sq => {
+                if (sq && sq.piece) {
+                    console.log('Azzero riferimento pezzo su casella:', sq.id);
+                    sq.piece = null;
+                }
+            });
+
+            // 3. Forza la pulizia di eventuali selezioni/hint
+            this._clearVisualState();
+
+            // 4. Aggiungi i listener e notifica il cambio
+            this._addListeners();
+            if (this.config.onChange) this.config.onChange(gameStateBefore);
+
+            console.log('Rimozione forzata completata');
+            return;
+        }
+
         console.log('_doUpdateBoardPieces - current FEN:', gameStateBefore);
         console.log('_doUpdateBoardPieces - animation:', animation, 'style:', this.config.animationStyle, 'isPositionLoad:', isPositionLoad);
 
@@ -8237,6 +8270,12 @@ let Chessboard$1 = class Chessboard {
         }
         if (this._clearVisualState) this._clearVisualState();
         this.positionService.getGame().clear();
+        // Forza la rimozione di tutti i pezzi dal DOM
+        if (this.boardService && this.boardService.squares) {
+            Object.values(this.boardService.squares).forEach(sq => {
+                if (sq && sq.piece) sq.piece = null;
+            });
+        }
         if (this._updateBoardPieces) {
             this._updateBoardPieces(animate, true);
         }

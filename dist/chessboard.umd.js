@@ -4,80 +4,1187 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Chessboard = {}));
 })(this, (function (exports) { 'use strict';
 
-    const animationTime = {
-        'fast': 200,
-        'slow': 600,
-        'normal': 400,
-        'verySlow': 1000,
-        'veryFast': 100
+    /**
+     * Standard chess positions and FEN constants
+     * @module constants/positions
+     * @since 2.0.0
+     */
+
+    /**
+     * Standard chess positions used throughout the application
+     * @type {Object.<string, string>}
+     * @readonly
+     */
+    const STANDARD_POSITIONS = {
+        'start': 'start',
+        'default': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        'empty': '8/8/8/8/8/8/8/8 w - - 0 1'
     };
 
-    const boolValues = {
-        'true': true,
-        'false': false,
-        'none': false,
+    /**
+     * Default starting position FEN string
+     * @type {string}
+     * @readonly
+     */
+    const DEFAULT_STARTING_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+    /**
+     * Chess piece types
+     * @type {string[]}
+     * @readonly
+     */
+    const PIECE_TYPES = ['p', 'r', 'n', 'b', 'q', 'k'];
+
+    /**
+     * Chess piece colors
+     * @type {string[]}
+     * @readonly
+     */
+    const PIECE_COLORS = ['w', 'b'];
+
+    /**
+     * Valid promotion pieces
+     * @type {string[]}
+     * @readonly
+     */
+    const PROMOTION_PIECES = ['q', 'r', 'b', 'n'];
+
+    /**
+     * Board coordinates letters
+     * @type {string}
+     * @readonly
+     */
+    const BOARD_LETTERS = 'abcdefgh';
+
+    /**
+     * Board size constants
+     * @type {Object}
+     * @readonly
+     */
+    const BOARD_SIZE = {
+        ROWS: 8,
+        COLS: 8,
+        TOTAL_SQUARES: 64
+    };
+
+    /**
+     * Error messages and error handling utilities
+     * @module errors/messages
+     * @since 2.0.0
+     */
+
+    /**
+     * Error codes for categorizing different types of errors
+     * @type {Object.<string, string>}
+     * @readonly
+     */
+    const ERROR_CODES = Object.freeze({
+        VALIDATION_ERROR: 'VALIDATION_ERROR',
+        CONFIG_ERROR: 'CONFIG_ERROR',
+        MOVE_ERROR: 'MOVE_ERROR',
+        DOM_ERROR: 'DOM_ERROR',
+        ANIMATION_ERROR: 'ANIMATION_ERROR',
+        PIECE_ERROR: 'PIECE_ERROR',
+        INITIALIZATION_ERROR: 'INITIALIZATION_ERROR',
+        POSITION_ERROR: 'POSITION_ERROR',
+        FEN_ERROR: 'FEN_ERROR',
+        SQUARE_ERROR: 'SQUARE_ERROR',
+        THEME_ERROR: 'THEME_ERROR',
+        NETWORK_ERROR: 'NETWORK_ERROR'
+    });
+
+    /**
+     * Standardized error messages for the chessboard application
+     * @type {Object.<string, string>}
+     * @readonly
+     */
+    const ERROR_MESSAGES = Object.freeze({
+        // Position and FEN related
+        invalid_position: 'Invalid position: ',
+        invalid_fen: 'Invalid FEN string: ',
+        position_load_failed: 'Failed to load position: ',
+        
+        // DOM and UI related
+        invalid_id_div: 'Board container not found: ',
+        invalid_value: 'Invalid value: ',
+        dom_operation_failed: 'DOM operation failed: ',
+        element_not_found: 'Element not found: ',
+        
+        // Piece related
+        invalid_piece: 'Invalid piece notation: ',
+        invalid_square: 'Invalid square notation: ',
+        invalid_piecesPath: 'Invalid pieces path: ',
+        piece_operation_failed: 'Piece operation failed: ',
+        
+        // Board configuration
+        invalid_orientation: 'Invalid orientation: ',
+        invalid_color: 'Invalid color: ',
+        invalid_mode: 'Invalid mode: ',
+        invalid_dropOffBoard: 'Invalid dropOffBoard setting: ',
+        invalid_size: 'Invalid size: ',
+        invalid_movableColors: 'Invalid movableColors setting: ',
+        
+        // Animation related
+        invalid_snapbackTime: 'Invalid snapbackTime: ',
+        invalid_snapbackAnimation: 'Invalid snapbackAnimation: ',
+        invalid_fadeTime: 'Invalid fadeTime: ',
+        invalid_fadeAnimation: 'Invalid fadeAnimation: ',
+        invalid_ratio: 'Invalid ratio: ',
+        invalid_animationStyle: 'Invalid animationStyle: ',
+        animation_failed: 'Animation failed: ',
+        
+        // Event handlers
+        invalid_onMove: 'Invalid onMove callback: ',
+        invalid_onMoveEnd: 'Invalid onMoveEnd callback: ',
+        invalid_onChange: 'Invalid onChange callback: ',
+        invalid_onDragStart: 'Invalid onDragStart callback: ',
+        invalid_onDragMove: 'Invalid onDragMove callback: ',
+        invalid_onDrop: 'Invalid onDrop callback: ',
+        invalid_onSnapbackEnd: 'Invalid onSnapbackEnd callback: ',
+        callback_execution_failed: 'Callback execution failed: ',
+        
+        // Visual styling
+        invalid_whiteSquare: 'Invalid whiteSquare color: ',
+        invalid_blackSquare: 'Invalid blackSquare color: ',
+        invalid_highlight: 'Invalid highlight color: ',
+        invalid_selectedSquareWhite: 'Invalid selectedSquareWhite color: ',
+        invalid_selectedSquareBlack: 'Invalid selectedSquareBlack color: ',
+        invalid_movedSquareWhite: 'Invalid movedSquareWhite color: ',
+        invalid_movedSquareBlack: 'Invalid movedSquareBlack color: ',
+        invalid_choiceSquare: 'Invalid choiceSquare color: ',
+        invalid_coverSquare: 'Invalid coverSquare color: ',
+        invalid_hintColor: 'Invalid hintColor: ',
+        
+        // Move related
+        invalid_move: 'Invalid move: ',
+        invalid_move_format: 'Invalid move format: ',
+        move_execution_failed: 'Move execution failed: ',
+        illegal_move: 'Illegal move: ',
+        square_no_piece: 'No piece found on square: ',
+        move_validation_failed: 'Move validation failed: ',
+        
+        // Game state
+        game_over: 'Game is over',
+        invalid_turn: 'Invalid turn: ',
+        position_validation_failed: 'Position validation failed: ',
+        
+        // Theme and assets
+        theme_load_failed: 'Theme loading failed: ',
+        asset_load_failed: 'Asset loading failed: ',
+        invalid_theme: 'Invalid theme: ',
+        
+        // Network and resources
+        network_error: 'Network error: ',
+        resource_not_found: 'Resource not found: ',
+        timeout_error: 'Operation timed out: ',
+        
+        // General errors
+        initialization_failed: 'Initialization failed: ',
+        operation_failed: 'Operation failed: ',
+        invalid_state: 'Invalid state: ',
+        memory_limit_exceeded: 'Memory limit exceeded',
+        performance_degraded: 'Performance degraded: '
+    });
+
+    /**
+     * Error severity levels
+     * @type {Object.<string, string>}
+     * @readonly
+     */
+    const ERROR_SEVERITY = Object.freeze({
+        LOW: 'LOW',
+        MEDIUM: 'MEDIUM',
+        HIGH: 'HIGH',
+        CRITICAL: 'CRITICAL'
+    });
+
+    /**
+     * Maps error codes to their severity levels
+     * @type {Object.<string, string>}
+     * @readonly
+     */
+    Object.freeze({
+        [ERROR_CODES.VALIDATION_ERROR]: ERROR_SEVERITY.MEDIUM,
+        [ERROR_CODES.CONFIG_ERROR]: ERROR_SEVERITY.HIGH,
+        [ERROR_CODES.MOVE_ERROR]: ERROR_SEVERITY.LOW,
+        [ERROR_CODES.DOM_ERROR]: ERROR_SEVERITY.HIGH,
+        [ERROR_CODES.ANIMATION_ERROR]: ERROR_SEVERITY.LOW,
+        [ERROR_CODES.PIECE_ERROR]: ERROR_SEVERITY.MEDIUM,
+        [ERROR_CODES.INITIALIZATION_ERROR]: ERROR_SEVERITY.CRITICAL,
+        [ERROR_CODES.POSITION_ERROR]: ERROR_SEVERITY.MEDIUM,
+        [ERROR_CODES.FEN_ERROR]: ERROR_SEVERITY.MEDIUM,
+        [ERROR_CODES.SQUARE_ERROR]: ERROR_SEVERITY.MEDIUM,
+        [ERROR_CODES.THEME_ERROR]: ERROR_SEVERITY.LOW,
+        [ERROR_CODES.NETWORK_ERROR]: ERROR_SEVERITY.MEDIUM
+    });
+
+    /**
+     * Custom error classes for better error handling
+     * @module errors/ChessboardError
+     * @since 2.0.0
+     */
+
+
+    /**
+     * Base error class for all chessboard-related errors
+     * @class
+     * @extends Error
+     */
+    class ChessboardError extends Error {
+        /**
+         * Creates a new ChessboardError instance
+         * @param {string} message - Error message
+         * @param {string} code - Error code from ERROR_CODES
+         * @param {Object} [context={}] - Additional context information
+         */
+        constructor(message, code, context = {}) {
+            super(message);
+            this.name = 'ChessboardError';
+            this.code = code;
+            this.context = context;
+            this.timestamp = new Date().toISOString();
+            
+            // Maintain stack trace for debugging
+            if (Error.captureStackTrace) {
+                Error.captureStackTrace(this, ChessboardError);
+            }
+        }
+    }
+
+    /**
+     * Error thrown when validation fails
+     * @class
+     * @extends ChessboardError
+     */
+    class ValidationError extends ChessboardError {
+        /**
+         * Creates a new ValidationError instance
+         * @param {string} message - Error message
+         * @param {string} field - Field that failed validation
+         * @param {*} value - Value that failed validation
+         */
+        constructor(message, field, value) {
+            super(message, ERROR_CODES.VALIDATION_ERROR, { field, value });
+            this.name = 'ValidationError';
+            this.field = field;
+            this.value = value;
+        }
+    }
+
+    /**
+     * Error thrown when configuration is invalid
+     * @class
+     * @extends ChessboardError
+     */
+    class ConfigurationError extends ChessboardError {
+        /**
+         * Creates a new ConfigurationError instance
+         * @param {string} message - Error message
+         * @param {string} configKey - Configuration key that is invalid
+         * @param {*} configValue - Configuration value that is invalid
+         */
+        constructor(message, configKey, configValue) {
+            super(message, ERROR_CODES.CONFIG_ERROR, { configKey, configValue });
+            this.name = 'ConfigurationError';
+            this.configKey = configKey;
+            this.configValue = configValue;
+        }
+    }
+
+    /**
+     * Error thrown when a move is invalid or fails
+     * @class
+     * @extends ChessboardError
+     */
+    class MoveError extends ChessboardError {
+        /**
+         * Creates a new MoveError instance
+         * @param {string} message - Error message
+         * @param {string} from - Source square
+         * @param {string} to - Target square
+         * @param {string} [piece] - Piece being moved
+         */
+        constructor(message, from, to, piece) {
+            super(message, ERROR_CODES.MOVE_ERROR, { from, to, piece });
+            this.name = 'MoveError';
+            this.from = from;
+            this.to = to;
+            this.piece = piece;
+        }
+    }
+
+    /**
+     * Error thrown when DOM operations fail
+     * @class
+     * @extends ChessboardError
+     */
+    class DOMError extends ChessboardError {
+        /**
+         * Creates a new DOMError instance
+         * @param {string} message - Error message
+         * @param {string} elementId - Element ID that caused the error
+         */
+        constructor(message, elementId) {
+            super(message, ERROR_CODES.DOM_ERROR, { elementId });
+            this.name = 'DOMError';
+            this.elementId = elementId;
+        }
+    }
+
+    /**
+     * Error thrown when piece operations fail
+     * @class
+     * @extends ChessboardError
+     */
+    class PieceError extends ChessboardError {
+        /**
+         * Creates a new PieceError instance
+         * @param {string} message - Error message
+         * @param {string} pieceId - Piece ID that caused the error
+         * @param {string} [square] - Square where the error occurred
+         */
+        constructor(message, pieceId, square) {
+            super(message, ERROR_CODES.PIECE_ERROR, { pieceId, square });
+            this.name = 'PieceError';
+            this.pieceId = pieceId;
+            this.square = square;
+        }
+    }
+
+    /**
+     * Service for input validation and data sanitization
+     * @module services/ValidationService
+     * @since 2.0.0
+     */
+
+
+    /**
+     * Validation patterns compiled for performance
+     * @constant
+     * @type {Object}
+     */
+    const VALIDATION_PATTERNS = Object.freeze({
+        square: /^[a-h][1-8]$/,
+        piece: /^[prnbqkPRNBQK][wb]$/,
+        fen: /^([rnbqkpRNBQKP1-8]+\/){7}[rnbqkpRNBQKP1-8]+\s[wb]\s[KQkq-]+\s[a-h1-8-]+\s\d+\s\d+$/,
+        move: /^[a-h][1-8][a-h][1-8][qrnb]?$/,
+        color: /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
+    });
+
+    /**
+     * Valid values for various configuration options
+     * @constant
+     * @type {Object}
+     */
+    const VALID_VALUES = Object.freeze({
+        orientations: ['w', 'b', 'white', 'black'],
+        colors: ['w', 'b', 'white', 'black'],
+        movableColors: ['w', 'b', 'white', 'black', 'both', 'none'],
+        dropOffBoard: ['snapback', 'trash'],
+        easingTypes: ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'],
+        animationStyles: ['sequential', 'simultaneous'],
+        modes: ['normal', 'creative', 'analysis'],
+        promotionPieces: ['q', 'r', 'b', 'n', 'Q', 'R', 'B', 'N']
+    });
+
+    /**
+     * Size constraints for validation
+     * @constant
+     * @type {Object}
+     */
+    const SIZE_CONSTRAINTS = Object.freeze({
+        min: 50,
+        max: 2000,
+        maxTime: 10000,
+        maxDelay: 5000
+    });
+
+    /**
+     * Service responsible for validating inputs and data
+     * Implements caching for performance optimization
+     * @class
+     */
+    class ValidationService {
+        /**
+         * Creates a new ValidationService instance
+         */
+        constructor() {
+            // Cache for validation results to improve performance
+            this._validationCache = new Map();
+            this._cacheMaxSize = 1000;
+            
+            // Compile patterns for reuse
+            this._patterns = VALIDATION_PATTERNS;
+            this._validValues = VALID_VALUES;
+            this._constraints = SIZE_CONSTRAINTS;
+        }
+
+        /**
+         * Validates a square identifier with caching
+         * @param {string} square - Square to validate (e.g., 'e4')
+         * @returns {boolean} True if valid
+         */
+        isValidSquare(square) {
+            const cacheKey = `square:${square}`;
+            
+            if (this._validationCache.has(cacheKey)) {
+                return this._validationCache.get(cacheKey);
+            }
+            
+            const isValid = typeof square === 'string' && 
+                            square.length === 2 && 
+                            this._patterns.square.test(square);
+            
+            this._cacheValidationResult(cacheKey, isValid);
+            return isValid;
+        }
+
+        /**
+         * Validates a piece identifier with enhanced format support
+         * @param {string} piece - Piece to validate (e.g., 'wK', 'bp')
+         * @returns {boolean} True if valid
+         */
+        isValidPiece(piece) {
+            if (typeof piece !== 'string' || piece.length !== 2) {
+                return false;
+            }
+            
+            const cacheKey = `piece:${piece}`;
+            
+            if (this._validationCache.has(cacheKey)) {
+                return this._validationCache.get(cacheKey);
+            }
+            
+            const [first, second] = piece.split('');
+            
+            // Check both formats: [type][color] and [color][type]
+            const format1 = PIECE_TYPES.includes(first.toLowerCase()) && 
+                           PIECE_COLORS.includes(second);
+            const format2 = PIECE_COLORS.includes(first) && 
+                           PIECE_TYPES.includes(second.toLowerCase());
+            
+            const isValid = format1 || format2;
+            this._cacheValidationResult(cacheKey, isValid);
+            return isValid;
+        }
+
+        /**
+         * Validates a FEN string with comprehensive checks
+         * @param {string} fen - FEN string to validate
+         * @returns {boolean} True if valid
+         */
+        isValidFen(fen) {
+            if (typeof fen !== 'string') {
+                return false;
+            }
+            
+            const cacheKey = `fen:${fen}`;
+            
+            if (this._validationCache.has(cacheKey)) {
+                return this._validationCache.get(cacheKey);
+            }
+            
+            // Basic pattern check
+            if (!this._patterns.fen.test(fen)) {
+                this._cacheValidationResult(cacheKey, false);
+                return false;
+            }
+            
+            // Additional FEN validation
+            const isValid = this._validateFenStructure(fen);
+            this._cacheValidationResult(cacheKey, isValid);
+            return isValid;
+        }
+
+        /**
+         * Validates FEN structure in detail
+         * @private
+         * @param {string} fen - FEN string to validate
+         * @returns {boolean} True if valid
+         */
+        _validateFenStructure(fen) {
+            const parts = fen.split(' ');
+            
+            if (parts.length !== 6) {
+                return false;
+            }
+            
+            // Validate piece placement
+            const ranks = parts[0].split('/');
+            if (ranks.length !== 8) {
+                return false;
+            }
+            
+            // Validate each rank
+            for (const rank of ranks) {
+                if (!this._validateRank(rank)) {
+                    return false;
+                }
+            }
+            
+            // Validate active color
+            if (!['w', 'b'].includes(parts[1])) {
+                return false;
+            }
+            
+            // Validate castling rights
+            if (!/^[KQkq-]*$/.test(parts[2])) {
+                return false;
+            }
+            
+            // Validate en passant target
+            if (parts[3] !== '-' && !this.isValidSquare(parts[3])) {
+                return false;
+            }
+            
+            // Validate halfmove clock and fullmove number
+            const halfmove = parseInt(parts[4], 10);
+            const fullmove = parseInt(parts[5], 10);
+            
+            return !isNaN(halfmove) && !isNaN(fullmove) && 
+                   halfmove >= 0 && fullmove >= 1;
+        }
+
+        /**
+         * Validates a single rank in FEN notation
+         * @private
+         * @param {string} rank - Rank to validate
+         * @returns {boolean} True if valid
+         */
+        _validateRank(rank) {
+            let squares = 0;
+            
+            for (let i = 0; i < rank.length; i++) {
+                const char = rank[i];
+                
+                if (/[1-8]/.test(char)) {
+                    squares += parseInt(char, 10);
+                } else if (/[prnbqkPRNBQK]/.test(char)) {
+                    squares += 1;
+                } else {
+                    return false;
+                }
+            }
+            
+            return squares === 8;
+        }
+
+        /**
+         * Validates a move string with comprehensive format support
+         * @param {string} move - Move string to validate (e.g., 'e2e4', 'e7e8q')
+         * @returns {boolean} True if valid
+         */
+        isValidMove(move) {
+            if (typeof move !== 'string') {
+                return false;
+            }
+            
+            const cacheKey = `move:${move}`;
+            
+            if (this._validationCache.has(cacheKey)) {
+                return this._validationCache.get(cacheKey);
+            }
+            
+            const isValid = this._validateMoveFormat(move);
+            this._cacheValidationResult(cacheKey, isValid);
+            return isValid;
+        }
+
+        /**
+         * Validates move format in detail
+         * @private
+         * @param {string} move - Move string to validate
+         * @returns {boolean} True if valid
+         */
+        _validateMoveFormat(move) {
+            if (move.length < 4 || move.length > 5) {
+                return false;
+            }
+            
+            const from = move.slice(0, 2);
+            const to = move.slice(2, 4);
+            const promotion = move.slice(4, 5);
+            
+            if (!this.isValidSquare(from) || !this.isValidSquare(to)) {
+                return false;
+            }
+            
+            if (promotion && !this._validValues.promotionPieces.includes(promotion)) {
+                return false;
+            }
+            
+            // Additional move validation (e.g., source and target different)
+            return from !== to;
+        }
+
+        /**
+         * Validates board orientation
+         * @param {string} orientation - Orientation to validate
+         * @returns {boolean} True if valid
+         */
+        isValidOrientation(orientation) {
+            return this._validValues.orientations.includes(orientation);
+        }
+
+        /**
+         * Validates a color value
+         * @param {string} color - Color to validate
+         * @returns {boolean} True if valid
+         */
+        isValidColor(color) {
+            return this._validValues.colors.includes(color);
+        }
+
+        /**
+         * Validates a size value with constraints
+         * @param {number|string} size - Size to validate
+         * @returns {boolean} True if valid
+         */
+        isValidSize(size) {
+            if (size === 'auto') {
+                return true;
+            }
+            
+            if (typeof size === 'number') {
+                return size >= this._constraints.min && size <= this._constraints.max;
+            }
+            
+            return false;
+        }
+
+        /**
+         * Validates a time value with constraints
+         * @param {number} time - Time value to validate
+         * @returns {boolean} True if valid
+         */
+        isValidTime(time) {
+            return typeof time === 'number' && 
+                   time >= 0 && 
+                   time <= this._constraints.maxTime;
+        }
+
+        /**
+         * Validates a callback function
+         * @param {Function} callback - Callback to validate
+         * @returns {boolean} True if valid
+         */
+        isValidCallback(callback) {
+            return typeof callback === 'function';
+        }
+
+        /**
+         * Validates a DOM element ID
+         * @param {string} id - Element ID to validate
+         * @returns {boolean} True if valid
+         */
+        isValidElementId(id) {
+            return typeof id === 'string' && 
+                   id.length > 0 && 
+                   id.length <= 100 && // Reasonable length limit
+                   /^[a-zA-Z][\w:-]*$/.test(id); // Valid HTML ID format
+        }
+
+        /**
+         * Validates movable colors configuration
+         * @param {string} colors - Colors value to validate
+         * @returns {boolean} True if valid
+         */
+        isValidMovableColors(colors) {
+            return this._validValues.movableColors.includes(colors);
+        }
+
+        /**
+         * Validates drop off board configuration
+         * @param {string} dropOff - Drop off board value to validate
+         * @returns {boolean} True if valid
+         */
+        isValidDropOffBoard(dropOff) {
+            return this._validValues.dropOffBoard.includes(dropOff);
+        }
+
+        /**
+         * Validates animation easing type
+         * @param {string} easing - Easing type to validate
+         * @returns {boolean} True if valid
+         */
+        isValidEasing(easing) {
+            return this._validValues.easingTypes.includes(easing);
+        }
+
+        /**
+         * Validates animation style
+         * @param {string} style - Animation style to validate
+         * @returns {boolean} True if valid
+         */
+        isValidAnimationStyle(style) {
+            return this._validValues.animationStyles.includes(style);
+        }
+
+        /**
+         * Validates CSS color format
+         * @param {string} color - Color string to validate
+         * @returns {boolean} True if valid
+         */
+        isValidCSSColor(color) {
+            if (typeof color !== 'string') {
+                return false;
+            }
+            
+            // Check for hex colors
+            if (this._patterns.color.test(color)) {
+                return true;
+            }
+            
+            // Check for named colors (basic set)
+            const namedColors = ['white', 'black', 'red', 'green', 'blue', 'yellow', 'cyan', 'magenta'];
+            if (namedColors.includes(color.toLowerCase())) {
+                return true;
+            }
+            
+            // Check for rgb/rgba format
+            if (/^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/.test(color) ||
+                /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-1](\.\d+)?\s*\)$/.test(color)) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        /**
+         * Validates and sanitizes a square identifier
+         * @param {string} square - Square to validate
+         * @returns {string} Sanitized square
+         * @throws {ValidationError} If square is invalid
+         */
+        validateSquare(square) {
+            if (!this.isValidSquare(square)) {
+                throw new ValidationError(
+                    ERROR_MESSAGES.invalid_square + square, 
+                    'square', 
+                    square
+                );
+            }
+            return square.toLowerCase();
+        }
+
+        /**
+         * Validates and sanitizes a piece identifier
+         * @param {string} piece - Piece to validate
+         * @returns {string} Sanitized piece
+         * @throws {ValidationError} If piece is invalid
+         */
+        validatePiece(piece) {
+            if (!this.isValidPiece(piece)) {
+                throw new ValidationError(
+                    ERROR_MESSAGES.invalid_piece + piece, 
+                    'piece', 
+                    piece
+                );
+            }
+            return piece.toLowerCase();
+        }
+
+        /**
+         * Validates and sanitizes a FEN string
+         * @param {string} fen - FEN to validate
+         * @returns {string} Sanitized FEN
+         * @throws {ValidationError} If FEN is invalid
+         */
+        validateFen(fen) {
+            if (!this.isValidFen(fen)) {
+                throw new ValidationError(
+                    ERROR_MESSAGES.invalid_fen + fen, 
+                    'fen', 
+                    fen
+                );
+            }
+            return fen.trim();
+        }
+
+        /**
+         * Validates and sanitizes a move string
+         * @param {string} move - Move to validate
+         * @returns {string} Sanitized move
+         * @throws {ValidationError} If move is invalid
+         */
+        validateMove(move) {
+            if (!this.isValidMove(move)) {
+                throw new ValidationError(
+                    ERROR_MESSAGES.invalid_move + move, 
+                    'move', 
+                    move
+                );
+            }
+            return move.toLowerCase();
+        }
+
+        /**
+         * Validates and sanitizes orientation
+         * @param {string} orientation - Orientation to validate
+         * @returns {string} Sanitized orientation ('w' or 'b')
+         * @throws {ValidationError} If orientation is invalid
+         */
+        validateOrientation(orientation) {
+            if (!this.isValidOrientation(orientation)) {
+                throw new ValidationError(
+                    ERROR_MESSAGES.invalid_orientation + orientation, 
+                    'orientation', 
+                    orientation
+                );
+            }
+            
+            // Normalize to 'w' or 'b'
+            return orientation === 'white' ? 'w' : 
+                   orientation === 'black' ? 'b' : 
+                   orientation;
+        }
+
+        /**
+         * Validates and sanitizes color
+         * @param {string} color - Color to validate
+         * @returns {string} Sanitized color ('w' or 'b')
+         * @throws {ValidationError} If color is invalid
+         */
+        validateColor(color) {
+            if (!this.isValidColor(color)) {
+                throw new ValidationError(
+                    ERROR_MESSAGES.invalid_color + color, 
+                    'color', 
+                    color
+                );
+            }
+            
+            // Normalize to 'w' or 'b'
+            return color === 'white' ? 'w' : 
+                   color === 'black' ? 'b' : 
+                   color;
+        }
+
+        /**
+         * Validates and sanitizes size
+         * @param {number|string} size - Size to validate
+         * @returns {number|string} Sanitized size
+         * @throws {ValidationError} If size is invalid
+         */
+        validateSize(size) {
+            if (!this.isValidSize(size)) {
+                throw new ValidationError(
+                    ERROR_MESSAGES.invalid_size + size, 
+                    'size', 
+                    size
+                );
+            }
+            return size;
+        }
+
+        /**
+         * Validates configuration object with comprehensive checks
+         * @param {Object} config - Configuration to validate
+         * @returns {Object} Validated configuration
+         * @throws {ValidationError} If configuration is invalid
+         */
+        validateConfig(config) {
+            if (!config || typeof config !== 'object') {
+                throw new ValidationError(
+                    'Configuration must be an object', 
+                    'config', 
+                    config
+                );
+            }
+            
+            const errors = [];
+            
+            // Validate required fields
+            if (!config.id && !config.id_div) {
+                errors.push('Configuration must include id or id_div');
+            }
+            
+            // Validate optional fields
+            if (config.orientation && !this.isValidOrientation(config.orientation)) {
+                errors.push(ERROR_MESSAGES.invalid_orientation + config.orientation);
+            }
+            
+            if (config.size && !this.isValidSize(config.size)) {
+                errors.push(ERROR_MESSAGES.invalid_size + config.size);
+            }
+            
+            if (config.movableColors && !this.isValidMovableColors(config.movableColors)) {
+                errors.push(ERROR_MESSAGES.invalid_color + config.movableColors);
+            }
+            
+            if (config.dropOffBoard && !this.isValidDropOffBoard(config.dropOffBoard)) {
+                errors.push(ERROR_MESSAGES.invalid_dropOffBoard + config.dropOffBoard);
+            }
+            
+            if (config.animationStyle && !this.isValidAnimationStyle(config.animationStyle)) {
+                errors.push(ERROR_MESSAGES.invalid_animationStyle + config.animationStyle);
+            }
+            
+            // Validate callbacks
+            const callbacks = ['onMove', 'onMoveEnd', 'onChange', 'onDragStart', 'onDragMove', 'onDrop', 'onSnapbackEnd'];
+            for (const callback of callbacks) {
+                if (config[callback] && !this.isValidCallback(config[callback])) {
+                    errors.push(`Invalid ${callback} callback`);
+                }
+            }
+            
+            // Validate colors
+            const colorFields = ['whiteSquare', 'blackSquare', 'highlight', 'hintColor'];
+            for (const field of colorFields) {
+                if (config[field] && !this.isValidCSSColor(config[field])) {
+                    errors.push(`Invalid ${field} color: ${config[field]}`);
+                }
+            }
+            
+            if (errors.length > 0) {
+                throw new ValidationError(
+                    `Configuration validation failed: ${errors.join(', ')}`, 
+                    'config', 
+                    config
+                );
+            }
+            
+            return config;
+        }
+
+        /**
+         * Caches validation result for performance
+         * @private
+         * @param {string} key - Cache key
+         * @param {boolean} result - Validation result
+         */
+        _cacheValidationResult(key, result) {
+            if (this._validationCache.size >= this._cacheMaxSize) {
+                // Remove oldest entry
+                const firstKey = this._validationCache.keys().next().value;
+                this._validationCache.delete(firstKey);
+            }
+            
+            this._validationCache.set(key, result);
+        }
+
+        /**
+         * Clears the validation cache
+         */
+        clearCache() {
+            this._validationCache.clear();
+        }
+
+        /**
+         * Gets validation cache statistics
+         * @returns {Object} Cache statistics
+         */
+        getCacheStats() {
+            return {
+                size: this._validationCache.size,
+                maxSize: this._cacheMaxSize,
+                hitRate: this._cacheHits / (this._cacheHits + this._cacheMisses) || 0
+            };
+        }
+
+        /**
+         * Batch validates multiple values
+         * @param {Array} validations - Array of validation objects
+         * @returns {Array} Array of validation results
+         */
+        batchValidate(validations) {
+            return validations.map(validation => {
+                try {
+                    const { type, value } = validation;
+                    
+                    switch (type) {
+                        case 'square':
+                            return { valid: this.isValidSquare(value), value };
+                        case 'piece':
+                            return { valid: this.isValidPiece(value), value };
+                        case 'fen':
+                            return { valid: this.isValidFen(value), value };
+                        case 'move':
+                            return { valid: this.isValidMove(value), value };
+                        default:
+                            return { valid: false, value, error: 'Unknown validation type' };
+                    }
+                } catch (error) {
+                    return { valid: false, value: validation.value, error: error.message };
+                }
+            });
+        }
+
+        /**
+         * Cleans up resources
+         */
+        destroy() {
+            this.clearCache();
+            this._validationCache = null;
+            this._patterns = null;
+            this._validValues = null;
+            this._constraints = null;
+        }
+    }
+
+    /**
+     * Configuration management for Chessboard.js
+     * @module core/ChessboardConfig
+     * @since 2.0.0
+     */
+
+
+    /**
+     * Animation timing constants
+     * @constant
+     * @type {Object}
+     */
+    const ANIMATION_TIMES = Object.freeze({
+        fast: 200,
+        slow: 600,
+        normal: 400,
+        verySlow: 1000,
+        veryFast: 100
+    });
+
+    /**
+     * Boolean value mappings
+     * @constant
+     * @type {Object}
+     */
+    const BOOLEAN_VALUES = Object.freeze({
+        true: true,
+        false: false,
+        none: false,
         1: true,
         0: false
-    };
+    });
 
-    const transitionFunctions = {
-        'ease': 'ease',
-        'linear': 'linear',
+    /**
+     * CSS transition functions
+     * @constant
+     * @type {Object}
+     */
+    const TRANSITION_FUNCTIONS = Object.freeze({
+        ease: 'ease',
+        linear: 'linear',
         'ease-in': 'ease-in',
         'ease-out': 'ease-out',
         'ease-in-out': 'ease-in-out',
-        'none': null
-    };
+        none: null
+    });
 
+    /**
+     * Default configuration values
+     * @constant
+     * @type {Object}
+     */
+    const DEFAULT_CONFIG$1 = Object.freeze({
+        id: 'board',
+        position: 'start',
+        orientation: 'w',
+        mode: 'normal',
+        size: 'auto',
+        draggable: true,
+        hints: true,
+        clickable: true,
+        movableColors: 'both',
+        moveHighlight: true,
+        overHighlight: true,
+        moveAnimation: 'ease',
+        moveTime: 'fast',
+        dropOffBoard: 'snapback',
+        snapbackTime: 'fast',
+        snapbackAnimation: 'ease',
+        dropCenterTime: 'veryFast',
+        dropCenterAnimation: 'ease',
+        fadeTime: 'fast',
+        fadeAnimation: 'ease',
+        ratio: 0.9,
+        piecesPath: '../assets/themes/default',
+        animationStyle: 'simultaneous',
+        simultaneousAnimationDelay: 100,
+        onMove: () => true,
+        onMoveEnd: () => true,
+        onChange: () => true,
+        onDragStart: () => true,
+        onDragMove: () => true,
+        onDrop: () => true,
+        onSnapbackEnd: () => true,
+        whiteSquare: '#f0d9b5',
+        blackSquare: '#b58863',
+        highlight: 'yellow',
+        selectedSquareWhite: '#ababaa',
+        selectedSquareBlack: '#ababaa',
+        movedSquareWhite: '#f1f1a0',
+        movedSquareBlack: '#e9e981',
+        choiceSquare: 'white',
+        coverSquare: 'black',
+        hintColor: '#ababaa'
+    });
+
+    /**
+     * Configuration management class for Chessboard.js
+     * Handles validation, normalization, and CSS property management
+     * @class
+     */
     class ChessboardConfig {
-        constructor(settings) {
-            const defaults = {
-                id: 'board',
-                position: 'start',
-                orientation: 'w',
-                mode: 'normal',
-                size: 'auto',
-                draggable: true,
-                hints: true,
-                clickable: true,
-                movableColors: 'both',
-                moveHighlight: true,
-                overHighlight: true,
-                moveAnimation: 'ease',
-                moveTime: 'fast',
-                dropOffBoard: 'snapback',
-                snapbackTime: 'fast',
-                snapbackAnimation: 'ease',
-                dropCenterTime: 'veryFast',
-                dropCenterAnimation: 'ease',
-                fadeTime: 'fast',
-                fadeAnimation: 'ease',
-                ratio: 0.9,
-                piecesPath: '../assets/themes/default',
-                // New animation style options
-                animationStyle: 'simultaneous', // 'sequential' or 'simultaneous'
-                simultaneousAnimationDelay: 100, // Delay between simultaneous animations in ms
-                onMove: () => true,
-                onMoveEnd: () => true,
-                onChange: () => true,
-                onDragStart: () => true,
-                onDragMove: () => true,
-                onDrop: () => true,
-                onSnapbackEnd: () => true,
-                whiteSquare: '#f0d9b5',
-                blackSquare: '#b58863',
-                highlight: 'yellow',
-                selectedSquareWhite: '#ababaa',
-                selectedSquareBlack: '#ababaa',
-                movedSquareWhite: '#f1f1a0',
-                movedSquareBlack: '#e9e981',
-                choiceSquare: 'white',
-                coverSquare: 'black',
-                hintColor: '#ababaa'
-            };
+        /**
+         * Creates a new ChessboardConfig instance
+         * @param {Object} settings - User-provided configuration
+         * @throws {ConfigurationError} If configuration is invalid
+         */
+        constructor(settings = {}) {
+            // Initialize validation service
+            this._validationService = new ValidationService();
 
-            const config = Object.assign({}, defaults, settings);
+            // Validate input
+            this._validateInput(settings);
 
+            // Merge with defaults
+            const config = this._mergeWithDefaults(settings);
+
+            // Process and validate configuration
+            this._processConfiguration(config);
+
+            // Set CSS properties
+            this._setCSSProperties(config);
+
+            // Configure mode-specific settings
+            this._configureModeSettings();
+        }
+
+        /**
+         * Validates input configuration
+         * @private
+         * @param {Object} settings - Input settings
+         * @throws {ConfigurationError} If input is invalid
+         */
+        _validateInput(settings) {
+            if (settings !== null && typeof settings !== 'object') {
+                throw new ConfigurationError('Settings must be an object', 'settings', settings);
+            }
+
+            // Validate using validation service
+            try {
+                this._validationService.validateConfig(settings);
+            } catch (error) {
+                throw new ConfigurationError(error.message, error.field, error.value);
+            }
+        }
+
+        /**
+         * Merges user settings with defaults
+         * @private
+         * @param {Object} settings - User settings
+         * @returns {Object} Merged configuration
+         */
+        _mergeWithDefaults(settings) {
+            return Object.assign({}, DEFAULT_CONFIG$1, settings);
+        }
+
+        /**
+         * Processes and validates configuration values
+         * @private
+         * @param {Object} config - Configuration object
+         */
+        _processConfiguration(config) {
+            // Basic properties
             this.id_div = config.id;
             this.position = config.position;
             this.orientation = config.orientation;
@@ -86,93 +1193,286 @@
             this.size = config.size;
             this.movableColors = config.movableColors;
             this.piecesPath = config.piecesPath;
-            this.onMove = config.onMove;
-            this.onMoveEnd = config.onMoveEnd;
-            this.onChange = config.onChange;
-            this.onDragStart = config.onDragStart;
-            this.onDragMove = config.onDragMove;
-            this.onDrop = config.onDrop;
-            this.onSnapbackEnd = config.onSnapbackEnd;
 
-            this.moveAnimation = this.setTransitionFunction(config.moveAnimation);
-            this.snapbackAnimation = this.setTransitionFunction(config.snapbackAnimation);
-            this.dropCenterAnimation = this.setTransitionFunction(config.dropCenterAnimation);
-            this.fadeAnimation = this.setTransitionFunction(config.fadeAnimation);
+            // Event handlers
+            this.onMove = this._validateCallback(config.onMove);
+            this.onMoveEnd = this._validateCallback(config.onMoveEnd);
+            this.onChange = this._validateCallback(config.onChange);
+            this.onDragStart = this._validateCallback(config.onDragStart);
+            this.onDragMove = this._validateCallback(config.onDragMove);
+            this.onDrop = this._validateCallback(config.onDrop);
+            this.onSnapbackEnd = this._validateCallback(config.onSnapbackEnd);
 
-            this.hints = this.setBoolean(config.hints);
-            this.clickable = this.setBoolean(config.clickable);
-            this.draggable = this.setBoolean(config.draggable);
-            this.moveHighlight = this.setBoolean(config.moveHighlight);
-            this.overHighlight = this.setBoolean(config.overHighlight);
+            // Animation properties
+            this.moveAnimation = this._setTransitionFunction(config.moveAnimation);
+            this.snapbackAnimation = this._setTransitionFunction(config.snapbackAnimation);
+            this.dropCenterAnimation = this._setTransitionFunction(config.dropCenterAnimation);
+            this.fadeAnimation = this._setTransitionFunction(config.fadeAnimation);
 
-            this.moveTime = this.setTime(config.moveTime);
-            this.snapbackTime = this.setTime(config.snapbackTime);
-            this.dropCenterTime = this.setTime(config.dropCenterTime);
-            this.fadeTime = this.setTime(config.fadeTime);
-            
-            // New animation style properties
-            this.animationStyle = config.animationStyle;
-            this.simultaneousAnimationDelay = config.simultaneousAnimationDelay;
+            // Boolean properties
+            this.hints = this._setBoolean(config.hints);
+            this.clickable = this._setBoolean(config.clickable);
+            this.draggable = this._setBoolean(config.draggable);
+            this.moveHighlight = this._setBoolean(config.moveHighlight);
+            this.overHighlight = this._setBoolean(config.overHighlight);
 
-            this.setCSSProperty('pieceRatio', config.ratio);
-            this.setCSSProperty('whiteSquare', config.whiteSquare);
-            this.setCSSProperty('blackSquare', config.blackSquare);
-            this.setCSSProperty('highlightSquare', config.highlight);
-            this.setCSSProperty('selectedSquareWhite', config.selectedSquareWhite);
-            this.setCSSProperty('selectedSquareBlack', config.selectedSquareBlack);
-            this.setCSSProperty('movedSquareWhite', config.movedSquareWhite);
-            this.setCSSProperty('movedSquareBlack', config.movedSquareBlack);
-            this.setCSSProperty('choiceSquare', config.choiceSquare);
-            this.setCSSProperty('coverSquare', config.coverSquare);
-            this.setCSSProperty('hintColor', config.hintColor);
+            // Timing properties
+            this.moveTime = this._setTime(config.moveTime);
+            this.snapbackTime = this._setTime(config.snapbackTime);
+            this.dropCenterTime = this._setTime(config.dropCenterTime);
+            this.fadeTime = this._setTime(config.fadeTime);
 
-            // Configure modes
-            if (this.mode === 'creative') {
-                this.onlyLegalMoves = false;
-                this.hints = false;
-            } else if (this.mode === 'normal') {
-                this.onlyLegalMoves = true;
+            // Animation style properties
+            this.animationStyle = this._validateAnimationStyle(config.animationStyle);
+            this.simultaneousAnimationDelay = this._validateDelay(config.simultaneousAnimationDelay);
+        }
+
+        /**
+         * Sets CSS custom properties
+         * @private
+         * @param {Object} config - Configuration object
+         */
+        _setCSSProperties(config) {
+            const cssProperties = {
+                pieceRatio: config.ratio,
+                whiteSquare: config.whiteSquare,
+                blackSquare: config.blackSquare,
+                highlightSquare: config.highlight,
+                selectedSquareWhite: config.selectedSquareWhite,
+                selectedSquareBlack: config.selectedSquareBlack,
+                movedSquareWhite: config.movedSquareWhite,
+                movedSquareBlack: config.movedSquareBlack,
+                choiceSquare: config.choiceSquare,
+                coverSquare: config.coverSquare,
+                hintColor: config.hintColor
+            };
+
+            Object.entries(cssProperties).forEach(([property, value]) => {
+                this._setCSSProperty(property, value);
+            });
+        }
+
+        /**
+         * Configures mode-specific settings
+         * @private
+         */
+        _configureModeSettings() {
+            switch (this.mode) {
+                case 'creative':
+                    this.onlyLegalMoves = false;
+                    this.hints = false;
+                    break;
+                case 'normal':
+                    this.onlyLegalMoves = true;
+                    break;
+                default:
+                    this.onlyLegalMoves = true;
             }
         }
 
-        setCSSProperty(property, value) {
-            document.documentElement.style.setProperty(`--${property}`, value);
+        /**
+         * Validates a callback function
+         * @private
+         * @param {Function} callback - Callback to validate
+         * @returns {Function} Validated callback
+         * @throws {ConfigurationError} If callback is invalid
+         */
+        _validateCallback(callback) {
+            if (!this._validationService.isValidCallback(callback)) {
+                throw new ConfigurationError('Callback must be a function', 'callback', callback);
+            }
+            return callback;
         }
 
+        /**
+         * Validates animation style
+         * @private
+         * @param {string} style - Animation style
+         * @returns {string} Validated style
+         * @throws {ConfigurationError} If style is invalid
+         */
+        _validateAnimationStyle(style) {
+            if (!this._validationService.isValidAnimationStyle(style)) {
+                throw new ConfigurationError('Invalid animation style', 'animationStyle', style);
+            }
+            return style;
+        }
+
+        /**
+         * Validates animation delay
+         * @private
+         * @param {number} delay - Animation delay
+         * @returns {number} Validated delay
+         * @throws {ConfigurationError} If delay is invalid
+         */
+        _validateDelay(delay) {
+            if (typeof delay !== 'number' || delay < 0 || delay > 5000) {
+                throw new ConfigurationError('Invalid animation delay', 'simultaneousAnimationDelay', delay);
+            }
+            return delay;
+        }
+
+        /**
+         * Sets a CSS custom property
+         * @private
+         * @param {string} property - Property name
+         * @param {string} value - Property value
+         */
+        _setCSSProperty(property, value) {
+            try {
+                if (typeof document !== 'undefined' && document.documentElement) {
+                    document.documentElement.style.setProperty(`--${property}`, value);
+                }
+            } catch (error) {
+                console.warn(`Failed to set CSS property ${property}:`, error.message);
+            }
+        }
+
+        /**
+         * Sets orientation with validation
+         * @param {string} orientation - Orientation value
+         * @returns {ChessboardConfig} This instance for chaining
+         * @throws {ConfigurationError} If orientation is invalid
+         */
         setOrientation(orientation) {
-            this.orientation = orientation;
+            const validatedOrientation = this._validationService.validateOrientation(orientation);
+            this.orientation = validatedOrientation;
             return this;
         }
 
-        setTime(value) {
-            if (typeof value === 'number') return value;
-            if (value in animationTime) return animationTime[value];
-            throw new Error('Invalid time value');
+        /**
+         * Validates and sets time value
+         * @private
+         * @param {string|number} value - Time value
+         * @returns {number} Validated time value
+         * @throws {ConfigurationError} If time value is invalid
+         */
+        _setTime(value) {
+            if (typeof value === 'number') {
+                if (!this._validationService.isValidTime(value)) {
+                    throw new ConfigurationError('Invalid time value', 'time', value);
+                }
+                return value;
+            }
+
+            if (typeof value === 'string' && value in ANIMATION_TIMES) {
+                return ANIMATION_TIMES[value];
+            }
+
+            throw new ConfigurationError('Invalid time value', 'time', value);
         }
 
-        setBoolean(value) {
-            if (typeof value === 'boolean') return value;
-            if (value in boolValues) return boolValues[value];
-            throw new Error('Invalid boolean value');
+        /**
+         * Validates and sets boolean value
+         * @private
+         * @param {*} value - Boolean value
+         * @returns {boolean} Validated boolean value
+         * @throws {ConfigurationError} If boolean value is invalid
+         */
+        _setBoolean(value) {
+            if (typeof value === 'boolean') {
+                return value;
+            }
+
+            if (value in BOOLEAN_VALUES) {
+                return BOOLEAN_VALUES[value];
+            }
+
+            throw new ConfigurationError('Invalid boolean value', 'boolean', value);
         }
 
-        setTransitionFunction(value) {
+        /**
+         * Validates and sets transition function
+         * @private
+         * @param {string|boolean|null} value - Transition function value
+         * @returns {string|null} Validated transition function
+         * @throws {ConfigurationError} If transition function is invalid
+         */
+        _setTransitionFunction(value) {
             // Handle boolean values - true means use default 'ease', false/null means no animation
             if (typeof value === 'boolean') {
-                return value ? transitionFunctions['ease'] : null;
+                return value ? TRANSITION_FUNCTIONS.ease : null;
             }
-            
+
             // Handle string values
-            if (typeof value === 'string' && value in transitionFunctions) {
-                return transitionFunctions[value];
+            if (typeof value === 'string' && value in TRANSITION_FUNCTIONS) {
+                return TRANSITION_FUNCTIONS[value];
             }
-            
+
             // Handle null/undefined
             if (value === null || value === undefined) {
                 return null;
             }
-            
-            throw new Error('Invalid transition function');
+
+            throw new ConfigurationError('Invalid transition function', 'transitionFunction', value);
+        }
+
+        /**
+         * Gets the current configuration as a plain object
+         * @returns {Object} Configuration object
+         */
+        toObject() {
+            return {
+                id_div: this.id_div,
+                position: this.position,
+                orientation: this.orientation,
+                mode: this.mode,
+                size: this.size,
+                draggable: this.draggable,
+                hints: this.hints,
+                clickable: this.clickable,
+                movableColors: this.movableColors,
+                moveHighlight: this.moveHighlight,
+                overHighlight: this.overHighlight,
+                moveAnimation: this.moveAnimation,
+                moveTime: this.moveTime,
+                dropOffBoard: this.dropOffBoard,
+                snapbackTime: this.snapbackTime,
+                snapbackAnimation: this.snapbackAnimation,
+                dropCenterTime: this.dropCenterTime,
+                dropCenterAnimation: this.dropCenterAnimation,
+                fadeTime: this.fadeTime,
+                fadeAnimation: this.fadeAnimation,
+                piecesPath: this.piecesPath,
+                animationStyle: this.animationStyle,
+                simultaneousAnimationDelay: this.simultaneousAnimationDelay,
+                onlyLegalMoves: this.onlyLegalMoves
+            };
+        }
+
+        /**
+         * Updates configuration with new values
+         * @param {Object} updates - Configuration updates
+         * @returns {ChessboardConfig} This instance for chaining
+         * @throws {ConfigurationError} If updates are invalid
+         */
+        update(updates) {
+            if (!updates || typeof updates !== 'object') {
+                throw new ConfigurationError('Updates must be an object', 'updates', updates);
+            }
+
+            // Validate updates
+            this._validationService.validateConfig(updates);
+
+            // Apply updates
+            const newConfig = Object.assign({}, this.toObject(), updates);
+
+            // Re-process configuration
+            this._processConfiguration(newConfig);
+            this._setCSSProperties(newConfig);
+            this._configureModeSettings();
+
+            return this;
+        }
+
+        /**
+         * Cleans up resources
+         */
+        destroy() {
+            if (this._validationService) {
+                this._validationService.destroy();
+                this._validationService = null;
+            }
         }
     }
 
@@ -183,7 +1483,7 @@
             this.id = this.getId();
             this.src = src;
             this.element = this.createElement(src, opacity);
-
+            console.debug(`[Piece] Constructed: ${this.id}`);
             this.check();
         }
 
@@ -195,18 +1495,18 @@
             element.id = this.id;
             element.src = src || this.src;
             element.style.opacity = opacity;
-            
+
             // Ensure the image loads properly
             element.onerror = () => {
                 console.warn('Failed to load piece image:', element.src);
             };
-            
+
             return element;
         }
 
-        visible() { this.element.style.opacity = 1; }
+        visible() { if (this.element) { this.element.style.opacity = 1; console.debug(`[Piece] visible: ${this.id}`); } }
 
-        invisible() { this.element.style.opacity = 0; }
+        invisible() { if (this.element) { this.element.style.opacity = 0; console.debug(`[Piece] invisible: ${this.id}`); } }
 
         /**
          * Updates the piece image source
@@ -227,23 +1527,19 @@
          * @param {Function} [callback] - Callback when transformation is complete
          */
         transformTo(newType, newSrc, duration = 200, callback = null) {
-            if (!this.element) {
-                if (callback) callback();
-                return;
-            }
-
+            if (!this.element) { console.debug(`[Piece] transformTo: ${this.id} - element is null`); if (callback) callback(); return; }
             const element = this.element;
             element.src;
-            
+
             // Add transformation class to disable all transitions temporarily
             element.classList.add('transforming');
-            
+
             // Create a smooth scale animation for the transformation
             const scaleDown = [
                 { transform: 'scale(1)', opacity: '1' },
                 { transform: 'scale(0.8)', opacity: '0.7' }
             ];
-            
+
             const scaleUp = [
                 { transform: 'scale(0.8)', opacity: '0.7' },
                 { transform: 'scale(1)', opacity: '1' }
@@ -260,13 +1556,14 @@
                 });
 
                 scaleDownAnimation.onfinish = () => {
+                    if (!this.element) { console.debug(`[Piece] transformTo.scaleDown.onfinish: ${this.id} - element is null`); if (callback) callback(); return; }
                     // Change the piece type and source at the smallest scale
                     this.type = newType;
                     this.id = this.getId();
                     this.src = newSrc;
                     element.src = newSrc;
                     element.id = this.id;
-                    
+
                     // Second animation: scale back up
                     const scaleUpAnimation = element.animate(scaleUp, {
                         duration: halfDuration,
@@ -275,19 +1572,22 @@
                     });
 
                     scaleUpAnimation.onfinish = () => {
+                        if (!this.element) { console.debug(`[Piece] transformTo.scaleUp.onfinish: ${this.id} - element is null`); if (callback) callback(); return; }
                         // Reset transform and remove transformation class
                         element.style.transform = '';
                         element.style.opacity = '';
                         element.classList.remove('transforming');
-                        
+
                         // Add a subtle bounce effect
                         element.classList.add('transform-complete');
-                        
+
                         // Remove bounce class after animation
                         setTimeout(() => {
+                            if (!this.element) return;
                             element.classList.remove('transform-complete');
                         }, 400);
-                        
+
+                        console.debug(`[Piece] transformTo complete: ${this.id}`);
                         if (callback) callback();
                     };
                 };
@@ -296,33 +1596,37 @@
                 element.style.transition = `transform ${halfDuration}ms ease-in, opacity ${halfDuration}ms ease-in`;
                 element.style.transform = 'scale(0.8)';
                 element.style.opacity = '0.7';
-                
+
                 setTimeout(() => {
+                    if (!this.element) { console.debug(`[Piece] transformTo (fallback): ${this.id} - element is null`); if (callback) callback(); return; }
                     // Change the piece
                     this.type = newType;
                     this.id = this.getId();
                     this.src = newSrc;
                     element.src = newSrc;
                     element.id = this.id;
-                    
+
                     // Scale back up
                     element.style.transition = `transform ${halfDuration}ms ease-out, opacity ${halfDuration}ms ease-out`;
                     element.style.transform = 'scale(1)';
                     element.style.opacity = '1';
-                    
+
                     setTimeout(() => {
+                        if (!this.element) { console.debug(`[Piece] transformTo (fallback, cleanup): ${this.id} - element is null`); if (callback) callback(); return; }
                         // Clean up
                         element.style.transition = '';
                         element.style.transform = '';
                         element.style.opacity = '';
                         element.classList.remove('transforming');
-                        
+
                         // Add bounce effect
                         element.classList.add('transform-complete');
                         setTimeout(() => {
+                            if (!this.element) return;
                             element.classList.remove('transform-complete');
                         }, 400);
-                        
+
+                        console.debug(`[Piece] transformTo complete (fallback): ${this.id}`);
                         if (callback) callback();
                     }, halfDuration);
                 }, halfDuration);
@@ -334,13 +1638,16 @@
             let opacity = 0;
             let piece = this;
             let fade = function () {
+                if (!piece.element) { console.debug(`[Piece] fadeIn: ${piece.id} - element is null`); if (callback) callback(); return; }
                 let elapsed = performance.now() - start;
                 opacity = transition_f(elapsed, duration, speed);
                 piece.element.style.opacity = opacity;
                 if (elapsed < duration) {
                     requestAnimationFrame(fade);
                 } else {
+                    if (!piece.element) { console.debug(`[Piece] fadeIn: ${piece.id} - element is null (end)`); if (callback) callback(); return; }
                     piece.element.style.opacity = 1;
+                    console.debug(`[Piece] fadeIn complete: ${piece.id}`);
                     if (callback) callback();
                 }
             };
@@ -352,13 +1659,16 @@
             let opacity = 1;
             let piece = this;
             let fade = function () {
+                if (!piece.element) { console.debug(`[Piece] fadeOut: ${piece.id} - element is null`); if (callback) callback(); return; }
                 let elapsed = performance.now() - start;
                 opacity = 1 - transition_f(elapsed, duration, speed);
                 piece.element.style.opacity = opacity;
                 if (elapsed < duration) {
                     requestAnimationFrame(fade);
                 } else {
+                    if (!piece.element) { console.debug(`[Piece] fadeOut: ${piece.id} - element is null (end)`); if (callback) callback(); return; }
                     piece.element.style.opacity = 0;
+                    console.debug(`[Piece] fadeOut complete: ${piece.id}`);
                     if (callback) callback();
                 }
             };
@@ -366,28 +1676,31 @@
         }
 
         setDrag(f) {
+            if (!this.element) { console.debug(`[Piece] setDrag: ${this.id} - element is null`); return; }
             this.element.ondragstart = (e) => { e.preventDefault(); };
             this.element.onmousedown = f;
+            console.debug(`[Piece] setDrag: ${this.id}`);
         }
 
         destroy() {
+            console.debug(`[Piece] Destroy: ${this.id}`);
             // Remove all event listeners
             if (this.element) {
                 this.element.onmousedown = null;
                 this.element.ondragstart = null;
-                
+
                 // Remove from DOM
                 if (this.element.parentNode) {
                     this.element.parentNode.removeChild(this.element);
                 }
-                
+
                 // Clear references
                 this.element = null;
             }
         }
 
         translate(to, duration, transition_f, speed, callback = null) {
-
+            if (!this.element) { console.debug(`[Piece] translate: ${this.id} - element is null`); if (callback) callback(); return; }
             let sourceRect = this.element.getBoundingClientRect();
             let targetRect = to.getBoundingClientRect();
             let x_start = sourceRect.left + sourceRect.width / 2;
@@ -410,14 +1723,17 @@
                 });
 
                 animation.onfinish = () => {
+                    if (!this.element) { console.debug(`[Piece] translate.onfinish: ${this.id} - element is null`); if (callback) callback(); return; }
                     if (callback) callback();
-                    this.element.style = '';
+                    if (this.element) this.element.style = '';
+                    console.debug(`[Piece] translate complete: ${this.id}`);
                 };
             } else {
                 this.element.style.transition = `transform ${duration}ms ease`;
                 this.element.style.transform = `translate(${dx}px, ${dy}px)`;
                 if (callback) callback();
-                this.element.style = '';
+                if (this.element) this.element.style = '';
+                console.debug(`[Piece] translate complete (no animate): ${this.id}`);
             }
         }
 
@@ -486,35 +1802,34 @@
             return this.element.getBoundingClientRect();
         }
 
-        removePiece() {
+        removePiece(preserve = false) {
             if (!this.piece) {
                 return null;
             }
-            
-            // Remove the piece element from DOM
-            if (this.piece.element && this.piece.element.parentNode === this.element) {
-                this.element.removeChild(this.piece.element);
+            // Only destroy the piece if not preserving (i.e., not moving)
+            if (!preserve && typeof this.piece.destroy === 'function') {
+                this.piece.destroy();
             }
-            
-            const piece = this.piece;
             this.piece = null;
-            return piece;
+            return null;
         }
 
         /**
          * Forcefully removes all pieces from this square
          */
         forceRemoveAllPieces() {
-            // Remove all img elements with class 'piece'
+            // Best practice: destroy the piece object if present
+            if (this.piece && typeof this.piece.destroy === 'function') {
+                this.piece.destroy();
+                this.piece = null;
+            }
+            // Remove any orphaned img.piece elements from the DOM
             const pieceElements = this.element.querySelectorAll('img.piece');
             pieceElements.forEach(element => {
                 if (element.parentNode === this.element) {
                     this.element.removeChild(element);
                 }
             });
-            
-            // Clear the piece reference
-            this.piece = null;
         }
 
         /**
@@ -526,10 +1841,10 @@
             if (this.piece) {
                 this.removePiece();
             }
-            
+
             // Add the new piece
             this.putPiece(newPiece);
-            
+
             // Ensure the piece is properly displayed
             newPiece.element.style.opacity = '1';
         }
@@ -539,11 +1854,10 @@
         }
 
         putPiece(piece) {
-            // If there's already a piece, remove it first
+            // If there's already a piece, remove it first, but preserve if moving
             if (this.piece) {
-                this.removePiece();
+                this.removePiece(true);
             }
-            
             this.piece = piece;
             if (piece && piece.element) {
                 this.element.appendChild(piece.element);
@@ -643,7 +1957,10 @@
         }
 
         destroy() {
+            // Remove all piece DOM nodes and clear reference
+            this.forceRemoveAllPieces();
             this.element.remove();
+            this.piece = null;
         }
 
         hasPiece() {
@@ -661,7 +1978,7 @@
             if (this.col < 1 || this.col > 8) {
                 throw new Error("Invalid square: col is out of bounds");
             }
-            
+
         }
     }
 
@@ -733,7 +2050,7 @@
         createTimingFunction(type = 'ease') {
             return (elapsed, duration) => {
                 const x = elapsed / duration;
-                
+
                 switch (type) {
                     case 'linear':
                         return x;
@@ -765,17 +2082,17 @@
             const timingFunction = this.createTimingFunction(easing);
             const startTime = performance.now();
             const startValues = {};
-            
+
             // Store initial values
             Object.keys(properties).forEach(prop => {
                 startValues[prop] = this._getInitialValue(element, prop);
             });
-            
+
             const animate = (currentTime) => {
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 const easedProgress = timingFunction(elapsed, duration);
-                
+
                 // Apply animated values
                 Object.keys(properties).forEach(prop => {
                     const startValue = startValues[prop];
@@ -783,7 +2100,7 @@
                     const currentValue = this._interpolateValue(startValue, endValue, easedProgress);
                     this._applyValue(element, prop, currentValue);
                 });
-                
+
                 if (progress < 1 && this.activeAnimations.has(animationId)) {
                     requestAnimationFrame(animate);
                 } else {
@@ -791,10 +2108,10 @@
                     if (callback) callback();
                 }
             };
-            
+
             this.activeAnimations.set(animationId, { element, animate, callback });
             requestAnimationFrame(animate);
-            
+
             return animationId;
         }
 
@@ -823,6 +2140,7 @@
          * @returns {number} Initial value
          */
         _getInitialValue(element, property) {
+            if (!element || !element.style) return 0;
             switch (property) {
                 case 'opacity':
                     return parseFloat(getComputedStyle(element).opacity) || 1;
@@ -857,6 +2175,7 @@
          * @param {number} value - Value to apply
          */
         _applyValue(element, property, value) {
+            if (!element || !element.style) return;
             switch (property) {
                 case 'opacity':
                     element.style.opacity = value;
@@ -880,230 +2199,6 @@
          */
         destroy() {
             this.cancelAll();
-        }
-    }
-
-    /**
-     * Standard chess positions and FEN constants
-     * @module constants/positions
-     * @since 2.0.0
-     */
-
-    /**
-     * Standard chess positions used throughout the application
-     * @type {Object.<string, string>}
-     * @readonly
-     */
-    const STANDARD_POSITIONS = {
-        'start': 'start',
-        'default': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        'empty': '8/8/8/8/8/8/8/8 w - - 0 1'
-    };
-
-    /**
-     * Default starting position FEN string
-     * @type {string}
-     * @readonly
-     */
-    const DEFAULT_STARTING_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-
-    /**
-     * Chess piece types
-     * @type {string[]}
-     * @readonly
-     */
-    const PIECE_TYPES = ['p', 'r', 'n', 'b', 'q', 'k'];
-
-    /**
-     * Chess piece colors
-     * @type {string[]}
-     * @readonly
-     */
-    const PIECE_COLORS = ['w', 'b'];
-
-    /**
-     * Valid promotion pieces
-     * @type {string[]}
-     * @readonly
-     */
-    const PROMOTION_PIECES = ['q', 'r', 'b', 'n'];
-
-    /**
-     * Board coordinates letters
-     * @type {string}
-     * @readonly
-     */
-    const BOARD_LETTERS = 'abcdefgh';
-
-    /**
-     * Board size constants
-     * @type {Object}
-     * @readonly
-     */
-    const BOARD_SIZE = {
-        ROWS: 8,
-        COLS: 8,
-        TOTAL_SQUARES: 64
-    };
-
-    /**
-     * Error messages and error handling utilities
-     * @module errors/messages
-     * @since 2.0.0
-     */
-
-    /**
-     * Standardized error messages for the chessboard application
-     * @type {Object.<string, string>}
-     * @readonly
-     */
-    const ERROR_MESSAGES = {
-        // Position and FEN related
-        'invalid_position': 'Invalid position - ',
-        'invalid_fen': 'Invalid fen - ',
-        
-        // DOM and UI related
-        'invalid_id_div': 'Board id not found - ',
-        'invalid_value': 'Invalid value - ',
-        
-        // Piece related
-        'invalid_piece': 'Invalid piece - ',
-        'invalid_square': 'Invalid square - ',
-        'invalid_piecesPath': 'Invalid piecesPath - ',
-        
-        // Board configuration
-        'invalid_orientation': 'Invalid orientation - ',
-        'invalid_color': 'Invalid color - ',
-        'invalid_dropOffBoard': 'Invalid dropOffBoard - ',
-        
-        // Move related
-        'invalid_move': 'Invalid move - ',
-        'square_no_piece': 'Square has no piece to remove.',
-        'invalid_move_format': 'Invalid move format'
-    };
-
-    /**
-     * Error codes for categorizing different types of errors
-     * @type {Object.<string, string>}
-     * @readonly
-     */
-    const ERROR_CODES = {
-        VALIDATION_ERROR: 'VALIDATION_ERROR',
-        MOVE_ERROR: 'MOVE_ERROR',
-        DOM_ERROR: 'DOM_ERROR',
-        PIECE_ERROR: 'PIECE_ERROR'
-    };
-
-    /**
-     * Custom error classes for better error handling
-     * @module errors/ChessboardError
-     * @since 2.0.0
-     */
-
-
-    /**
-     * Base error class for all chessboard-related errors
-     * @class
-     * @extends Error
-     */
-    class ChessboardError extends Error {
-        /**
-         * Creates a new ChessboardError instance
-         * @param {string} message - Error message
-         * @param {string} code - Error code from ERROR_CODES
-         * @param {Object} [context={}] - Additional context information
-         */
-        constructor(message, code, context = {}) {
-            super(message);
-            this.name = 'ChessboardError';
-            this.code = code;
-            this.context = context;
-            this.timestamp = new Date().toISOString();
-            
-            // Maintain stack trace for debugging
-            if (Error.captureStackTrace) {
-                Error.captureStackTrace(this, ChessboardError);
-            }
-        }
-    }
-
-    /**
-     * Error thrown when validation fails
-     * @class
-     * @extends ChessboardError
-     */
-    class ValidationError extends ChessboardError {
-        /**
-         * Creates a new ValidationError instance
-         * @param {string} message - Error message
-         * @param {string} field - Field that failed validation
-         * @param {*} value - Value that failed validation
-         */
-        constructor(message, field, value) {
-            super(message, ERROR_CODES.VALIDATION_ERROR, { field, value });
-            this.name = 'ValidationError';
-            this.field = field;
-            this.value = value;
-        }
-    }
-
-    /**
-     * Error thrown when a move is invalid or fails
-     * @class
-     * @extends ChessboardError
-     */
-    class MoveError extends ChessboardError {
-        /**
-         * Creates a new MoveError instance
-         * @param {string} message - Error message
-         * @param {string} from - Source square
-         * @param {string} to - Target square
-         * @param {string} [piece] - Piece being moved
-         */
-        constructor(message, from, to, piece) {
-            super(message, ERROR_CODES.MOVE_ERROR, { from, to, piece });
-            this.name = 'MoveError';
-            this.from = from;
-            this.to = to;
-            this.piece = piece;
-        }
-    }
-
-    /**
-     * Error thrown when DOM operations fail
-     * @class
-     * @extends ChessboardError
-     */
-    class DOMError extends ChessboardError {
-        /**
-         * Creates a new DOMError instance
-         * @param {string} message - Error message
-         * @param {string} elementId - Element ID that caused the error
-         */
-        constructor(message, elementId) {
-            super(message, ERROR_CODES.DOM_ERROR, { elementId });
-            this.name = 'DOMError';
-            this.elementId = elementId;
-        }
-    }
-
-    /**
-     * Error thrown when piece operations fail
-     * @class
-     * @extends ChessboardError
-     */
-    class PieceError extends ChessboardError {
-        /**
-         * Creates a new PieceError instance
-         * @param {string} message - Error message
-         * @param {string} pieceId - Piece ID that caused the error
-         * @param {string} [square] - Square where the error occurred
-         */
-        constructor(message, pieceId, square) {
-            super(message, ERROR_CODES.PIECE_ERROR, { pieceId, square });
-            this.name = 'PieceError';
-            this.pieceId = pieceId;
-            this.square = square;
         }
     }
 
@@ -1135,12 +2230,12 @@
          */
         buildBoard() {
             console.log('BoardService.buildBoard: Looking for element with ID:', this.config.id_div);
-            
+
             this.element = document.getElementById(this.config.id_div);
             if (!this.element) {
                 throw new DOMError(ERROR_MESSAGES.invalid_id_div + this.config.id_div, this.config.id_div);
             }
-            
+
             this.resize(this.config.size);
             this.element.className = "board";
         }
@@ -1154,7 +2249,7 @@
                 for (let col = 0; col < BOARD_SIZE.COLS; col++) {
                     const [squareRow, squareCol] = coordConverter(row, col);
                     const square = new Square(squareRow, squareCol);
-                    
+
                     this.squares[square.getId()] = square;
                     this.element.appendChild(square.element);
                 }
@@ -1162,25 +2257,26 @@
         }
 
         /**
+         * Removes all squares from the board and cleans up their resources
+         * Best practice: always destroy JS objects and DOM nodes, and clear references.
+         */
+        removeSquares() {
+            for (const square of Object.values(this.squares)) {
+                // Always call destroy to remove DOM and clear piece reference
+                square.destroy();
+            }
+            this.squares = {};
+        }
+
+        /**
          * Removes all content from the board element
+         * Best practice: clear DOM and force element to be re-fetched on next build.
          */
         removeBoard() {
             if (this.element) {
                 this.element.innerHTML = '';
+                this.element = null;
             }
-        }
-
-        /**
-         * Removes all squares from the board and cleans up their resources
-         */
-        removeSquares() {
-            for (const square of Object.values(this.squares)) {
-                if (this.element && square.element) {
-                    this.element.removeChild(square.element);
-                }
-                square.destroy();
-            }
-            this.squares = {};
         }
 
         /**
@@ -1206,9 +2302,9 @@
          */
         _calculateAutoSize() {
             if (!this.element) return 400; // Default fallback
-            
+
             const { offsetWidth, offsetHeight } = this.element;
-            
+
             if (offsetWidth === 0) {
                 return offsetHeight || 400;
             } else if (offsetHeight === 0) {
@@ -1613,8 +2709,179 @@
     }
 
     /**
-     * Performance utilities for smooth interactions
+     * Performance utilities for smooth interactions and monitoring
+     * @module utils/performance
+     * @since 2.0.0
      */
+
+    /**
+     * Performance monitoring class for measuring and tracking performance metrics
+     * @class
+     */
+    class PerformanceMonitor {
+        /**
+         * Creates a new PerformanceMonitor instance
+         */
+        constructor() {
+            this.metrics = new Map();
+            this.observers = new Map();
+            this.isEnabled = typeof performance !== 'undefined' && performance.mark;
+            
+            if (this.isEnabled) {
+                this._setupObservers();
+            }
+        }
+        
+        /**
+         * Sets up performance observers for automatic metrics collection
+         * @private
+         */
+        _setupObservers() {
+            try {
+                // Performance Observer for paint metrics
+                if (typeof PerformanceObserver !== 'undefined') {
+                    const paintObserver = new PerformanceObserver((list) => {
+                        for (const entry of list.getEntries()) {
+                            this.recordMetric(entry.name, entry.startTime);
+                        }
+                    });
+                    
+                    paintObserver.observe({ entryTypes: ['paint'] });
+                    this.observers.set('paint', paintObserver);
+                }
+            } catch (error) {
+                console.warn('Performance observers not available:', error.message);
+            }
+        }
+        
+        /**
+         * Starts measuring performance for a given operation
+         * @param {string} name - Name of the operation
+         */
+        startMeasure(name) {
+            if (!this.isEnabled) return;
+            
+            try {
+                performance.mark(`${name}-start`);
+            } catch (error) {
+                console.warn(`Failed to start performance measure for ${name}:`, error.message);
+            }
+        }
+        
+        /**
+         * Ends measuring performance for a given operation
+         * @param {string} name - Name of the operation
+         * @returns {number} Duration in milliseconds
+         */
+        endMeasure(name) {
+            if (!this.isEnabled) return 0;
+            
+            try {
+                performance.mark(`${name}-end`);
+                const measure = performance.measure(name, `${name}-start`, `${name}-end`);
+                
+                this.recordMetric(name, measure.duration);
+                
+                // Clean up marks
+                performance.clearMarks(`${name}-start`);
+                performance.clearMarks(`${name}-end`);
+                performance.clearMeasures(name);
+                
+                return measure.duration;
+            } catch (error) {
+                console.warn(`Failed to end performance measure for ${name}:`, error.message);
+                return 0;
+            }
+        }
+        
+        /**
+         * Records a metric value
+         * @param {string} name - Metric name
+         * @param {number} value - Metric value
+         */
+        recordMetric(name, value) {
+            if (!this.metrics.has(name)) {
+                this.metrics.set(name, {
+                    count: 0,
+                    total: 0,
+                    min: Infinity,
+                    max: -Infinity,
+                    values: []
+                });
+            }
+            
+            const metric = this.metrics.get(name);
+            metric.count++;
+            metric.total += value;
+            metric.min = Math.min(metric.min, value);
+            metric.max = Math.max(metric.max, value);
+            metric.values.push(value);
+            
+            // Keep only last 100 values to prevent memory leaks
+            if (metric.values.length > 100) {
+                metric.values.shift();
+            }
+        }
+        
+        /**
+         * Gets metrics summary
+         * @returns {Object} Metrics summary
+         */
+        getMetrics() {
+            const summary = {};
+            
+            for (const [name, metric] of this.metrics) {
+                summary[name] = {
+                    count: metric.count,
+                    average: metric.total / metric.count,
+                    min: metric.min,
+                    max: metric.max,
+                    total: metric.total,
+                    p95: this._calculatePercentile(metric.values, 95),
+                    p99: this._calculatePercentile(metric.values, 99)
+                };
+            }
+            
+            return summary;
+        }
+        
+        /**
+         * Calculates percentile for a set of values
+         * @private
+         * @param {Array<number>} values - Array of values
+         * @param {number} percentile - Percentile to calculate (0-100)
+         * @returns {number} Percentile value
+         */
+        _calculatePercentile(values, percentile) {
+            if (values.length === 0) return 0;
+            
+            const sorted = [...values].sort((a, b) => a - b);
+            const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+            return sorted[Math.max(0, index)];
+        }
+        
+        /**
+         * Clears all metrics
+         */
+        clearMetrics() {
+            this.metrics.clear();
+        }
+        
+        /**
+         * Destroys the performance monitor and cleans up resources
+         */
+        destroy() {
+            // Disconnect observers
+            for (const observer of this.observers.values()) {
+                if (observer && typeof observer.disconnect === 'function') {
+                    observer.disconnect();
+                }
+            }
+            
+            this.observers.clear();
+            this.metrics.clear();
+        }
+    }
 
     /**
      * Throttle function to limit how often a function can be called
@@ -1624,8 +2891,7 @@
      */
     function throttle(func, limit) {
         let inThrottle;
-        return function() {
-            const args = arguments;
+        return function(...args) {
             const context = this;
             if (!inThrottle) {
                 func.apply(context, args);
@@ -1636,16 +2902,30 @@
     }
 
     /**
+     * Debounce function to delay function execution
+     * @param {Function} func - Function to debounce
+     * @param {number} delay - Delay in milliseconds
+     * @returns {Function} Debounced function
+     */
+    function debounce(func, delay) {
+        let timeoutId;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(context, args), delay);
+        };
+    }
+
+    /**
      * Request animation frame throttle for smooth animations
      * @param {Function} func - Function to throttle
      * @returns {Function} RAF throttled function
      */
     function rafThrottle(func) {
         let isThrottled = false;
-        return function() {
+        return function(...args) {
             if (isThrottled) return;
             
-            const args = arguments;
             const context = this;
             
             isThrottled = true;
@@ -1657,15 +2937,20 @@
     }
 
     /**
-     * High performance transform utility
+     * High performance transform utility with hardware acceleration
      * @param {HTMLElement} element - Element to transform
      * @param {number} x - X coordinate
      * @param {number} y - Y coordinate
-     * @param {number} scale - Scale factor
+     * @param {number} [scale=1] - Scale factor
      */
     function setTransform(element, x, y, scale = 1) {
+        if (!element || !element.style) return;
+        
         // Use transform3d for hardware acceleration
         element.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+        
+        // Promote to composite layer for better performance
+        element.style.willChange = 'transform';
     }
 
     /**
@@ -1673,9 +2958,66 @@
      * @param {HTMLElement} element - Element to reset
      */
     function resetTransform(element) {
+        if (!element || !element.style) return;
+        
         element.style.transform = '';
         element.style.left = '';
         element.style.top = '';
+        element.style.willChange = '';
+    }
+
+    /**
+     * Memory-efficient batch DOM operations
+     * @param {Function} callback - Callback containing DOM operations
+     * @returns {*} Result of the callback
+     */
+    function batchDOMOperations(callback) {
+        return new Promise((resolve) => {
+            requestAnimationFrame(() => {
+                const result = callback();
+                resolve(result);
+            });
+        });
+    }
+
+    /**
+     * Optimized element visibility check
+     * @param {HTMLElement} element - Element to check
+     * @returns {boolean} True if element is visible
+     */
+    function isElementVisible(element) {
+        if (!element || !element.getBoundingClientRect) return false;
+        
+        const rect = element.getBoundingClientRect();
+        return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            rect.bottom > 0 &&
+            rect.right > 0 &&
+            rect.top < (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.left < (window.innerWidth || document.documentElement.clientWidth)
+        );
+    }
+
+    /**
+     * Memory usage tracking utility
+     * @returns {Object} Memory usage information
+     */
+    function getMemoryUsage() {
+        if (typeof performance !== 'undefined' && performance.memory) {
+            return {
+                used: performance.memory.usedJSHeapSize,
+                total: performance.memory.totalJSHeapSize,
+                limit: performance.memory.jsHeapSizeLimit
+            };
+        }
+        
+        return {
+            used: 0,
+            total: 0,
+            limit: 0,
+            supported: false
+        };
     }
 
     /**
@@ -1767,12 +3109,12 @@
             this.moveService = moveService;
             this.coordinateService = coordinateService;
             this.chessboard = chessboard;
-            
+
             // State management
             this.clicked = null;
             this.promoting = false;
             this.isAnimating = false;
-            
+
             // Event listeners storage for cleanup
             this.eventListeners = new Map();
         }
@@ -1786,9 +3128,9 @@
         addListeners(onSquareClick, onPieceHover, onPieceLeave) {
             // Remove existing listeners to avoid duplicates
             this.removeListeners();
-            
+
             const squares = this.boardService.getAllSquares();
-            
+
             Object.values(squares).forEach(square => {
                 this._addSquareListeners(square, onSquareClick, onPieceHover, onPieceLeave);
             });
@@ -1804,20 +3146,20 @@
          */
         _addSquareListeners(square, onSquareClick, onPieceHover, onPieceLeave) {
             const listeners = [];
-            
+
             // Throttled hover handlers for performance
             const throttledHover = rafThrottle((e) => {
                 if (!this.clicked && this.config.hints) {
                     onPieceHover(square);
                 }
             });
-            
+
             const throttledLeave = rafThrottle((e) => {
                 if (!this.clicked && this.config.hints) {
                     onPieceLeave(square);
                 }
             });
-            
+
             // Click handler
             const handleClick = (e) => {
                 e.stopPropagation();
@@ -1825,13 +3167,13 @@
                     onSquareClick(square);
                 }
             };
-            
+
             // Add listeners
             square.element.addEventListener('mouseover', throttledHover);
             square.element.addEventListener('mouseout', throttledLeave);
             square.element.addEventListener('click', handleClick);
             square.element.addEventListener('touchstart', handleClick);
-            
+
             // Store listeners for cleanup
             listeners.push(
                 { element: square.element, type: 'mouseover', handler: throttledHover },
@@ -1839,7 +3181,7 @@
                 { element: square.element, type: 'click', handler: handleClick },
                 { element: square.element, type: 'touchstart', handler: handleClick }
             );
-            
+
             this.eventListeners.set(square.id, listeners);
         }
 
@@ -1858,31 +3200,31 @@
         createDragFunction(square, piece, onDragStart, onDragMove, onDrop, onSnapback, onMove, onRemove) {
             return (event) => {
                 event.preventDefault();
-                
+
                 if (!this.config.draggable || !piece || this.isAnimating) {
                     return;
                 }
-                
+
                 const originalFrom = square;
                 let isDragging = false;
                 let from = originalFrom;
                 let to = square;
                 let previousHighlight = null;
-                
+
                 const img = piece.element;
-                
+
                 if (!this.moveService.canMove(from)) {
                     return;
                 }
-                
+
                 // Track initial position for drag threshold
                 const startX = event.clientX || (event.touches && event.touches[0]?.clientX) || 0;
                 const startY = event.clientY || (event.touches && event.touches[0]?.clientY) || 0;
-                
+
                 const moveAt = (event) => {
                     const boardElement = this.boardService.element;
                     const squareSize = boardElement.offsetWidth / 8;
-                    
+
                     // Get mouse coordinates
                     let clientX, clientY;
                     if (event.touches && event.touches[0]) {
@@ -1892,28 +3234,28 @@
                         clientX = event.clientX;
                         clientY = event.clientY;
                     }
-                    
+
                     // Calculate position relative to board
                     const boardRect = boardElement.getBoundingClientRect();
                     const x = clientX - boardRect.left - (squareSize / 2);
                     const y = clientY - boardRect.top - (squareSize / 2);
-                    
+
                     img.style.left = x + 'px';
                     img.style.top = y + 'px';
-                    
+
                     return true;
                 };
-                
+
                 const onMouseMove = (event) => {
                     const currentX = event.clientX || 0;
                     const currentY = event.clientY || 0;
                     const deltaX = Math.abs(currentX - startX);
                     const deltaY = Math.abs(currentY - startY);
-                    
+
                     // Start dragging if mouse moved enough
                     if (!isDragging && (deltaX > 3 || deltaY > 3)) {
                         isDragging = true;
-                        
+
                         // Set up drag state
                         if (!this.config.clickable) {
                             this.clicked = null;
@@ -1921,45 +3263,45 @@
                         } else if (!this.clicked) {
                             this.clicked = from;
                         }
-                        
+
                         // Visual feedback
                         if (this.config.clickable) {
                             from.select();
                             // Show hints would be handled by the main class
                         }
-                        
+
                         // Prepare piece for dragging
                         img.style.position = 'absolute';
                         img.style.zIndex = '100';
                         img.classList.add('dragging');
-                        
+
                         DragOptimizations.enableForDrag(img);
-                        
+
                         // Call drag start callback
                         if (!onDragStart(square, piece)) {
                             return;
                         }
                     }
-                    
+
                     if (!isDragging) return;
-                    
+
                     if (!moveAt(event)) ;
-                    
+
                     // Update target square
                     const boardElement = this.boardService.element;
                     const boardRect = boardElement.getBoundingClientRect();
                     const x = event.clientX - boardRect.left;
                     const y = event.clientY - boardRect.top;
-                    
+
                     let newTo = null;
                     if (x >= 0 && x <= boardRect.width && y >= 0 && y <= boardRect.height) {
                         const squareId = this.coordinateService.pixelToSquareID(x, y, boardElement);
                         newTo = squareId ? this.boardService.getSquare(squareId) : null;
                     }
-                    
+
                     to = newTo;
                     onDragMove(from, to, piece);
-                    
+
                     // Update visual feedback
                     if (to !== previousHighlight) {
                         to?.highlight();
@@ -1967,27 +3309,27 @@
                         previousHighlight = to;
                     }
                 };
-                
+
                 const onMouseUp = () => {
                     // Clean up visual feedback
                     previousHighlight?.dehighlight();
                     document.removeEventListener('mousemove', onMouseMove);
                     window.removeEventListener('mouseup', onMouseUp);
-                    
+
                     // If this was just a click, don't interfere
                     if (!isDragging) {
                         return;
                     }
-                    
+
                     // Clean up drag state
                     img.style.zIndex = '20';
                     img.classList.remove('dragging');
                     img.style.willChange = 'auto';
-                    
+
                     // Handle drop
                     const dropResult = onDrop(originalFrom, to, piece);
                     const isTrashDrop = !to && (this.config.dropOffBoard === 'trash' || dropResult === 'trash');
-                    
+
                     if (isTrashDrop) {
                         this._handleTrashDrop(originalFrom, onRemove);
                     } else if (!to) {
@@ -1996,14 +3338,14 @@
                         img.style.left = '';
                         img.style.top = '';
                         img.style.transform = '';
-                        
+
                         this._handleSnapback(originalFrom, piece, onSnapback);
                     } else {
                         // Handle drop like a click - simple and reliable
                         this._handleDrop(originalFrom, to, piece, onMove, onSnapback);
                     }
                 };
-                
+
                 // Attach event listeners
                 window.addEventListener('mouseup', onMouseUp, { once: true });
                 document.addEventListener('mousemove', onMouseMove);
@@ -2021,7 +3363,7 @@
             this.boardService.applyToAllSquares('unmoved');
             this.boardService.applyToAllSquares('removeHint');
             fromSquare.deselect();
-            
+
             if (onRemove) {
                 onRemove(fromSquare.getId());
             }
@@ -2053,30 +3395,30 @@
          */
         _handleDrop(fromSquare, toSquare, piece, onMove, onSnapback) {
             this.clicked = fromSquare;
-            
+
             // Check if move requires promotion
             if (this.moveService.requiresPromotion(new Move$1(fromSquare, toSquare))) {
                 console.log('Drag move requires promotion:', fromSquare.id, '->', toSquare.id);
-                
+
                 // Set up promotion UI - use the same logic as click
                 this.moveService.setupPromotion(
                     new Move$1(fromSquare, toSquare),
                     this.boardService.squares,
                     (selectedPromotion) => {
                         console.log('Drag promotion selected:', selectedPromotion);
-                        
+
                         // Clear promotion UI first
                         this.boardService.applyToAllSquares('removePromotion');
                         this.boardService.applyToAllSquares('removeCover');
-                        
+
                         // Execute the move with promotion
                         const moveResult = onMove(fromSquare, toSquare, selectedPromotion, true);
-                        
+
                         if (moveResult) {
                             // After a successful promotion move, we need to replace the piece
                             // after the drop animation completes
                             this._schedulePromotionPieceReplacement(toSquare, selectedPromotion);
-                            
+
                             this.clicked = null;
                         } else {
                             // Move failed - snapback
@@ -2085,11 +3427,11 @@
                     },
                     () => {
                         console.log('Drag promotion cancelled');
-                        
+
                         // Clear promotion UI on cancel
                         this.boardService.applyToAllSquares('removePromotion');
                         this.boardService.applyToAllSquares('removeCover');
-                        
+
                         // Snapback the piece
                         this._handleSnapback(fromSquare, piece, onSnapback);
                     }
@@ -2097,7 +3439,7 @@
             } else {
                 // Regular move - no promotion needed
                 const moveSuccess = onMove(fromSquare, toSquare, null, true);
-                
+
                 if (moveSuccess) {
                     // Move successful - reset clicked state
                     this.clicked = null;
@@ -2120,20 +3462,20 @@
                 if (callback) callback();
                 return;
             }
-            
+
             const duration = this.config.dropCenterTime;
-            
+
             // Get current position of piece element
             const sourceRect = piece.element.getBoundingClientRect();
             const targetRect = targetSquare.element.getBoundingClientRect();
-            
+
             const x_start = sourceRect.left + sourceRect.width / 2;
             const y_start = sourceRect.top + sourceRect.height / 2;
             const x_end = targetRect.left + targetRect.width / 2;
             const y_end = targetRect.top + targetRect.height / 2;
             const dx = x_end - x_start;
             const dy = y_end - y_start;
-            
+
             if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
                 // Already centered, just reset styles
                 piece.element.style.position = '';
@@ -2144,20 +3486,25 @@
                 if (callback) callback();
                 return;
             }
-            
+
             const keyframes = [
                 { transform: 'translate(0, 0)' },
                 { transform: `translate(${dx}px, ${dy}px)` }
             ];
-            
+
             if (piece.element.animate) {
                 const animation = piece.element.animate(keyframes, {
                     duration: duration,
                     easing: 'ease',
                     fill: 'none'  // Don't keep the final position
                 });
-                
+
                 animation.onfinish = () => {
+                    // Defensive: check if element still exists
+                    if (!piece.element) {
+                        if (callback) callback();
+                        return;
+                    }
                     // Reset all drag-related styles to let default CSS handle positioning
                     piece.element.style.position = '';
                     piece.element.style.left = '';
@@ -2165,15 +3512,20 @@
                     piece.element.style.transform = '';
                     piece.element.style.zIndex = '';
                     piece.element.style.transition = '';
-                    
+
                     if (callback) callback();
                 };
             } else {
                 // Fallback for browsers without Web Animations API
                 piece.element.style.transition = `transform ${duration}ms ease`;
                 piece.element.style.transform = `translate(${dx}px, ${dy}px)`;
-                
+
                 setTimeout(() => {
+                    // Defensive: check if element still exists
+                    if (!piece.element) {
+                        if (callback) callback();
+                        return;
+                    }
                     // After animation, reset ALL positioning styles and let CSS handle centering
                     piece.element.style.position = 'relative';
                     piece.element.style.left = '0';
@@ -2181,7 +3533,7 @@
                     piece.element.style.transform = 'translate(-50%, -50%)';
                     piece.element.style.zIndex = '20';
                     piece.element.style.transition = 'none';
-                    
+
                     if (callback) callback();
                 }, duration);
             }
@@ -2199,10 +3551,10 @@
          */
         onClick(square, onMove, onSelect, onDeselect, animate = true, dragged = false) {
             console.log('EventService.onClick: square =', square.id, 'clicked =', this.clicked?.id || 'none');
-            
+
             let from = this.clicked;
             let promotion = null;
-            
+
             // Handle promotion state
             if (this.promoting) {
                 if (this.promoting === 'none') {
@@ -2210,12 +3562,12 @@
                 } else {
                     promotion = this.promoting;
                 }
-                
+
                 this.promoting = false;
                 this.boardService.applyToAllSquares('removePromotion');
                 this.boardService.applyToAllSquares('removeCover');
             }
-            
+
             // No source square selected
             if (!from) {
                 if (this.moveService.canMove(square)) {
@@ -2228,58 +3580,58 @@
                     return false;
                 }
             }
-            
+
             // Clicking same square - deselect
             if (this.clicked === square) {
                 onDeselect(square);
                 this.clicked = null;
                 return false;
             }
-            
+
             // Check if move requires promotion
             if (!promotion && this.moveService.requiresPromotion(new Move$1(from, square))) {
                 console.log('Move requires promotion:', from.id, '->', square.id);
-                
+
                 // Set up promotion UI
                 this.moveService.setupPromotion(
                     new Move$1(from, square),
                     this.boardService.squares,
                     (selectedPromotion) => {
                         console.log('Promotion selected:', selectedPromotion);
-                        
+
                         // Clear promotion UI first
                         this.boardService.applyToAllSquares('removePromotion');
                         this.boardService.applyToAllSquares('removeCover');
-                        
+
                         // Execute the move with promotion
                         const moveResult = onMove(from, square, selectedPromotion, animate);
-                        
+
                         if (moveResult) {
                             // After a successful promotion move, we need to replace the piece
                             // after the drop animation completes
                             this._schedulePromotionPieceReplacement(square, selectedPromotion);
-                            
+
                             onDeselect(from);
                             this.clicked = null;
                         }
                     },
                     () => {
                         console.log('Promotion cancelled');
-                        
+
                         // Clear promotion UI on cancel
                         this.boardService.applyToAllSquares('removePromotion');
                         this.boardService.applyToAllSquares('removeCover');
-                        
+
                         onDeselect(from);
                         this.clicked = null;
                     }
                 );
                 return false;
             }
-            
+
             // Attempt to make move
             const moveResult = onMove(from, square, promotion, animate);
-            
+
             if (moveResult) {
                 // Move successful
                 onDeselect(from);
@@ -2290,12 +3642,12 @@
                 if (this.moveService.canMove(square)) {
                     // Deselect the previous piece
                     onDeselect(from);
-                    
+
                     // Select the new piece if clicking is enabled
                     if (this.config.clickable) {
                         onSelect(square);
                     }
-                    
+
                     // Set the new piece as clicked
                     this.clicked = square;
                     return false;
@@ -2317,7 +3669,7 @@
         _schedulePromotionPieceReplacement(square, promotionPiece) {
             // Mark that we're doing a promotion to prevent interference
             this.chessboard._isPromoting = true;
-            
+
             // Use a more robust approach: poll for the piece to be present
             this._waitForPieceAndReplace(square, promotionPiece, 0);
         }
@@ -2332,7 +3684,7 @@
         _waitForPieceAndReplace(square, promotionPiece, attempt) {
             const maxAttempts = 20; // Maximum 1 second of waiting (20 * 50ms)
             const targetSquare = this.boardService.getSquare(square.id);
-            
+
             if (!targetSquare) {
                 console.warn('Target square not found:', square.id);
                 this.chessboard._isPromoting = false;
@@ -2343,7 +3695,7 @@
             if (targetSquare.piece && targetSquare.piece.element) {
                 console.log('Piece found on', square.id, 'after', attempt, 'attempts');
                 this._replacePromotionPiece(square, promotionPiece);
-                
+
                 // Allow normal updates again after transformation
                 setTimeout(() => {
                     this.chessboard._isPromoting = false;
@@ -2351,7 +3703,7 @@
                     // Force a board update to ensure everything is correctly synchronized
                     this.chessboard._updateBoardPieces(false);
                 }, 400); // Wait for transformation animation to complete
-                
+
                 return;
             }
 
@@ -2363,12 +3715,12 @@
             } else {
                 console.warn('Failed to find piece for promotion after', maxAttempts, 'attempts');
                 this.chessboard._isPromoting = false;
-                
+
                 // Force a board update to recover from the failed promotion
                 this.chessboard._updateBoardPieces(false);
             }
         }
-        
+
         /**
          * Replaces the piece on the square with the promotion piece
          * @private
@@ -2377,18 +3729,18 @@
          */
         _replacePromotionPiece(square, promotionPiece) {
             console.log('Replacing piece on', square.id, 'with', promotionPiece);
-            
+
             // Get the target square from the board service
             const targetSquare = this.boardService.getSquare(square.id);
             if (!targetSquare) {
                 console.log('Target square not found:', square.id);
                 return;
             }
-            
+
             // Get the game state to determine the correct piece color
             const gameState = this.chessboard.positionService.getGame();
             const gamePiece = gameState.get(targetSquare.id);
-            
+
             if (!gamePiece) {
                 console.log('No piece found in game state for', targetSquare.id);
                 return;
@@ -2396,27 +3748,27 @@
 
             // Get the current piece on the square
             const currentPiece = targetSquare.piece;
-            
+
             if (!currentPiece) {
                 console.warn('No piece found on target square for promotion');
-                
+
                 // Try to recover by creating a new piece
                 const pieceId = promotionPiece + gamePiece.color;
                 const piecePath = this.chessboard.pieceService.getPiecePath(pieceId);
-                
+
                 const newPiece = new Piece(
                     gamePiece.color,
                     promotionPiece,
                     piecePath
                 );
-                
+
                 // Place the new piece on the square
                 targetSquare.putPiece(newPiece);
-                
+
                 // Set up drag functionality
                 const dragFunction = this.chessboard._createDragFunction.bind(this.chessboard);
                 newPiece.setDrag(dragFunction(targetSquare, newPiece));
-                
+
                 console.log('Created new promotion piece:', pieceId, 'on', targetSquare.id);
                 return;
             }
@@ -2424,7 +3776,7 @@
             // Create the piece ID and get the path
             const pieceId = promotionPiece + gamePiece.color;
             const piecePath = this.chessboard.pieceService.getPiecePath(pieceId);
-            
+
             console.log('Transforming piece to:', pieceId, 'with path:', piecePath);
 
             // Use the new smooth transformation animation
@@ -2436,14 +3788,14 @@
                     // After transformation, set up drag functionality
                     const dragFunction = this.chessboard._createDragFunction.bind(this.chessboard);
                     currentPiece.setDrag(dragFunction(targetSquare, currentPiece));
-                    
+
                     // Ensure hints are properly updated after promotion
                     if (this.config.hints && this.chessboard.moveService) {
                         setTimeout(() => {
                             this.chessboard.moveService.clearCache();
                         }, 100);
                     }
-                    
+
                     console.log('Successfully transformed piece on', targetSquare.id, 'to', pieceId);
                 }
             );
@@ -2506,7 +3858,7 @@
                     element.removeEventListener(type, handler);
                 });
             });
-            
+
             this.eventListeners.clear();
         }
 
@@ -2519,7 +3871,7 @@
                     element.removeEventListener(type, handler);
                 });
             });
-            
+
             this.eventListeners.clear();
         }
 
@@ -2574,6 +3926,11 @@
             
             if (!onlyLegalMoves) return true;
             
+            // Check if position service and game are available
+            if (!this.positionService || !this.positionService.getGame()) {
+                return false;
+            }
+            
             const game = this.positionService.getGame();
             return square.piece.color === game.turn();
         }
@@ -2626,6 +3983,11 @@
          * @returns {Array} Array of legal moves
          */
         getLegalMoves(from = null, verbose = true) {
+            // Check if position service and game are available
+            if (!this.positionService || !this.positionService.getGame()) {
+                return [];
+            }
+            
             const game = this.positionService.getGame();
             
             if (!game) return [];
@@ -2644,6 +4006,11 @@
          * @returns {Array} Array of legal moves
          */
         getCachedLegalMoves(square) {
+            // Check if position service and game are available
+            if (!this.positionService || !this.positionService.getGame()) {
+                return [];
+            }
+            
             const game = this.positionService.getGame();
             if (!game) return [];
             
@@ -2673,6 +4040,11 @@
          * @returns {Object|null} Move result from chess.js or null if invalid
          */
         executeMove(move) {
+            // Check if position service and game are available
+            if (!this.positionService || !this.positionService.getGame()) {
+                return null;
+            }
+            
             const game = this.positionService.getGame();
             if (!game) return null;
             
@@ -2856,6 +4228,11 @@
          */
         setupPromotion(move, squares, onPromotionSelect, onPromotionCancel) {
             if (!this.requiresPromotion(move)) return false;
+            
+            // Check if position service and game are available
+            if (!this.positionService || !this.positionService.getGame()) {
+                return false;
+            }
             
             const game = this.positionService.getGame();
             const piece = game.get(move.from.id);
@@ -3128,7 +4505,7 @@
          */
         getPiecePath(piece) {
             const { piecesPath } = this.config;
-            
+
             if (typeof piecesPath === 'string') {
                 return `${piecesPath}/${piece}.svg`;
             } else if (typeof piecesPath === 'object' && piecesPath !== null) {
@@ -3150,13 +4527,28 @@
             if (piece instanceof Piece) {
                 return piece;
             }
-            
+
             if (typeof piece === 'string' && piece.length === 2) {
-                const [type, color] = piece.split('');
-                const piecePath = this.getPiecePath(piece);
+                const [first, second] = piece.split('');
+                let type, color;
+
+                // Check format: [type][color] (e.g., 'pw')
+                if (PIECE_TYPES.includes(first.toLowerCase()) && PIECE_COLORS.includes(second)) {
+                    type = first.toLowerCase();
+                    color = second;
+                }
+                // Check format: [color][type] (e.g., 'wP')
+                else if (PIECE_COLORS.includes(first) && PIECE_TYPES.includes(second.toLowerCase())) {
+                    color = first;
+                    type = second.toLowerCase();
+                } else {
+                    throw new PieceError(ERROR_MESSAGES.invalid_piece + piece, piece);
+                }
+
+                const piecePath = this.getPiecePath(type + color);
                 return new Piece(color, type, piecePath);
             }
-            
+
             throw new PieceError(ERROR_MESSAGES.invalid_piece + piece, piece);
         }
 
@@ -3169,8 +4561,9 @@
          * @param {Function} [callback] - Callback when animation completes
          */
         addPieceOnSquare(square, piece, fade = true, dragFunction, callback) {
+            console.debug(`[PieceService] addPieceOnSquare: ${piece.id} to ${square.id}`);
             square.putPiece(piece);
-            
+
             if (dragFunction) {
                 piece.setDrag(dragFunction(square, piece));
             }
@@ -3198,8 +4591,9 @@
          * @throws {PieceError} When square has no piece to remove
          */
         removePieceFromSquare(square, fade = true, callback) {
+            console.debug(`[PieceService] removePieceFromSquare: ${square.id}`);
             square.check();
-            
+
             const piece = square.piece;
             if (!piece) {
                 if (callback) callback();
@@ -3229,17 +4623,18 @@
          * @param {Function} [callback] - Callback function when animation completes
          */
         movePiece(piece, targetSquare, duration, callback) {
+            console.debug(`[PieceService] movePiece: ${piece.id} to ${targetSquare.id}`);
             if (!piece) {
                 console.warn('PieceService.movePiece: piece is null, skipping animation');
                 if (callback) callback();
                 return;
             }
-            
+
             piece.translate(
-                targetSquare, 
-                duration, 
-                this._getTransitionTimingFunction(), 
-                this.config.moveAnimation, 
+                targetSquare,
+                duration,
+                this._getTransitionTimingFunction(),
+                this.config.moveAnimation,
                 callback
             );
         }
@@ -3253,6 +4648,7 @@
          * @param {Function} [callback] - Callback function when complete
          */
         translatePiece(move, removeTarget, animate, dragFunction = null, callback = null) {
+            console.debug(`[PieceService] translatePiece: ${move.piece.id} from ${move.from.id} to ${move.to.id}`);
             if (!move.piece) {
                 console.warn('PieceService.translatePiece: move.piece is null, skipping translation');
                 if (callback) callback();
@@ -3268,25 +4664,25 @@
             const changeSquareCallback = () => {
                 // Check if piece still exists and is on the source square
                 if (move.from.piece === move.piece) {
-                    move.from.removePiece();
+                    move.from.removePiece(true); // Preserve the piece when moving
                 }
-                
+
                 // Only put piece if destination square doesn't already have it
                 if (move.to.piece !== move.piece) {
                     move.to.putPiece(move.piece);
-                    
+
                     // Re-attach drag handler if provided
-                    if (dragFunction && this.config.draggable) {
+                    if (dragFunction && this.config.draggable && move.piece.element) {
                         move.piece.setDrag(dragFunction(move.to, move.piece));
                     }
                 }
-                
+
                 if (callback) callback();
             };
 
             // Check if piece is currently being dragged
             const isDragging = move.piece.element.classList.contains('dragging');
-            
+
             if (isDragging) {
                 // If piece is being dragged, don't animate - just move it immediately
                 // The piece is already visually in the correct position from the drag
@@ -3307,14 +4703,13 @@
             if (!square || !square.piece) {
                 return;
             }
-            
             const piece = square.piece;
             const duration = animate ? this.config.snapbackTime : 0;
-            
+            console.debug(`[PieceService] snapbackPiece: ${piece.id} on ${square.id}`);
             piece.translate(
-                square, 
-                duration, 
-                this._getTransitionTimingFunction(), 
+                square,
+                duration,
+                this._getTransitionTimingFunction(),
                 this.config.snapbackAnimation
             );
         }
@@ -3328,17 +4723,17 @@
             if (!square || !square.piece) {
                 return;
             }
-            
             const piece = square.piece;
             const duration = animate ? this.config.dropCenterTime : 0;
-            
+            console.debug(`[PieceService] centerPiece: ${piece.id} on ${square.id}`);
             piece.translate(
-                square, 
-                duration, 
-                this._getTransitionTimingFunction(), 
+                square,
+                duration,
+                this._getTransitionTimingFunction(),
                 this.config.dropCenterAnimation,
                 () => {
                     // After animation, reset all drag-related styles
+                    if (!piece.element) return;
                     piece.element.style.position = '';
                     piece.element.style.left = '';
                     piece.element.style.top = '';
@@ -3356,7 +4751,7 @@
         _getTransitionTimingFunction() {
             return (elapsed, duration, type = 'ease') => {
                 const x = elapsed / duration;
-                
+
                 switch (type) {
                     case 'linear':
                         return x;
@@ -4287,8 +5682,8 @@
                 return true;
             }
             else if (
-            // k vs. kn .... or .... k vs. kb
-            numPieces === 3 &&
+                // k vs. kn .... or .... k vs. kb
+                numPieces === 3 &&
                 (pieces[BISHOP] === 1 || pieces[KNIGHT] === 1)) {
                 return true;
             }
@@ -4921,14 +6316,14 @@
             function toHex(s) {
                 return Array.from(s)
                     .map(function (c) {
-                    /*
-                     * encodeURI doesn't transform most ASCII characters, so we handle
-                     * these ourselves
-                     */
-                    return c.charCodeAt(0) < 128
-                        ? c.charCodeAt(0).toString(16)
-                        : encodeURIComponent(c).replace(/%/g, '').toLowerCase();
-                })
+                        /*
+                         * encodeURI doesn't transform most ASCII characters, so we handle
+                         * these ourselves
+                         */
+                        return c.charCodeAt(0) < 128
+                            ? c.charCodeAt(0).toString(16)
+                            : encodeURIComponent(c).replace(/%/g, '').toLowerCase();
+                    })
                     .join('');
             }
             function fromHex(s) {
@@ -4949,12 +6344,12 @@
             let ms = pgn
                 .replace(headerString, '')
                 .replace(
-            // encode comments so they don't get deleted below
-            new RegExp(`({[^}]*})+?|;([^${mask(newlineChar)}]*)`, 'g'), function (_match, bracket, semicolon) {
-                return bracket !== undefined
-                    ? encodeComment(bracket)
-                    : ' ' + encodeComment(`{${semicolon.slice(1)}}`);
-            })
+                    // encode comments so they don't get deleted below
+                    new RegExp(`({[^}]*})+?|;([^${mask(newlineChar)}]*)`, 'g'), function (_match, bracket, semicolon) {
+                        return bracket !== undefined
+                            ? encodeComment(bracket)
+                            : ' ' + encodeComment(`{${semicolon.slice(1)}}`);
+                    })
                 .replace(new RegExp(mask(newlineChar), 'g'), ' ');
             // delete recursive annotation variations
             const ravRegex = /(\([^()]+\))+?/g;
@@ -5601,333 +6996,6 @@
     }
 
     /**
-     * Service for input validation and data sanitization
-     * @module services/ValidationService
-     * @since 2.0.0
-     */
-
-
-    /**
-     * Service responsible for validating inputs and data
-     * @class
-     */
-    class ValidationService {
-        /**
-         * Creates a new ValidationService instance
-         */
-        constructor() {
-            this.validSquarePattern = /^[a-h][1-8]$/;
-            this.validPiecePattern = /^[prnbqkPRNBQK][wb]$/;
-            this.validFenPattern = /^([rnbqkpRNBQKP1-8]+\/){7}[rnbqkpRNBQKP1-8]+\s[wb]\s[KQkq-]+\s[a-h1-8-]+\s\d+\s\d+$/;
-        }
-
-        /**
-         * Validates a square identifier
-         * @param {string} square - Square to validate (e.g., 'e4')
-         * @returns {boolean} True if valid
-         */
-        isValidSquare(square) {
-            return typeof square === 'string' && this.validSquarePattern.test(square);
-        }
-
-        /**
-         * Validates a piece identifier
-         * @param {string} piece - Piece to validate (e.g., 'wK', 'bp')
-         * @returns {boolean} True if valid
-         */
-        isValidPiece(piece) {
-            if (typeof piece !== 'string' || piece.length !== 2) {
-                return false;
-            }
-            
-            const [type, color] = piece.split('');
-            return PIECE_TYPES.includes(type.toLowerCase()) && PIECE_COLORS.includes(color);
-        }
-
-        /**
-         * Validates a FEN string
-         * @param {string} fen - FEN string to validate
-         * @returns {boolean} True if valid
-         */
-        isValidFen(fen) {
-            if (typeof fen !== 'string') {
-                return false;
-            }
-            
-            // Basic pattern check
-            if (!this.validFenPattern.test(fen)) {
-                return false;
-            }
-            
-            // Additional FEN validation logic could be added here
-            return true;
-        }
-
-        /**
-         * Validates a move string
-         * @param {string} move - Move string to validate (e.g., 'e2e4', 'e7e8q')
-         * @returns {boolean} True if valid
-         */
-        isValidMove(move) {
-            if (typeof move !== 'string' || move.length < 4 || move.length > 5) {
-                return false;
-            }
-            
-            const from = move.slice(0, 2);
-            const to = move.slice(2, 4);
-            const promotion = move.slice(4, 5);
-            
-            if (!this.isValidSquare(from) || !this.isValidSquare(to)) {
-                return false;
-            }
-            
-            if (promotion && !['q', 'r', 'b', 'n'].includes(promotion.toLowerCase())) {
-                return false;
-            }
-            
-            return true;
-        }
-
-        /**
-         * Validates board orientation
-         * @param {string} orientation - Orientation to validate
-         * @returns {boolean} True if valid
-         */
-        isValidOrientation(orientation) {
-            return orientation === 'w' || orientation === 'b' || 
-                   orientation === 'white' || orientation === 'black';
-        }
-
-        /**
-         * Validates a color value
-         * @param {string} color - Color to validate
-         * @returns {boolean} True if valid
-         */
-        isValidColor(color) {
-            return color === 'w' || color === 'b' || 
-                   color === 'white' || color === 'black';
-        }
-
-        /**
-         * Validates a size value
-         * @param {number|string} size - Size to validate
-         * @returns {boolean} True if valid
-         */
-        isValidSize(size) {
-            if (size === 'auto') {
-                return true;
-            }
-            
-            if (typeof size === 'number') {
-                return size > 0 && size <= 2000; // Reasonable limits
-            }
-            
-            return false;
-        }
-
-        /**
-         * Validates a time value (for animations)
-         * @param {number} time - Time value to validate
-         * @returns {boolean} True if valid
-         */
-        isValidTime(time) {
-            return typeof time === 'number' && time >= 0 && time <= 10000;
-        }
-
-        /**
-         * Validates a callback function
-         * @param {Function} callback - Callback to validate
-         * @returns {boolean} True if valid
-         */
-        isValidCallback(callback) {
-            return typeof callback === 'function';
-        }
-
-        /**
-         * Validates a DOM element ID
-         * @param {string} id - Element ID to validate
-         * @returns {boolean} True if valid
-         */
-        isValidElementId(id) {
-            return typeof id === 'string' && id.length > 0;
-        }
-
-        /**
-         * Validates movable colors configuration
-         * @param {string} colors - Colors value to validate
-         * @returns {boolean} True if valid
-         */
-        isValidMovableColors(colors) {
-            return ['w', 'b', 'white', 'black', 'both', 'none'].includes(colors);
-        }
-
-        /**
-         * Validates drop off board configuration
-         * @param {string} dropOff - Drop off board value to validate
-         * @returns {boolean} True if valid
-         */
-        isValidDropOffBoard(dropOff) {
-            return ['snapback', 'trash'].includes(dropOff);
-        }
-
-        /**
-         * Validates animation easing type
-         * @param {string} easing - Easing type to validate
-         * @returns {boolean} True if valid
-         */
-        isValidEasing(easing) {
-            return ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'].includes(easing);
-        }
-
-        /**
-         * Validates animation style
-         * @param {string} style - Animation style to validate
-         * @returns {boolean} True if valid
-         */
-        isValidAnimationStyle(style) {
-            return ['sequential', 'simultaneous'].includes(style);
-        }
-
-        /**
-         * Validates and sanitizes a square identifier
-         * @param {string} square - Square to validate
-         * @returns {string} Sanitized square
-         * @throws {ValidationError} If square is invalid
-         */
-        validateSquare(square) {
-            if (!this.isValidSquare(square)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_square + square, 'square', square);
-            }
-            return square.toLowerCase();
-        }
-
-        /**
-         * Validates and sanitizes a piece identifier
-         * @param {string} piece - Piece to validate
-         * @returns {string} Sanitized piece
-         * @throws {ValidationError} If piece is invalid
-         */
-        validatePiece(piece) {
-            if (!this.isValidPiece(piece)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_piece + piece, 'piece', piece);
-            }
-            return piece.toLowerCase();
-        }
-
-        /**
-         * Validates and sanitizes a FEN string
-         * @param {string} fen - FEN to validate
-         * @returns {string} Sanitized FEN
-         * @throws {ValidationError} If FEN is invalid
-         */
-        validateFen(fen) {
-            if (!this.isValidFen(fen)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_fen + fen, 'fen', fen);
-            }
-            return fen.trim();
-        }
-
-        /**
-         * Validates and sanitizes a move string
-         * @param {string} move - Move to validate
-         * @returns {string} Sanitized move
-         * @throws {ValidationError} If move is invalid
-         */
-        validateMove(move) {
-            if (!this.isValidMove(move)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_move + move, 'move', move);
-            }
-            return move.toLowerCase();
-        }
-
-        /**
-         * Validates and sanitizes orientation
-         * @param {string} orientation - Orientation to validate
-         * @returns {string} Sanitized orientation ('w' or 'b')
-         * @throws {ValidationError} If orientation is invalid
-         */
-        validateOrientation(orientation) {
-            if (!this.isValidOrientation(orientation)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_orientation + orientation, 'orientation', orientation);
-            }
-            
-            // Normalize to 'w' or 'b'
-            return orientation === 'white' ? 'w' : orientation === 'black' ? 'b' : orientation;
-        }
-
-        /**
-         * Validates and sanitizes color
-         * @param {string} color - Color to validate
-         * @returns {string} Sanitized color ('w' or 'b')
-         * @throws {ValidationError} If color is invalid
-         */
-        validateColor(color) {
-            if (!this.isValidColor(color)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_color + color, 'color', color);
-            }
-            
-            // Normalize to 'w' or 'b'
-            return color === 'white' ? 'w' : color === 'black' ? 'b' : color;
-        }
-
-        /**
-         * Validates and sanitizes size
-         * @param {number|string} size - Size to validate
-         * @returns {number|string} Sanitized size
-         * @throws {ValidationError} If size is invalid
-         */
-        validateSize(size) {
-            if (!this.isValidSize(size)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_value + size, 'size', size);
-            }
-            return size;
-        }
-
-        /**
-         * Validates configuration object
-         * @param {Object} config - Configuration to validate
-         * @returns {Object} Validated configuration
-         * @throws {ValidationError} If configuration is invalid
-         */
-        validateConfig(config) {
-            if (!config || typeof config !== 'object') {
-                throw new ValidationError('Configuration must be an object', 'config', config);
-            }
-            
-            // Validate required fields
-            if (!config.id && !config.id_div) {
-                throw new ValidationError('Configuration must include id or id_div', 'id', config.id);
-            }
-            
-            // Validate optional fields
-            if (config.orientation && !this.isValidOrientation(config.orientation)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_orientation + config.orientation, 'orientation', config.orientation);
-            }
-            
-            if (config.size && !this.isValidSize(config.size)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_value + config.size, 'size', config.size);
-            }
-            
-            if (config.movableColors && !this.isValidMovableColors(config.movableColors)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_color + config.movableColors, 'movableColors', config.movableColors);
-            }
-            
-            if (config.dropOffBoard && !this.isValidDropOffBoard(config.dropOffBoard)) {
-                throw new ValidationError(ERROR_MESSAGES.invalid_dropOffBoard + config.dropOffBoard, 'dropOffBoard', config.dropOffBoard);
-            }
-            
-            return config;
-        }
-
-        /**
-         * Cleans up resources
-         */
-        destroy() {
-            // No cleanup needed for this service
-        }
-    }
-
-    /**
      * Main Chessboard class - Orchestrates all services and components
      * @module core/Chessboard
      * @since 2.0.0
@@ -5936,25 +7004,101 @@
 
     /**
      * Main Chessboard class responsible for coordinating all services
+     * Implements the Facade pattern to provide a unified interface
      * @class
      */
     let Chessboard$1 = class Chessboard {
         /**
          * Creates a new Chessboard instance
          * @param {Object} config - Configuration object
+         * @throws {ConfigurationError} If configuration is invalid
          */
         constructor(config) {
-            console.log('Chessboard constructor received config:', config);
-            
-            // Initialize configuration
+            try {
+                // Initialize performance monitoring
+                this._performanceMonitor = new PerformanceMonitor();
+                this._performanceMonitor.startMeasure('chessboard-initialization');
+
+                // Validate and initialize configuration
+                this._validateAndInitializeConfig(config);
+
+                // Initialize services
+                this._initializeServices();
+
+                // Initialize the board
+                this._initialize();
+
+                this._performanceMonitor.endMeasure('chessboard-initialization');
+            } catch (error) {
+                this._handleConstructorError(error);
+            }
+            this._undoneMoves = [];
+        }
+
+        /**
+         * Validates and initializes configuration
+         * @private
+         * @param {Object} config - Raw configuration object
+         * @throws {ConfigurationError} If configuration is invalid
+         */
+        _validateAndInitializeConfig(config) {
+            if (!config || typeof config !== 'object') {
+                throw new ConfigurationError('Configuration must be an object', 'config', config);
+            }
+
             this.config = new ChessboardConfig(config);
-            console.log('Processed config.id_div:', this.config.id_div);
-            
-            // Initialize services
-            this._initializeServices();
-            
-            // Initialize the board
-            this._initialize();
+
+            // Validate required configuration
+            if (!this.config.id_div) {
+                throw new ConfigurationError('Configuration must include id_div', 'id_div', this.config.id_div);
+            }
+        }
+
+        /**
+         * Handles constructor errors gracefully
+         * @private
+         * @param {Error} error - Error that occurred during construction
+         */
+        _handleConstructorError(error) {
+            console.error('Chessboard initialization failed:', error);
+
+            // Clean up any partially initialized resources
+            this._cleanup();
+
+            // Re-throw with additional context
+            if (error instanceof ChessboardError) {
+                throw error;
+            } else {
+                throw new ChessboardError('Failed to initialize chessboard', 'INITIALIZATION_ERROR', {
+                    originalError: error.message,
+                    stack: error.stack
+                });
+            }
+        }
+
+        /**
+         * Cleans up any partially initialized resources (safe to call multiple times)
+         * @private
+         */
+        _cleanup() {
+            // Remove event listeners if present
+            if (this.eventService && typeof this.eventService.removeListeners === 'function') {
+                this.eventService.removeListeners();
+            }
+            // Clear timeouts
+            if (this._updateTimeout) {
+                clearTimeout(this._updateTimeout);
+                this._updateTimeout = null;
+            }
+            // Null all services
+            this.validationService = null;
+            this.coordinateService = null;
+            this.positionService = null;
+            this.boardService = null;
+            this.pieceService = null;
+            this.animationService = null;
+            this.moveService = null;
+            this.eventService = null;
         }
 
         /**
@@ -5977,11 +7121,11 @@
                 this.coordinateService,
                 this
             );
-            
+
             // State management
             this._updateTimeout = null;
             this._isAnimating = false;
-            
+
             // Bind methods to preserve context
             this._boundUpdateBoardPieces = this._updateBoardPieces.bind(this);
             this._boundOnSquareClick = this._onSquareClick.bind(this);
@@ -6025,8 +7169,18 @@
         /**
          * Builds the board DOM structure
          * @private
+         * Best practice: always remove squares (destroy JS/DOM) before clearing the board container.
          */
         _buildBoard() {
+            // Forza la pulizia completa del contenitore board (DOM)
+            const boardContainer = document.getElementById(this.config.id_div);
+            if (boardContainer) boardContainer.innerHTML = '';
+            // Force remove all pieces from all squares (no animation, best practice)
+            if (this.boardService && this.boardService.squares) {
+                Object.values(this.boardService.squares).forEach(sq => sq && sq.forceRemoveAllPieces && sq.forceRemoveAllPieces());
+            }
+            if (this.boardService && this.boardService.removeSquares) this.boardService.removeSquares();
+            if (this.boardService && this.boardService.removeBoard) this.boardService.removeBoard();
             this.boardService.buildBoard();
         }
 
@@ -6035,6 +7189,9 @@
          * @private
          */
         _buildSquares() {
+            if (this.boardService && this.boardService.removeSquares) {
+                this.boardService.removeSquares();
+            }
             this.boardService.buildSquares((row, col) => {
                 return this.coordinateService.realCoord(row, col);
             });
@@ -6106,31 +7263,31 @@
          */
         _onMove(fromSquare, toSquare, promotion = null, animate = true) {
             const move = new Move$1(fromSquare, toSquare, promotion);
-            
+
             if (!move.check()) {
                 // Clear state on failed move
                 this._clearVisualState();
                 return false;
             }
-            
+
             if (this.config.onlyLegalMoves && !move.isLegal(this.positionService.getGame())) {
                 // Clear state on illegal move
                 this._clearVisualState();
                 return false;
             }
-            
+
             if (!move.hasPromotion() && this._requiresPromotion(move)) {
                 // Don't clear state for promotion - it's handled elsewhere
                 return false;
             }
-            
+
             if (this.config.onMove(move)) {
                 // Clear state before executing move
                 this._clearVisualState();
                 this._executeMove(move, animate);
                 return true;
             }
-            
+
             // Clear state on rejected move
             this._clearVisualState();
             return false;
@@ -6164,18 +7321,18 @@
          */
         _hintMoves(square) {
             if (!this.moveService.canMove(square)) return;
-            
+
             // Clear existing hints first
             this.boardService.applyToAllSquares('removeHint');
-            
+
             const moves = this.moveService.getCachedLegalMoves(square);
-            
+
             for (const move of moves) {
                 if (move.to && move.to.length === 2) {
                     const targetSquare = this.boardService.getSquare(move.to);
                     if (targetSquare) {
-                        const hasEnemyPiece = targetSquare.piece && 
-                                             targetSquare.piece.color !== this.positionService.getGame().turn();
+                        const hasEnemyPiece = targetSquare.piece &&
+                            targetSquare.piece.color !== this.positionService.getGame().turn();
                         targetSquare.putHint(hasEnemyPiece);
                     }
                 }
@@ -6189,7 +7346,7 @@
          */
         _dehintMoves(square) {
             const moves = this.moveService.getCachedLegalMoves(square);
-            
+
             for (const move of moves) {
                 if (move.to && move.to.length === 2) {
                     const targetSquare = this.boardService.getSquare(move.to);
@@ -6218,40 +7375,40 @@
          */
         _executeMove(move, animate = true) {
             this.positionService.getGame().fen();
-            
+
             if (this.config.onlyLegalMoves) {
                 this.boardService.applyToAllSquares('unmoved');
-                
+
                 const gameMove = this.moveService.executeMove(move);
                 if (!gameMove) {
                     throw new Error('Move execution failed');
                 }
-                
+
                 move.from.moved();
                 move.to.moved();
-                
+
                 // Check for special moves that need additional handling
                 const isCastleMove = this.moveService.isCastle(gameMove);
                 const isEnPassantMove = this.moveService.isEnPassant(gameMove);
-                
+
                 // Animate the move if requested
                 if (animate && move.from.piece) {
                     const capturedPiece = move.to.piece;
-                    
+
                     // For castle moves in simultaneous mode, we need to coordinate both animations
                     if (isCastleMove && this.config.animationStyle === 'simultaneous') {
                         // Start king animation
                         this.pieceService.translatePiece(
-                            move, 
-                            !!capturedPiece, 
-                            animate, 
+                            move,
+                            !!capturedPiece,
+                            animate,
                             this._createDragFunction.bind(this),
                             () => {
                                 // King animation completed, trigger change event
                                 this.config.onMoveEnd(gameMove);
                             }
                         );
-                        
+
                         // Start rook animation simultaneously (with small delay)
                         setTimeout(() => {
                             this._handleCastleMove(gameMove, true);
@@ -6259,9 +7416,9 @@
                     } else {
                         // Regular move or sequential castle
                         this.pieceService.translatePiece(
-                            move, 
-                            !!capturedPiece, 
-                            animate, 
+                            move,
+                            !!capturedPiece,
+                            animate,
                             this._createDragFunction.bind(this),
                             () => {
                                 // After animation, handle special moves and trigger change event
@@ -6288,14 +7445,14 @@
                 // Handle non-legal mode
                 const piece = this.positionService.getGamePieceId(move.from.id);
                 const game = this.positionService.getGame();
-                
+
                 game.remove(move.from.id);
                 game.remove(move.to.id);
-                game.put({ 
-                    type: move.hasPromotion() ? move.promotion : piece[0], 
-                    color: piece[1] 
+                game.put({
+                    type: move.hasPromotion() ? move.promotion : piece[0],
+                    color: piece[1]
                 }, move.to.id);
-                
+
                 // Update board for non-legal mode
                 this._updateBoardPieces(animate);
             }
@@ -6336,17 +7493,17 @@
         _handleCastleMove(gameMove, animate) {
             const rookMove = this.moveService.getCastleRookMove(gameMove);
             if (!rookMove) return;
-            
+
             const rookFromSquare = this.boardService.getSquare(rookMove.from);
             const rookToSquare = this.boardService.getSquare(rookMove.to);
-            
+
             if (!rookFromSquare || !rookToSquare || !rookFromSquare.piece) {
                 console.warn('Castle rook move failed - squares or piece not found');
                 return;
             }
-            
+
             console.log(`Castle: moving rook from ${rookMove.from} to ${rookMove.to}`);
-            
+
             if (animate) {
                 // Always use translatePiece for smooth sliding animation
                 const rookPiece = rookFromSquare.piece;
@@ -6375,15 +7532,15 @@
         _handleEnPassantMove(gameMove, animate) {
             const capturedSquare = this.moveService.getEnPassantCapturedSquare(gameMove);
             if (!capturedSquare) return;
-            
+
             const capturedSquareObj = this.boardService.getSquare(capturedSquare);
             if (!capturedSquareObj || !capturedSquareObj.piece) {
                 console.warn('En passant captured square not found or empty');
                 return;
             }
-            
+
             console.log(`En passant: removing captured pawn from ${capturedSquare}`);
-            
+
             if (animate) {
                 // Animate the captured pawn removal
                 this.pieceService.removePieceFromSquare(capturedSquareObj, true);
@@ -6404,44 +7561,50 @@
          * @param {boolean} [isPositionLoad=false] - Whether this is a position load
          */
         _updateBoardPieces(animation = false, isPositionLoad = false) {
+            // Check if services are available
+            if (!this.positionService || !this.moveService || !this.eventService) {
+                console.log('Cannot update board pieces - services not available');
+                return;
+            }
+
             // Clear any pending update
             if (this._updateTimeout) {
                 clearTimeout(this._updateTimeout);
                 this._updateTimeout = null;
             }
-            
+
             // Clear moves cache
             this.moveService.clearCache();
-            
+
             // Add small delay for click-to-move to avoid lag
             if (animation && !this.eventService.getClicked()) {
                 this._updateTimeout = setTimeout(() => {
                     this._doUpdateBoardPieces(animation, isPositionLoad);
                     this._updateTimeout = null;
-                    
+
                     // Ensure hints are available for the next turn
                     this._ensureHintsAvailable();
                 }, 10);
             } else {
                 this._doUpdateBoardPieces(animation, isPositionLoad);
-                
+
                 // Ensure hints are available for the next turn
                 this._ensureHintsAvailable();
             }
         }
-        
+
         /**
          * Ensures hints are available for the current turn
          * @private
          */
         _ensureHintsAvailable() {
             if (!this.config.hints) return;
-            
+
             // Small delay to ensure the board state is fully updated
             setTimeout(() => {
                 // Clear any existing hints
                 this.boardService.applyToAllSquares('removeHint');
-                
+
                 // The hints will be shown when the user hovers over pieces
                 // This just ensures the cache is ready
                 this.moveService.clearCache();
@@ -6468,17 +7631,23 @@
                 console.log('Skipping board update during promotion');
                 return;
             }
-            
+
+            // Check if services are available
+            if (!this.positionService || !this.positionService.getGame()) {
+                console.log('Cannot update board pieces - position service not available');
+                return;
+            }
+
             const squares = this.boardService.getAllSquares();
             const gameStateBefore = this.positionService.getGame().fen();
-            
+
             console.log('_doUpdateBoardPieces - current FEN:', gameStateBefore);
             console.log('_doUpdateBoardPieces - animation:', animation, 'style:', this.config.animationStyle, 'isPositionLoad:', isPositionLoad);
-            
+
             // Determine which animation style to use
             const useSimultaneous = this.config.animationStyle === 'simultaneous';
             console.log('_doUpdateBoardPieces - useSimultaneous:', useSimultaneous);
-            
+
             if (useSimultaneous) {
                 console.log('Using simultaneous animation');
                 this._doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad);
@@ -6501,11 +7670,11 @@
                 const expectedPieceId = this.positionService.getGamePieceId(square.id);
                 const currentPiece = square.piece;
                 const currentPieceId = currentPiece ? currentPiece.getId() : null;
-                
+
                 // Log only for squares that are changing
                 if (currentPieceId !== expectedPieceId) {
                     console.log(`_doSequentialUpdate - ${square.id}: ${currentPieceId} -> ${expectedPieceId}`);
-                    
+
                     // Check if we already have the correct piece (from promotion)
                     if (currentPiece && currentPiece.getId() === expectedPieceId) {
                         console.log(`Piece ${expectedPieceId} already correctly placed on ${square.id}`);
@@ -6514,13 +7683,13 @@
                         if (currentPiece) {
                             this.pieceService.removePieceFromSquare(square, animation);
                         }
-                        
+
                         // Add new piece if needed
                         if (expectedPieceId) {
                             const newPiece = this.pieceService.convertPiece(expectedPieceId);
                             this.pieceService.addPieceOnSquare(
-                                square, 
-                                newPiece, 
+                                square,
+                                newPiece,
                                 animation,
                                 this._createDragFunction.bind(this)
                             );
@@ -6528,10 +7697,10 @@
                     }
                 }
             });
-            
+
             // Re-add listeners after updating pieces to ensure hover events work correctly
             this._addListeners();
-            
+
             // Trigger change event if position changed
             const gameStateAfter = this.positionService.getGame().fen();
             if (gameStateBefore !== gameStateAfter) {
@@ -6548,14 +7717,14 @@
          */
         _doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad = false) {
             console.log('_doSimultaneousUpdate - Starting simultaneous update');
-            
+
             // Analyze what changes need to be made
             const changeAnalysis = this._analyzePositionChanges(squares);
-            
+
             if (changeAnalysis.totalChanges === 0) {
                 console.log('_doSimultaneousUpdate - No changes needed, returning');
                 this._addListeners();
-                
+
                 // Trigger change event if position changed
                 const gameStateAfter = this.positionService.getGame().fen();
                 if (gameStateBefore !== gameStateAfter) {
@@ -6563,9 +7732,9 @@
                 }
                 return;
             }
-            
+
             console.log('_doSimultaneousUpdate - Change analysis:', changeAnalysis);
-            
+
             // Execute all changes simultaneously
             this._executeSimultaneousChanges(changeAnalysis, gameStateBefore, isPositionLoad);
         }
@@ -6579,76 +7748,93 @@
         _analyzePositionChanges(squares) {
             const currentPieces = new Map();
             const expectedPieces = new Map();
-            
+
             // Map current and expected piece positions
             Object.values(squares).forEach(square => {
                 const currentPiece = square.piece;
                 const expectedPieceId = this.positionService.getGamePieceId(square.id);
-                
+
                 if (currentPiece) {
                     currentPieces.set(square.id, currentPiece.getId());
                 }
-                
+
                 if (expectedPieceId) {
                     expectedPieces.set(square.id, expectedPieceId);
                 }
             });
-            
+
+            console.log('Position Analysis:');
+            console.log('Current pieces:', Array.from(currentPieces.entries()));
+            console.log('Expected pieces:', Array.from(expectedPieces.entries()));
+
             // Identify different types of changes
             const moves = []; // Pieces that can slide to new positions
             const removes = []; // Pieces that need to be removed
             const adds = []; // Pieces that need to be added
             const unchanged = []; // Pieces that stay in place
-            
-            // Find pieces that can move to new positions
-            const usedDestinations = new Set();
-            
-            currentPieces.forEach((pieceId, fromSquare) => {
-                const stillExists = Array.from(expectedPieces.entries()).find(([toSquare, expectedId]) => 
-                    expectedId === pieceId && !usedDestinations.has(toSquare)
+
+            // First pass: identify pieces that don't need to move (same piece type on same square)
+            const processedSquares = new Set();
+
+            currentPieces.forEach((currentPieceId, square) => {
+                const expectedPieceId = expectedPieces.get(square);
+
+                if (currentPieceId === expectedPieceId) {
+                    // Same piece type on same square - no movement needed
+                    console.log(`UNCHANGED: ${currentPieceId} stays on ${square}`);
+                    unchanged.push({
+                        piece: currentPieceId,
+                        square: square
+                    });
+                    processedSquares.add(square);
+                }
+            });
+
+            // Second pass: handle pieces that need to move or be removed
+            currentPieces.forEach((currentPieceId, fromSquare) => {
+                if (processedSquares.has(fromSquare)) {
+                    return; // Already processed as unchanged
+                }
+
+                // Try to find a destination for this piece
+                const availableDestination = Array.from(expectedPieces.entries()).find(([toSquare, expectedId]) =>
+                    expectedId === currentPieceId && !processedSquares.has(toSquare)
                 );
-                
-                if (stillExists) {
-                    const [toSquare, expectedId] = stillExists;
-                    if (fromSquare !== toSquare) {
-                        // This piece moves from one square to another
-                        moves.push({
-                            piece: pieceId,
-                            from: fromSquare,
-                            to: toSquare,
-                            fromSquare: squares[fromSquare],
-                            toSquare: squares[toSquare]
-                        });
-                        usedDestinations.add(toSquare);
-                    } else {
-                        // This piece stays in the same place
-                        unchanged.push({
-                            piece: pieceId,
-                            square: fromSquare
-                        });
-                        usedDestinations.add(toSquare);
-                    }
+
+                if (availableDestination) {
+                    const [toSquare, expectedId] = availableDestination;
+                    console.log(`MOVE: ${currentPieceId} from ${fromSquare} to ${toSquare}`);
+                    moves.push({
+                        piece: currentPieceId,
+                        from: fromSquare,
+                        to: toSquare,
+                        fromSquare: squares[fromSquare],
+                        toSquare: squares[toSquare]
+                    });
+                    processedSquares.add(toSquare);
                 } else {
                     // This piece needs to be removed
+                    console.log(`REMOVE: ${currentPieceId} from ${fromSquare}`);
                     removes.push({
-                        piece: pieceId,
+                        piece: currentPieceId,
                         square: fromSquare,
                         squareObj: squares[fromSquare]
                     });
                 }
             });
-            
-            // Find pieces that need to be added
-            expectedPieces.forEach((pieceId, toSquare) => {
-                if (!usedDestinations.has(toSquare)) {
+
+            // Third pass: handle pieces that need to be added
+            expectedPieces.forEach((expectedPieceId, toSquare) => {
+                if (!processedSquares.has(toSquare)) {
+                    console.log(`ADD: ${expectedPieceId} to ${toSquare}`);
                     adds.push({
-                        piece: pieceId,
+                        piece: expectedPieceId,
                         square: toSquare,
                         squareObj: squares[toSquare]
                     });
                 }
             });
-            
+
             return {
                 moves,
                 removes,
@@ -6666,18 +7852,43 @@
          * @param {boolean} [isPositionLoad=false] - Whether this is a position load
          */
         _executeSimultaneousChanges(changeAnalysis, gameStateBefore, isPositionLoad = false) {
-            const { moves, removes, adds } = changeAnalysis;
-            
+            const { moves, removes, adds, unchanged } = changeAnalysis;
+
+            console.log(`Position changes analysis:`, {
+                moves: moves.length,
+                removes: removes.length,
+                adds: adds.length,
+                unchanged: unchanged.length
+            });
+
+            // Log unchanged pieces for debugging
+            if (unchanged.length > 0) {
+                console.log('Pieces staying in place:', unchanged.map(u => `${u.piece} on ${u.square}`));
+            }
+
             let animationsCompleted = 0;
             const totalAnimations = moves.length + removes.length + adds.length;
-            
+
+            // If no animations are needed, complete immediately
+            if (totalAnimations === 0) {
+                console.log('No animations needed, completing immediately');
+                this._addListeners();
+
+                // Trigger change event if position changed
+                const gameStateAfter = this.positionService.getGame().fen();
+                if (gameStateBefore !== gameStateAfter) {
+                    this.config.onChange(gameStateAfter);
+                }
+                return;
+            }
+
             const onAnimationComplete = () => {
                 animationsCompleted++;
                 console.log(`Animation completed: ${animationsCompleted}/${totalAnimations}`);
                 if (animationsCompleted === totalAnimations) {
                     console.log('All simultaneous animations completed');
                     this._addListeners();
-                    
+
                     // Trigger change event if position changed
                     const gameStateAfter = this.positionService.getGame().fen();
                     if (gameStateBefore !== gameStateAfter) {
@@ -6685,46 +7896,46 @@
                     }
                 }
             };
-            
+
             // Determine delay: 0 for position loads, configured delay for normal moves
             const animationDelay = isPositionLoad ? 0 : this.config.simultaneousAnimationDelay;
             console.log(`Using animation delay: ${animationDelay}ms (position load: ${isPositionLoad})`);
-            
+
             let animationIndex = 0;
-            
+
             // Process moves (pieces sliding to new positions)
             moves.forEach(move => {
                 const delay = animationIndex * animationDelay;
                 console.log(`Scheduling move ${move.piece} from ${move.from} to ${move.to} with delay ${delay}ms`);
-                
+
                 setTimeout(() => {
                     this._animatePieceMove(move, onAnimationComplete);
                 }, delay);
-                
+
                 animationIndex++;
             });
-            
+
             // Process removes (pieces disappearing)
             removes.forEach(remove => {
                 const delay = animationIndex * animationDelay;
                 console.log(`Scheduling removal of ${remove.piece} from ${remove.square} with delay ${delay}ms`);
-                
+
                 setTimeout(() => {
                     this._animatePieceRemoval(remove, onAnimationComplete);
                 }, delay);
-                
+
                 animationIndex++;
             });
-            
+
             // Process adds (pieces appearing)
             adds.forEach(add => {
                 const delay = animationIndex * animationDelay;
                 console.log(`Scheduling addition of ${add.piece} to ${add.square} with delay ${delay}ms`);
-                
+
                 setTimeout(() => {
                     this._animatePieceAddition(add, onAnimationComplete);
                 }, delay);
-                
+
                 animationIndex++;
             });
         }
@@ -6738,15 +7949,15 @@
         _animatePieceMove(move, onComplete) {
             const { fromSquare, toSquare } = move;
             const piece = fromSquare.piece;
-            
+
             if (!piece) {
                 console.warn(`No piece found on ${move.from} for move animation`);
                 onComplete();
                 return;
             }
-            
+
             console.log(`Animating piece move: ${move.piece} from ${move.from} to ${move.to}`);
-            
+
             // Use translatePiece for smooth sliding animation
             this.pieceService.translatePiece(
                 { from: fromSquare, to: toSquare, piece: piece },
@@ -6768,7 +7979,7 @@
          */
         _animatePieceRemoval(remove, onComplete) {
             console.log(`Animating piece removal: ${remove.piece} from ${remove.square}`);
-            
+
             this.pieceService.removePieceFromSquare(remove.squareObj, true, () => {
                 console.log(`Piece removal animation completed: ${remove.piece} from ${remove.square}`);
                 onComplete();
@@ -6783,11 +7994,11 @@
          */
         _animatePieceAddition(add, onComplete) {
             console.log(`Animating piece addition: ${add.piece} to ${add.square}`);
-            
+
             const newPiece = this.pieceService.convertPiece(add.piece);
             this.pieceService.addPieceOnSquare(
-                add.squareObj, 
-                newPiece, 
+                add.squareObj,
+                newPiece,
                 true,
                 this._createDragFunction.bind(this),
                 () => {
@@ -6851,79 +8062,401 @@
         }
 
         // -------------------
-        // Public API Methods
+        // Public API Methods (Refactored)
         // -------------------
 
+        // --- POSITION & STATE ---
         /**
-         * Gets the current position as FEN
-         * @returns {string} FEN string
+         * Get the current position as FEN
+         * @returns {string}
          */
-        fen() {
-            return this.positionService.getGame().fen();
+        getPosition() { return this.fen(); }
+        /**
+         * Set the board position (FEN or object)
+         * @param {string|Object} position
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
+         * @returns {boolean}
+         */
+        setPosition(position, opts = {}) {
+            const animate = opts.animate !== undefined ? opts.animate : true;
+            // Remove highlights and selections
+            if (this.boardService && this.boardService.applyToAllSquares) {
+                this.boardService.applyToAllSquares('removeHint');
+                this.boardService.applyToAllSquares('deselect');
+                this.boardService.applyToAllSquares('unmoved');
+            }
+            if (this.positionService && this.positionService.setGame) {
+                this.positionService.setGame(position);
+            }
+            if (this._updateBoardPieces) {
+                this._updateBoardPieces(animate, true);
+            }
+            return true;
+        }
+        /**
+         * Reset the board to the starting position
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
+         * @returns {boolean}
+         */
+        reset(opts = {}) {
+            const animate = opts.animate !== undefined ? opts.animate : true;
+            // Use the default starting position from config or fallback
+            const startPosition = this.config && this.config.position ? this.config.position : 'start';
+            return this.setPosition(startPosition, { animate });
+        }
+        /**
+         * Clear the board
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
+         * @returns {boolean}
+         */
+        clear(opts = {}) {
+            const animate = opts.animate !== undefined ? opts.animate : true;
+            if (!this.positionService || !this.positionService.getGame()) {
+                return false;
+            }
+            if (this._clearVisualState) this._clearVisualState();
+            this.positionService.getGame().clear();
+            if (this._updateBoardPieces) {
+                this._updateBoardPieces(animate, true);
+            }
+            return true;
         }
 
+        // --- MOVE MANAGEMENT ---
         /**
-         * Gets current turn
-         * @returns {string} 'w' or 'b'
+         * Make a move
+         * @param {string|Object} move
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
+         * @returns {boolean}
          */
-        turn() {
-            return this.positionService.getGame().turn();
+        movePiece(move, opts = {}) {
+            const animate = opts.animate !== undefined ? opts.animate : true;
+            let moveObj;
+            if (typeof move === 'string') {
+                moveObj = this.moveService.parseMove(move);
+                if (!moveObj) return false;
+            } else if (move && move.from && move.to) {
+                moveObj = move;
+            } else {
+                return false;
+            }
+            const fromSquare = this.boardService.getSquare(moveObj.from);
+            const toSquare = this.boardService.getSquare(moveObj.to);
+            if (!fromSquare || !toSquare) return false;
+            // Actually make the move in the game state
+            const game = this.positionService.getGame();
+            const result = game.move ? game.move({ from: moveObj.from, to: moveObj.to, promotion: moveObj.promotion }) : null;
+            if (!result) return false;
+            // Update the board visually
+            if (this._updateBoardPieces) {
+                this._updateBoardPieces(animate, true);
+            }
+            return true;
+        }
+        /**
+         * Undo last move
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
+         * @returns {boolean}
+         */
+        undoMove(opts = {}) { return this.undo(opts.animate); }
+        /**
+         * Redo last undone move
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
+         * @returns {boolean}
+         */
+        redoMove(opts = {}) { return this.redo(opts.animate); }
+        /**
+         * Get legal moves for a square
+         * @param {string} square
+         * @returns {Array}
+         */
+        getLegalMoves(square) { return this.legalMoves(square); }
+
+        // --- PIECE MANAGEMENT ---
+        /**
+         * Get the piece at a square
+         * @param {string} square
+         * @returns {string|null}
+         */
+        getPiece(square) {
+            if (!this.validationService.isValidSquare(square)) return null;
+            const position = this.positionService.getPosition();
+            return position[square] || null;
+        }
+        /**
+         * Put a piece on a square
+         * @param {string} piece
+         * @param {string} square
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
+         * @returns {boolean}
+         */
+        putPiece(piece, square, opts = {}) {
+            const animate = opts.animate !== undefined ? opts.animate : true;
+            console.debug('[putPiece] called with:', { piece, square, animate });
+            // Conversione robusta per convertPiece
+            let pieceForConvert = piece;
+            if (typeof piece === 'object' && piece.type && piece.color) {
+                pieceForConvert = (piece.color + piece.type).toLowerCase();
+            }
+            console.debug('[putPiece] pieceForConvert:', pieceForConvert);
+            const validSquare = this.validationService.isValidSquare(square);
+            const validPiece = this.validationService.isValidPiece(pieceForConvert);
+            console.debug('[putPiece] validSquare:', validSquare, 'validPiece:', validPiece);
+            if (!validSquare || !validPiece) {
+                console.error('[putPiece] Invalid input:', { piece, square });
+                return false;
+            }
+            if (!this.positionService || !this.positionService.getGame()) {
+                console.error('[putPiece] No positionService or game');
+                return false;
+            }
+            const pieceObj = this.pieceService.convertPiece(pieceForConvert);
+            const squareObj = this.boardService.getSquare(square);
+            console.debug('[putPiece] pieceObj:', pieceObj, 'squareObj:', squareObj);
+            if (!squareObj) {
+                console.error('[putPiece] No squareObj for', square);
+                return false;
+            }
+            const chessJsPiece = { type: pieceObj.type.toLowerCase(), color: pieceObj.color.toLowerCase() };
+            console.debug('[putPiece] chessJsPiece:', chessJsPiece);
+            const result = this.positionService.getGame().put(chessJsPiece, square);
+            console.debug('[putPiece] game.put result:', result);
+            if (result && this._updateBoardPieces) {
+                this._updateBoardPieces(animate, true);
+            }
+            return result;
+        }
+        /**
+         * Remove a piece from a square
+         * @param {string} square
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
+         * @returns {string|null}
+         */
+        removePiece(square, opts = {}) {
+            const animate = opts.animate !== undefined ? opts.animate : true;
+            if (!this.validationService.isValidSquare(square)) {
+                return null;
+            }
+            const squareObj = this.boardService.getSquare(square);
+            if (!squareObj) return null;
+            if (!this.positionService || !this.positionService.getGame()) {
+                return null;
+            }
+            const removed = this.positionService.getGame().remove(square);
+            if (this._updateBoardPieces) {
+                this._updateBoardPieces(animate, true);
+            }
+            return removed;
         }
 
+        // --- BOARD CONTROL ---
         /**
-         * Loads a new position
-         * @param {string|Object} position - Position to load
-         * @param {Object} [options={}] - Loading options
-         * @param {boolean} [animation=true] - Whether to animate
+         * Flip the board orientation
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
          */
-        load(position, options = {}, animation = true) {
-            this.boardService.applyToAllSquares('removeHint');
-            this.boardService.applyToAllSquares('deselect');
-            this.boardService.applyToAllSquares('unmoved');
-            
-            this.positionService.setGame(position, options);
-            this._updateBoardPieces(animation, true); // Position load
+        flipBoard(opts = {}) {
+            if (this.coordinateService && this.coordinateService.flipOrientation) {
+                this.coordinateService.flipOrientation();
+            }
+            // Reinitialize all services
+            if (this._initializeServices) this._initializeServices();
+            // Restore game state to current FEN, or fallback to default if invalid
+            let fen = this.fen();
+            if (!fen || fen.split(' ').length !== 6) {
+                fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+            }
+            if (this._setGame) this._setGame(fen);
+            // Remove old board DOM before rebuilding
+            if (this.boardService && this.boardService.removeBoard) this.boardService.removeBoard();
+            if (this._initParams) this._initParams();
+            if (this._buildBoard) this._buildBoard();
+            if (this._buildSquares) this._buildSquares();
+            if (this._addListeners) this._addListeners();
+            if (this._updateBoardPieces) this._updateBoardPieces(true, true);
         }
-
         /**
-         * Destroys the board and cleans up resources
+         * Set the board orientation
+         * @param {'w'|'b'} color
+         * @param {Object} [opts]
+         * @param {boolean} [opts.animate=true]
          */
-        destroy() {
-            this.eventService.destroy();
-            this.boardService.destroy();
-            this.positionService.destroy();
-            this.pieceService.destroy();
-            this.moveService.destroy();
-            this.animationService.destroy();
-            this.validationService.destroy();
-            
-            if (this._updateTimeout) {
-                clearTimeout(this._updateTimeout);
-                this._updateTimeout = null;
+        setOrientation(color, opts = {}) {
+            if (this.validationService.isValidOrientation(color)) {
+                this.coordinateService.setOrientation(color);
+                // Reinitialize all services
+                if (this._initializeServices) this._initializeServices();
+                // Restore game state to current FEN, or fallback to default if invalid
+                let fen = this.fen();
+                if (!fen || fen.split(' ').length !== 6) {
+                    fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+                }
+                if (this._setGame) this._setGame(fen);
+                // Remove old board DOM before rebuilding
+                if (this.boardService && this.boardService.removeBoard) this.boardService.removeBoard();
+                if (this._initParams) this._initParams();
+                if (this._buildBoard) this._buildBoard();
+                if (this._buildSquares) this._buildSquares();
+                if (this._addListeners) this._addListeners();
+                if (this._updateBoardPieces) this._updateBoardPieces(true, true);
+            }
+            return this.coordinateService.getOrientation();
+        }
+        /**
+         * Get the current orientation
+         * @returns {'w'|'b'}
+         */
+        getOrientation() { return this.orientation(); }
+        /**
+         * Resize the board
+         * @param {number|string} size
+         */
+        resizeBoard(size) {
+            if (this.boardService && this.boardService.resize) {
+                this.boardService.resize(size);
+            }
+            if (this._updateBoardPieces) {
+                this._updateBoardPieces();
             }
         }
 
+        // --- HIGHLIGHTING & UI ---
         /**
-         * Resizes the board
-         * @param {number|string} size - New size
+         * Highlight a square
+         * @param {string} square
+         * @param {Object} [opts]
          */
-        resize(size) {
-            this.boardService.resize(size);
-            this._updateBoardPieces();
+        highlight(square, opts = {}) {
+            if (!this.validationService.isValidSquare(square)) return;
+            if (this.boardService && this.boardService.highlightSquare) {
+                this.boardService.highlightSquare(square, opts);
+            } else if (this.eventService && this.eventService.highlightSquare) {
+                this.eventService.highlightSquare(square, opts);
+            }
+        }
+        /**
+         * Remove highlight from a square
+         * @param {string} square
+         * @param {Object} [opts]
+         */
+        dehighlight(square, opts = {}) {
+            if (!this.validationService.isValidSquare(square)) return;
+            if (this.boardService && this.boardService.dehighlightSquare) {
+                this.boardService.dehighlightSquare(square, opts);
+            } else if (this.eventService && this.eventService.dehighlightSquare) {
+                this.eventService.dehighlightSquare(square, opts);
+            }
         }
 
+        // --- GAME INFO ---
         /**
-         * Flips the board orientation
+         * Get FEN string
+         * @returns {string}
          */
-        flip() {
-            this.coordinateService.flipOrientation();
-            this.destroy();
-            this._initParams();
-            this._buildBoard();
-            this._buildSquares();
-            this._addListeners();
-            this._updateBoardPieces();
+        fen() {
+            // Avoid recursion: call the underlying game object's fen()
+            const game = this.positionService.getGame();
+            if (!game || typeof game.fen !== 'function') return '';
+            return game.fen();
         }
+        /**
+         * Get current turn
+         * @returns {'w'|'b'}
+         */
+        turn() { return this.positionService.getGame().turn(); }
+        /**
+         * Is the game over?
+         * @returns {boolean}
+         */
+        isGameOver() {
+            const game = this.positionService.getGame();
+            if (!game) return false;
+            if (game.isGameOver) return game.isGameOver();
+            // Fallback: checkmate or draw
+            if (game.isCheckmate && game.isCheckmate()) return true;
+            if (game.isDraw && game.isDraw()) return true;
+            return false;
+        }
+        /**
+         * Is it checkmate?
+         * @returns {boolean}
+         */
+        isCheckmate() {
+            const game = this.positionService.getGame();
+            if (!game) return false;
+            return game.isCheckmate ? game.isCheckmate() : false;
+        }
+        /**
+         * Is it draw?
+         * @returns {boolean}
+         */
+        isDraw() {
+            const game = this.positionService.getGame();
+            if (!game) return false;
+            return game.isDraw ? game.isDraw() : false;
+        }
+        /**
+         * Get move history
+         * @returns {Array}
+         */
+        getHistory() {
+            const game = this.positionService.getGame();
+            if (!game) return [];
+            return game.history ? game.history() : [];
+        }
+
+        // --- LIFECYCLE ---
+        /**
+         * Destroy the board and cleanup
+         */
+        destroy() { /* TODO: robust destroy logic */ }
+        /**
+         * Rebuild the board
+         */
+        rebuild() { this._initialize(); }
+
+        // --- CONFIGURATION ---
+        /**
+         * Get current config
+         * @returns {Object}
+         */
+        getConfig() { return this.config; }
+        /**
+         * Set new config
+         * @param {Object} newConfig
+         */
+        setConfig(newConfig) { this.setConfig(newConfig); }
+
+        // --- ALIASES/DEPRECATED ---
+        /**
+         * Alias for move (deprecated)
+         */
+        move(move, animate = true) {
+            // On any new move, clear the redo stack
+            this._undoneMoves = [];
+            return this.movePiece(move, { animate });
+        }
+        /**
+         * Alias for clear (deprecated)
+         */
+        clearBoard(animate = true) { return this.clear({ animate }); }
+        /**
+         * Alias for reset (deprecated)
+         */
+        start(animate = true) { return this.reset({ animate }); }
+
+        /**
+         * Alias for flipBoard (for backward compatibility)
+         */
+        flip(opts = {}) { return this.flipBoard(opts); }
 
         /**
          * Gets the current position as an object
@@ -6946,50 +8479,20 @@
         }
 
         /**
-         * Makes a move on the board
-         * @param {string|Object} move - Move to make
-         * @param {boolean} [animate=true] - Whether to animate
-         * @returns {boolean} True if move was successful
-         */
-        move(move, animate = true) {
-            if (typeof move === 'string') {
-                // Parse move string (e.g., 'e2e4')
-                const moveObj = this.moveService.parseMove(move);
-                if (!moveObj) return false;
-                
-                const fromSquare = this.boardService.getSquare(moveObj.from);
-                const toSquare = this.boardService.getSquare(moveObj.to);
-                
-                if (!fromSquare || !toSquare) return false;
-                
-                return this._onMove(fromSquare, toSquare, moveObj.promotion, animate);
-            } else if (move && move.from && move.to) {
-                // Handle move object
-                const fromSquare = this.boardService.getSquare(move.from);
-                const toSquare = this.boardService.getSquare(move.to);
-                
-                if (!fromSquare || !toSquare) return false;
-                
-                return this._onMove(fromSquare, toSquare, move.promotion, animate);
-            }
-            
-            return false;
-        }
-
-        /**
          * Undoes the last move
          * @param {boolean} [animate=true] - Whether to animate
          * @returns {boolean} True if undo was successful
          */
         undo(animate = true) {
-            if (this.positionService.getGame().undo) {
-                const undoResult = this.positionService.getGame().undo();
-                if (undoResult) {
-                    this._updateBoardPieces(animate, true); // Position change
-                    return true;
-                }
+            // Use chess.js undo
+            const undone = this.positionService.getGame().undo();
+            if (undone) {
+                // Save the undone move for redo
+                this._undoneMoves.push(undone);
+                this._updateBoardPieces(animate, true);
+                return undone;
             }
-            return false;
+            return null;
         }
 
         /**
@@ -6998,12 +8501,15 @@
          * @returns {boolean} True if redo was successful
          */
         redo(animate = true) {
-            if (this.positionService.getGame().redo) {
-                const redoResult = this.positionService.getGame().redo();
-                if (redoResult) {
-                    this._updateBoardPieces(animate, true); // Position change
-                    return true;
-                }
+            // Redo the last undone move using the API, if available
+            if (this._undoneMoves && this._undoneMoves.length > 0) {
+                const move = this._undoneMoves.pop();
+                // Re-apply the move using the public move API
+                // move is in chess.js format: {from, to, ...}
+                const moveObj = { from: move.from, to: move.to };
+                if (move.promotion) moveObj.promotion = move.promotion;
+                const result = this.movePiece(moveObj, { animate });
+                return result;
             }
             return false;
         }
@@ -7033,12 +8539,12 @@
             if (orientation === undefined) {
                 return this.coordinateService.getOrientation();
             }
-            
+
             if (this.validationService.isValidOrientation(orientation)) {
                 this.coordinateService.setOrientation(orientation);
                 this.flip();
             }
-            
+
             return this.coordinateService.getOrientation();
         }
 
@@ -7051,12 +8557,12 @@
             if (size === undefined) {
                 return this.config.size;
             }
-            
+
             if (this.validationService.isValidSize(size)) {
                 this.config.size = size;
                 this.resize(size);
             }
-            
+
             return this.config.size;
         }
 
@@ -7068,7 +8574,7 @@
         legalMoves(square) {
             const squareObj = this.boardService.getSquare(square);
             if (!squareObj) return [];
-            
+
             return this.moveService.getCachedLegalMoves(squareObj);
         }
 
@@ -7080,12 +8586,12 @@
         isLegal(move) {
             const moveObj = typeof move === 'string' ? this.moveService.parseMove(move) : move;
             if (!moveObj) return false;
-            
+
             const fromSquare = this.boardService.getSquare(moveObj.from);
             const toSquare = this.boardService.getSquare(moveObj.to);
-            
+
             if (!fromSquare || !toSquare) return false;
-            
+
             const moveInstance = new Move$1(fromSquare, toSquare, moveObj.promotion);
             return moveInstance.isLegal(this.positionService.getGame());
         }
@@ -7111,7 +8617,7 @@
          * @returns {boolean} True if in checkmate
          */
         inCheckmate() {
-            return this.positionService.getGame().inCheckmate();
+            return this.positionService.getGame().isCheckmate();
         }
 
         /**
@@ -7119,7 +8625,7 @@
          * @returns {boolean} True if in stalemate
          */
         inStalemate() {
-            return this.positionService.getGame().inStalemate();
+            return this.positionService.getGame().isStalemate();
         }
 
         /**
@@ -7127,7 +8633,7 @@
          * @returns {boolean} True if drawn
          */
         inDraw() {
-            return this.positionService.getGame().inDraw();
+            return this.positionService.getGame().isDraw();
         }
 
         /**
@@ -7135,7 +8641,7 @@
          * @returns {boolean} True if threefold repetition
          */
         inThreefoldRepetition() {
-            return this.positionService.getGame().inThreefoldRepetition();
+            return this.positionService.getGame().isThreefoldRepetition();
         }
 
         /**
@@ -7166,73 +8672,6 @@
         }
 
         /**
-         * Clears the board
-         * @param {boolean} [animate=true] - Whether to animate
-         */
-        clear(animate = true) {
-            this.positionService.getGame().clear();
-            this._updateBoardPieces(animate, true); // Position change
-        }
-
-        /**
-         * Resets the board to starting position
-         * @param {boolean} [animate=true] - Whether to animate
-         */
-        reset(animate = true) {
-            this.positionService.getGame().reset();
-            this._updateBoardPieces(animate, true); // Position change
-        }
-
-        /**
-         * Puts a piece on a square
-         * @param {string} square - Square to put piece on
-         * @param {string} piece - Piece to put
-         * @param {boolean} [animate=true] - Whether to animate
-         * @returns {boolean} True if successful
-         */
-        put(square, piece, animate = true) {
-            if (!this.validationService.isValidSquare(square) || !this.validationService.isValidPiece(piece)) {
-                return false;
-            }
-            
-            const pieceObj = this.pieceService.convertPiece(piece);
-            const squareObj = this.boardService.getSquare(square);
-            
-            if (!squareObj) return false;
-            
-            // Update game state
-            this.positionService.getGame().put(pieceObj, square);
-            
-            // Update visual representation
-            this._updateBoardPieces(animate, true); // Position change
-            
-            return true;
-        }
-
-        /**
-         * Removes a piece from a square
-         * @param {string} square - Square to remove piece from
-         * @param {boolean} [animate=true] - Whether to animate
-         * @returns {boolean} True if successful
-         */
-        remove(square, animate = true) {
-            if (!this.validationService.isValidSquare(square)) {
-                return false;
-            }
-            
-            const squareObj = this.boardService.getSquare(square);
-            if (!squareObj) return false;
-            
-            // Update game state
-            this.positionService.getGame().remove(square);
-            
-            // Update visual representation
-            this._updateBoardPieces(animate, true); // Position change
-            
-            return true;
-        }
-
-        /**
          * Gets configuration options
          * @returns {Object} Configuration object
          */
@@ -7246,12 +8685,12 @@
          */
         setConfig(newConfig) {
             this.config.update(newConfig);
-            
+
             // Rebuild board if necessary
             if (newConfig.size !== undefined) {
                 this.resize(newConfig.size);
             }
-            
+
             if (newConfig.orientation !== undefined) {
                 this.orientation(newConfig.orientation);
             }
@@ -7266,11 +8705,11 @@
             if (style === undefined) {
                 return this.config.animationStyle;
             }
-            
+
             if (this.validationService.isValidAnimationStyle(style)) {
                 this.config.animationStyle = style;
             }
-            
+
             return this.config.animationStyle;
         }
 
@@ -7283,53 +8722,1028 @@
             if (delay === undefined) {
                 return this.config.simultaneousAnimationDelay;
             }
-            
+
             if (typeof delay === 'number' && delay >= 0) {
                 this.config.simultaneousAnimationDelay = delay;
             }
-            
+
             return this.config.simultaneousAnimationDelay;
         }
 
         // Additional API methods would be added here following the same pattern
         // This is a good starting point for the refactored architecture
+
+        // Ensure all public API methods from README are present and routed
+        clear(animation = true) { return this.clear({ animate: animation }); }
+        insert(square, piece) { return this.putPiece(piece, square); }
+        get(square) { return this.getPiece(square); }
+        position(position, color) {
+            if (color) this.setOrientation(color);
+            return this.setPosition(position);
+        }
+        flip(animation = true) { return this.flipBoard({ animate: animation }); }
+        build() { return this._initialize(); }
+        resize(value) { return this.resizeBoard(value); }
+        destroy() { return this.destroy(); }
+        piece(square) { return this.getPiece(square); }
+        highlight(square) { return this.highlight(square); }
+        dehighlight(square) { return this.dehighlight(square); }
+        turn() { return this.turn(); }
+        // fen() { return this.fen(); }
+        ascii() { return this.ascii(); }
+        board() { return this.board(); }
+        getCastlingRights(color) { return this.positionService.getGame().getCastlingRights(color); }
+        getComment() { return this.positionService.getGame().getComment(); }
+        getComments() { return this.positionService.getGame().getComments(); }
+        history(options = {}) { return this.positionService.getGame().history(options); }
+        lastMove() { return this.positionService.getGame().lastMove(); }
+        moveNumber() { return this.positionService.getGame().moveNumber(); }
+        moves(options = {}) { return this.positionService.getGame().moves(options); }
+        pgn(options = {}) { return this.positionService.getGame().pgn(options); }
+        squareColor(squareId) { return this.boardService.getSquare(squareId).isWhite() ? 'light' : 'dark'; }
+        isCheckmate() { return this.isCheckmate(); }
+        isDraw() { return this.isDraw(); }
+        isDrawByFiftyMoves() { return this.positionService.getGame().isDrawByFiftyMoves(); }
+        isInsufficientMaterial() { return this.positionService.getGame().isInsufficientMaterial(); }
+        isGameOver() { return this.isGameOver(); }
+        isStalemate() { return this.isStalemate(); }
+        isThreefoldRepetition() { return this.isThreefoldRepetition(); }
+        load(fen, options = {}, animation = true) { return this.setPosition(fen, { ...options, animate: animation }); }
+        loadPgn(pgn, options = {}, animation = true) { return this.loadPgn(pgn, animation); }
+        put(pieceId, squareId, animation = true) {
+            console.debug('[put] called with:', { pieceId, squareId, animation });
+            let pieceObj = null;
+            // Helper to normalize string like 'wQ', 'Qw', 'Wq', 'qw', etc.
+            function parsePieceString(str) {
+                if (typeof str !== 'string' || str.length !== 2) return null;
+                const a = str[0].toLowerCase();
+                const b = str[1].toLowerCase();
+                const types = 'kqrbnp';
+                const colors = 'wb';
+                if (types.includes(a) && colors.includes(b)) {
+                    return { type: a, color: b };
+                } else if (colors.includes(a) && types.includes(b)) {
+                    return { type: b, color: a };
+                }
+                return null;
+            }
+            if (typeof pieceId === 'string') {
+                pieceObj = parsePieceString(pieceId);
+                console.debug('[put] parsed piece string:', pieceObj);
+                if (!pieceObj) {
+                    console.error(`[put] Invalid piece string: '${pieceId}'. Use e.g. 'wQ', 'Qw', 'bK', 'kb'`);
+                    return false;
+                }
+            } else if (typeof pieceId === 'object' && pieceId.type && pieceId.color) {
+                const type = String(pieceId.type).toLowerCase();
+                const color = String(pieceId.color).toLowerCase();
+                if ('kqrbnp'.includes(type) && 'wb'.includes(color)) {
+                    pieceObj = { type, color };
+                    console.debug('[put] normalized piece object:', pieceObj);
+                } else {
+                    console.error(`[put] Invalid piece object: {type: '${pieceId.type}', color: '${pieceId.color}'}`);
+                    return false;
+                }
+            } else {
+                console.error('[put] Invalid pieceId:', pieceId);
+                return false;
+            }
+            if (typeof squareId !== 'string' || squareId.length !== 2) {
+                console.error('[put] Invalid squareId:', squareId);
+                return false;
+            }
+            // Call the internal putPiece method
+            const result = this.putPiece(pieceObj, squareId, { animate: animation });
+            console.debug('[put] putPiece result:', result);
+            return result;
+        }
+        remove(squareId, animation = true) { return this.removePiece(squareId, { animate: animation }); }
+        removeComment() { return this.positionService.getGame().removeComment(); }
+        removeComments() { return this.positionService.getGame().removeComments(); }
+        removeHeader(field) { return this.positionService.getGame().removeHeader(field); }
+        setCastlingRights(color, rights) { return this.positionService.getGame().setCastlingRights(color, rights); }
+        setComment(comment) { return this.positionService.getGame().setComment(comment); }
+        setHeader(key, value) { return this.positionService.getGame().setHeader(key, value); }
+        validateFen(fen) { return this.positionService.getGame().validateFen(fen); }
     };
+
+    /**
+     * Structured logging system for Chessboard.js
+     * @module utils/logger
+     * @since 2.0.0
+     */
+
+    /**
+     * Log levels in order of severity
+     * @constant
+     * @type {Object}
+     */
+    const LOG_LEVELS = Object.freeze({
+        DEBUG: 0,
+        INFO: 1,
+        WARN: 2,
+        ERROR: 3,
+        NONE: 4
+    });
+
+    /**
+     * Default logger configuration
+     * @constant
+     * @type {Object}
+     */
+    const DEFAULT_CONFIG = Object.freeze({
+        level: LOG_LEVELS.INFO,
+        enableColors: true,
+        enableTimestamp: true,
+        enableStackTrace: true,
+        maxLogSize: 1000,
+        enableConsole: true,
+        enableStorage: false,
+        storageKey: 'chessboard-logs'
+    });
+
+    /**
+     * ANSI color codes for console output
+     * @constant
+     * @type {Object}
+     */
+    const COLORS = Object.freeze({
+        DEBUG: '\x1b[36m',    // Cyan
+        INFO: '\x1b[32m',     // Green
+        WARN: '\x1b[33m',     // Yellow
+        ERROR: '\x1b[31m',    // Red
+        RESET: '\x1b[0m'      // Reset
+    });
+
+    /**
+     * Structured logger class with configurable output and filtering
+     * @class
+     */
+    class Logger {
+        /**
+         * Creates a new Logger instance
+         * @param {Object} [config] - Logger configuration
+         * @param {string} [name] - Logger name/namespace
+         */
+        constructor(config = {}, name = 'Chessboard') {
+            this.config = { ...DEFAULT_CONFIG, ...config };
+            this.name = name;
+            this.logs = [];
+            this.startTime = Date.now();
+            
+            // Create bound methods for better performance
+            this.debug = this._createLogMethod('DEBUG');
+            this.info = this._createLogMethod('INFO');
+            this.warn = this._createLogMethod('WARN');
+            this.error = this._createLogMethod('ERROR');
+            
+            // Performance tracking
+            this.performances = new Map();
+            
+            // Initialize storage if enabled
+            if (this.config.enableStorage) {
+                this._initStorage();
+            }
+        }
+
+        /**
+         * Creates a log method for a specific level
+         * @private
+         * @param {string} level - Log level
+         * @returns {Function} Log method
+         */
+        _createLogMethod(level) {
+            return (message, data = {}, error = null) => {
+                this._log(level, message, data, error);
+            };
+        }
+
+        /**
+         * Core logging method
+         * @private
+         * @param {string} level - Log level
+         * @param {string} message - Log message
+         * @param {Object} data - Additional data
+         * @param {Error} error - Error object
+         */
+        _log(level, message, data, error) {
+            const levelNumber = LOG_LEVELS[level];
+            
+            // Filter by level
+            if (levelNumber < this.config.level) {
+                return;
+            }
+            
+            // Create log entry
+            const entry = this._createLogEntry(level, message, data, error);
+            
+            // Store log entry
+            this._storeLogEntry(entry);
+            
+            // Output to console
+            if (this.config.enableConsole) {
+                this._outputToConsole(entry);
+            }
+            
+            // Store in localStorage if enabled
+            if (this.config.enableStorage) {
+                this._storeInStorage(entry);
+            }
+        }
+
+        /**
+         * Creates a structured log entry
+         * @private
+         * @param {string} level - Log level
+         * @param {string} message - Log message
+         * @param {Object} data - Additional data
+         * @param {Error} error - Error object
+         * @returns {Object} Log entry
+         */
+        _createLogEntry(level, message, data, error) {
+            const entry = {
+                timestamp: new Date().toISOString(),
+                level,
+                logger: this.name,
+                message,
+                data: { ...data },
+                runtime: Date.now() - this.startTime
+            };
+            
+            // Add error details if provided
+            if (error) {
+                entry.error = {
+                    name: error.name,
+                    message: error.message,
+                    stack: this.config.enableStackTrace ? error.stack : null
+                };
+            }
+            
+            // Add performance context if available
+            if (typeof performance !== 'undefined' && performance.memory) {
+                entry.memory = {
+                    used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
+                    total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024)
+                };
+            }
+            
+            return entry;
+        }
+
+        /**
+         * Stores log entry in memory
+         * @private
+         * @param {Object} entry - Log entry
+         */
+        _storeLogEntry(entry) {
+            this.logs.push(entry);
+            
+            // Limit log size
+            if (this.logs.length > this.config.maxLogSize) {
+                this.logs.shift();
+            }
+        }
+
+        /**
+         * Outputs log entry to console
+         * @private
+         * @param {Object} entry - Log entry
+         */
+        _outputToConsole(entry) {
+            const color = this.config.enableColors ? COLORS[entry.level] : '';
+            const reset = this.config.enableColors ? COLORS.RESET : '';
+            const timestamp = this.config.enableTimestamp ? 
+                `[${new Date(entry.timestamp).toLocaleTimeString()}] ` : '';
+            
+            const prefix = `${color}${timestamp}[${entry.logger}:${entry.level}]${reset}`;
+            const message = `${prefix} ${entry.message}`;
+            
+            // Choose console method based on level
+            const consoleMethod = this._getConsoleMethod(entry.level);
+            
+            if (Object.keys(entry.data).length > 0 || entry.error) {
+                consoleMethod(message, {
+                    data: entry.data,
+                    error: entry.error,
+                    runtime: `${entry.runtime}ms`
+                });
+            } else {
+                consoleMethod(message);
+            }
+        }
+
+        /**
+         * Gets appropriate console method for log level
+         * @private
+         * @param {string} level - Log level
+         * @returns {Function} Console method
+         */
+        _getConsoleMethod(level) {
+            switch (level) {
+                case 'DEBUG':
+                    return console.debug || console.log;
+                case 'INFO':
+                    return console.info || console.log;
+                case 'WARN':
+                    return console.warn || console.log;
+                case 'ERROR':
+                    return console.error || console.log;
+                default:
+                    return console.log;
+            }
+        }
+
+        /**
+         * Initializes localStorage for log storage
+         * @private
+         */
+        _initStorage() {
+            if (typeof localStorage === 'undefined') {
+                this.config.enableStorage = false;
+                return;
+            }
+            
+            try {
+                // Test localStorage availability
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+            } catch (error) {
+                this.config.enableStorage = false;
+                console.warn('localStorage not available, disabling log storage');
+            }
+        }
+
+        /**
+         * Stores log entry in localStorage
+         * @private
+         * @param {Object} entry - Log entry
+         */
+        _storeInStorage(entry) {
+            if (!this.config.enableStorage) {
+                return;
+            }
+            
+            try {
+                const stored = JSON.parse(localStorage.getItem(this.config.storageKey) || '[]');
+                stored.push(entry);
+                
+                // Limit stored logs
+                if (stored.length > this.config.maxLogSize) {
+                    stored.shift();
+                }
+                
+                localStorage.setItem(this.config.storageKey, JSON.stringify(stored));
+            } catch (error) {
+                console.warn('Failed to store log entry:', error);
+            }
+        }
+
+        /**
+         * Starts performance measurement
+         * @param {string} name - Performance measurement name
+         */
+        startPerformance(name) {
+            this.performances.set(name, {
+                start: performance.now(),
+                measurements: []
+            });
+            
+            this.debug(`Started performance measurement: ${name}`);
+        }
+
+        /**
+         * Ends performance measurement
+         * @param {string} name - Performance measurement name
+         * @returns {number} Duration in milliseconds
+         */
+        endPerformance(name) {
+            const perf = this.performances.get(name);
+            if (!perf) {
+                this.warn(`Performance measurement not found: ${name}`);
+                return 0;
+            }
+            
+            const duration = performance.now() - perf.start;
+            perf.measurements.push(duration);
+            
+            this.debug(`Performance measurement completed: ${name}`, {
+                duration: `${duration.toFixed(2)}ms`,
+                measurements: perf.measurements.length
+            });
+            
+            return duration;
+        }
+
+        /**
+         * Gets performance statistics
+         * @param {string} name - Performance measurement name
+         * @returns {Object} Performance statistics
+         */
+        getPerformanceStats(name) {
+            const perf = this.performances.get(name);
+            if (!perf || perf.measurements.length === 0) {
+                return null;
+            }
+            
+            const measurements = perf.measurements;
+            const total = measurements.reduce((sum, m) => sum + m, 0);
+            const avg = total / measurements.length;
+            const min = Math.min(...measurements);
+            const max = Math.max(...measurements);
+            
+            return {
+                name,
+                count: measurements.length,
+                total: total.toFixed(2),
+                average: avg.toFixed(2),
+                min: min.toFixed(2),
+                max: max.toFixed(2)
+            };
+        }
+
+        /**
+         * Creates a child logger with a specific namespace
+         * @param {string} namespace - Child logger namespace
+         * @returns {Logger} Child logger instance
+         */
+        child(namespace) {
+            return new Logger(this.config, `${this.name}:${namespace}`);
+        }
+
+        /**
+         * Sets log level
+         * @param {string} level - Log level
+         */
+        setLevel(level) {
+            if (LOG_LEVELS[level] !== undefined) {
+                this.config.level = LOG_LEVELS[level];
+            }
+        }
+
+        /**
+         * Gets current log level
+         * @returns {string} Current log level
+         */
+        getLevel() {
+            return Object.keys(LOG_LEVELS).find(key => LOG_LEVELS[key] === this.config.level);
+        }
+
+        /**
+         * Gets all stored logs
+         * @returns {Array} Array of log entries
+         */
+        getLogs() {
+            return [...this.logs];
+        }
+
+        /**
+         * Clears all stored logs
+         */
+        clearLogs() {
+            this.logs = [];
+            
+            if (this.config.enableStorage) {
+                try {
+                    localStorage.removeItem(this.config.storageKey);
+                } catch (error) {
+                    console.warn('Failed to clear stored logs:', error);
+                }
+            }
+        }
+
+        /**
+         * Exports logs as JSON
+         * @returns {string} JSON string of logs
+         */
+        exportLogs() {
+            return JSON.stringify(this.logs, null, 2);
+        }
+
+        /**
+         * Cleans up resources
+         */
+        destroy() {
+            this.clearLogs();
+            this.performances.clear();
+        }
+    }
+
+    /**
+     * Default logger instance
+     * @type {Logger}
+     */
+    const logger = new Logger();
+
+    /**
+     * Creates a logger with specific configuration
+     * @param {Object} config - Logger configuration
+     * @param {string} name - Logger name
+     * @returns {Logger} Logger instance
+     */
+    function createLogger(config, name) {
+        return new Logger(config, name);
+    }
+
+    /**
+     * Chessboard factory for creating and managing chessboard instances
+     * @module core/ChessboardFactory
+     * @since 2.0.0
+     */
+
+
+    /**
+     * Factory class for creating and managing chessboard instances
+     * Implements the Factory pattern with instance management
+     * @class
+     */
+    class ChessboardFactory {
+        /**
+         * Creates a new ChessboardFactory instance
+         */
+        constructor() {
+            this.instances = new Map();
+            this.validationService = new ValidationService();
+            this.performanceMonitor = new PerformanceMonitor();
+            this.logger = logger.child('ChessboardFactory');
+            
+            // Default configuration templates
+            this.templates = new Map();
+            this._initializeDefaultTemplates();
+        }
+
+        /**
+         * Initializes default configuration templates
+         * @private
+         */
+        _initializeDefaultTemplates() {
+            // Basic template
+            this.templates.set('basic', {
+                size: 400,
+                draggable: true,
+                hints: true,
+                clickable: true,
+                moveHighlight: true,
+                animationStyle: 'simultaneous'
+            });
+
+            // Tournament template
+            this.templates.set('tournament', {
+                size: 500,
+                draggable: false,
+                hints: false,
+                clickable: true,
+                moveHighlight: true,
+                onlyLegalMoves: true,
+                animationStyle: 'sequential'
+            });
+
+            // Analysis template
+            this.templates.set('analysis', {
+                size: 600,
+                draggable: true,
+                hints: true,
+                clickable: true,
+                moveHighlight: true,
+                mode: 'analysis',
+                animationStyle: 'simultaneous'
+            });
+
+            // Puzzle template
+            this.templates.set('puzzle', {
+                size: 450,
+                draggable: true,
+                hints: true,
+                clickable: true,
+                moveHighlight: true,
+                onlyLegalMoves: true,
+                animationStyle: 'sequential'
+            });
+
+            // Demo template
+            this.templates.set('demo', {
+                size: 'auto',
+                draggable: false,
+                hints: false,
+                clickable: false,
+                moveHighlight: true,
+                animationStyle: 'simultaneous'
+            });
+        }
+
+        /**
+         * Creates a new chessboard instance
+         * @param {string} containerId - Container element ID
+         * @param {Object} [config={}] - Configuration options
+         * @param {string} [template] - Template name to use
+         * @returns {Chessboard} Chessboard instance
+         * @throws {ConfigurationError} If configuration is invalid
+         */
+        create(containerId, config = {}, template = null) {
+            this.performanceMonitor.startMeasure('chessboard-creation');
+            
+            try {
+                // Validate container ID
+                if (!containerId || typeof containerId !== 'string') {
+                    throw new ConfigurationError('Container ID must be a non-empty string', 'containerId', containerId);
+                }
+
+                // Check if container exists
+                const container = document.getElementById(containerId);
+                if (!container) {
+                    throw new ConfigurationError(`Container element not found: ${containerId}`, 'containerId', containerId);
+                }
+
+                // Merge configuration with template if specified
+                let finalConfig = { ...config };
+                if (template) {
+                    const templateConfig = this.templates.get(template);
+                    if (!templateConfig) {
+                        this.logger.warn(`Template "${template}" not found, using default configuration`);
+                    } else {
+                        finalConfig = { ...templateConfig, ...config };
+                        this.logger.info(`Using template "${template}" for chessboard creation`);
+                    }
+                }
+
+                // Set container ID
+                finalConfig.id = containerId;
+
+                // Validate configuration
+                this.validationService.validateConfig(finalConfig);
+
+                // Create chessboard instance
+                const chessboard = new Chessboard$1(finalConfig);
+
+                // Store instance for management
+                this.instances.set(containerId, {
+                    instance: chessboard,
+                    config: finalConfig,
+                    template,
+                    createdAt: new Date(),
+                    container
+                });
+
+                this.performanceMonitor.endMeasure('chessboard-creation');
+                this.logger.info(`Created chessboard instance for container: ${containerId}`, {
+                    template,
+                    configKeys: Object.keys(finalConfig)
+                });
+
+                return chessboard;
+            } catch (error) {
+                this.performanceMonitor.endMeasure('chessboard-creation');
+                this.logger.error('Failed to create chessboard instance', { containerId, error });
+                throw error;
+            }
+        }
+
+        /**
+         * Creates a chessboard using a predefined template
+         * @param {string} containerId - Container element ID
+         * @param {string} templateName - Template name
+         * @param {Object} [overrides={}] - Configuration overrides
+         * @returns {Chessboard} Chessboard instance
+         */
+        createFromTemplate(containerId, templateName, overrides = {}) {
+            return this.create(containerId, overrides, templateName);
+        }
+
+        /**
+         * Gets an existing chessboard instance
+         * @param {string} containerId - Container element ID
+         * @returns {Chessboard|null} Chessboard instance or null if not found
+         */
+        getInstance(containerId) {
+            const instance = this.instances.get(containerId);
+            return instance ? instance.instance : null;
+        }
+
+        /**
+         * Gets information about an instance
+         * @param {string} containerId - Container element ID
+         * @returns {Object|null} Instance information or null if not found
+         */
+        getInstanceInfo(containerId) {
+            const instance = this.instances.get(containerId);
+            if (!instance) {
+                return null;
+            }
+
+            return {
+                containerId,
+                template: instance.template,
+                createdAt: instance.createdAt,
+                config: { ...instance.config }
+            };
+        }
+
+        /**
+         * Destroys a chessboard instance
+         * @param {string} containerId - Container element ID
+         * @returns {boolean} True if instance was destroyed, false if not found
+         */
+        destroy(containerId) {
+            const instance = this.instances.get(containerId);
+            if (!instance) {
+                this.logger.warn(`Instance not found for destruction: ${containerId}`);
+                return false;
+            }
+
+            try {
+                // Destroy the chessboard instance
+                instance.instance.destroy();
+                
+                // Remove from instances map
+                this.instances.delete(containerId);
+                
+                this.logger.info(`Destroyed chessboard instance: ${containerId}`);
+                return true;
+            } catch (error) {
+                this.logger.error(`Failed to destroy chessboard instance: ${containerId}`, { error });
+                return false;
+            }
+        }
+
+        /**
+         * Destroys all chessboard instances
+         */
+        destroyAll() {
+            const containerIds = Array.from(this.instances.keys());
+            let destroyed = 0;
+
+            for (const containerId of containerIds) {
+                if (this.destroy(containerId)) {
+                    destroyed++;
+                }
+            }
+
+            this.logger.info(`Destroyed ${destroyed} chessboard instances`);
+        }
+
+        /**
+         * Lists all active chessboard instances
+         * @returns {Array} Array of instance information
+         */
+        listInstances() {
+            return Array.from(this.instances.keys()).map(containerId => 
+                this.getInstanceInfo(containerId)
+            );
+        }
+
+        /**
+         * Registers a new configuration template
+         * @param {string} name - Template name
+         * @param {Object} config - Template configuration
+         * @throws {ConfigurationError} If template name or config is invalid
+         */
+        registerTemplate(name, config) {
+            if (!name || typeof name !== 'string') {
+                throw new ConfigurationError('Template name must be a non-empty string', 'name', name);
+            }
+
+            if (!config || typeof config !== 'object') {
+                throw new ConfigurationError('Template configuration must be an object', 'config', config);
+            }
+
+            // Validate template configuration
+            this.validationService.validateConfig(config);
+
+            this.templates.set(name, { ...config });
+            this.logger.info(`Registered template: ${name}`, { configKeys: Object.keys(config) });
+        }
+
+        /**
+         * Removes a configuration template
+         * @param {string} name - Template name
+         * @returns {boolean} True if template was removed, false if not found
+         */
+        removeTemplate(name) {
+            const removed = this.templates.delete(name);
+            if (removed) {
+                this.logger.info(`Removed template: ${name}`);
+            }
+            return removed;
+        }
+
+        /**
+         * Gets a configuration template
+         * @param {string} name - Template name
+         * @returns {Object|null} Template configuration or null if not found
+         */
+        getTemplate(name) {
+            const template = this.templates.get(name);
+            return template ? { ...template } : null;
+        }
+
+        /**
+         * Lists all available templates
+         * @returns {Array} Array of template names
+         */
+        listTemplates() {
+            return Array.from(this.templates.keys());
+        }
+
+        /**
+         * Creates multiple chessboard instances from a configuration array
+         * @param {Array} configurations - Array of configuration objects
+         * @returns {Array} Array of created chessboard instances
+         */
+        createMultiple(configurations) {
+            const instances = [];
+            const errors = [];
+
+            for (const config of configurations) {
+                try {
+                    const { containerId, template, ...options } = config;
+                    const instance = this.create(containerId, options, template);
+                    instances.push({ containerId, instance, success: true });
+                } catch (error) {
+                    errors.push({ containerId: config.containerId, error, success: false });
+                    this.logger.error(`Failed to create instance for ${config.containerId}`, { error });
+                }
+            }
+
+            if (errors.length > 0) {
+                this.logger.warn(`Failed to create ${errors.length} out of ${configurations.length} instances`);
+            }
+
+            return { instances, errors };
+        }
+
+        /**
+         * Gets factory statistics
+         * @returns {Object} Factory statistics
+         */
+        getStats() {
+            const stats = {
+                activeInstances: this.instances.size,
+                availableTemplates: this.templates.size,
+                performance: this.performanceMonitor.getMetrics(),
+                validation: this.validationService.getCacheStats()
+            };
+
+            return stats;
+        }
+
+        /**
+         * Cleans up factory resources
+         */
+        destroy() {
+            this.destroyAll();
+            this.validationService.destroy();
+            this.performanceMonitor.destroy();
+            this.templates.clear();
+        }
+    }
+
+    /**
+     * Default factory instance
+     * @type {ChessboardFactory}
+     */
+    const chessboardFactory = new ChessboardFactory();
+
+    /**
+     * Convenience method to create a chessboard instance
+     * @param {string} containerId - Container element ID
+     * @param {Object} [config={}] - Configuration options
+     * @param {string} [template] - Template name to use
+     * @returns {Chessboard} Chessboard instance
+     */
+    function createChessboard(containerId, config = {}, template = null) {
+        return chessboardFactory.create(containerId, config, template);
+    }
+
+    /**
+     * Convenience method to create a chessboard from template
+     * @param {string} containerId - Container element ID
+     * @param {string} templateName - Template name
+     * @param {Object} [overrides={}] - Configuration overrides
+     * @returns {Chessboard} Chessboard instance
+     */
+    function createChessboardFromTemplate(containerId, templateName, overrides = {}) {
+        return chessboardFactory.createFromTemplate(containerId, templateName, overrides);
+    }
 
     /**
      * Chessboard.js - A beautiful, customizable chessboard widget
      * Entry point for the core library
+     * @module core
+     * @since 2.0.0
      */
 
 
-    // Factory function to maintain backward compatibility
+    /**
+     * Main Chessboard factory function for backward compatibility
+     * Supports both legacy and modern calling conventions
+     * @param {string|Object} containerElm - Container element ID or configuration object
+     * @param {Object} [config={}] - Configuration options (when first param is string)
+     * @returns {ChessboardClass} Chessboard instance
+     */
     function Chessboard(containerElm, config = {}) {
-        // If first parameter is an object, treat it as config
-        if (typeof containerElm === 'object' && containerElm !== null) {
-            return new Chessboard$1(containerElm);
-        }
-        
-        // Otherwise, treat first parameter as element ID
-        const fullConfig = { ...config, id: containerElm };
-        return new Chessboard$1(fullConfig);
-    }
+        const factoryLogger = logger.child('ChessboardFactory');
 
-    // Wrapper class that handles both calling conventions
-    class ChessboardWrapper extends Chessboard$1 {
-        constructor(containerElm, config = {}) {
+        try {
             // If first parameter is an object, treat it as config
             if (typeof containerElm === 'object' && containerElm !== null) {
-                super(containerElm);
-            } else {
-                // Otherwise, treat first parameter as element ID
+                factoryLogger.debug('Creating chessboard with config object');
+                return new Chessboard$1(containerElm);
+            }
+
+            // Otherwise, treat first parameter as element ID
+            if (typeof containerElm === 'string') {
+                factoryLogger.debug('Creating chessboard with element ID', { elementId: containerElm });
                 const fullConfig = { ...config, id: containerElm };
-                super(fullConfig);
+                return new Chessboard$1(fullConfig);
+            }
+
+            throw new Error('Invalid parameters: first parameter must be string or object');
+        } catch (error) {
+            factoryLogger.error('Failed to create chessboard instance', { error });
+            throw error;
+        }
+    }
+
+    /**
+     * Wrapper class that handles both calling conventions
+     * Provides enhanced error handling and logging
+     * @class
+     * @extends ChessboardClass
+     */
+    class ChessboardWrapper extends Chessboard$1 {
+        /**
+         * Creates a new ChessboardWrapper instance
+         * @param {string|Object} containerElm - Container element ID or configuration object
+         * @param {Object} [config={}] - Configuration options
+         */
+        constructor(containerElm, config = {}) {
+            const instanceLogger = logger.child('ChessboardWrapper');
+
+            try {
+                // If first parameter is an object, treat it as config
+                if (typeof containerElm === 'object' && containerElm !== null) {
+                    instanceLogger.debug('Initializing with config object');
+                    super(containerElm);
+                } else if (typeof containerElm === 'string') {
+                    // Otherwise, treat first parameter as element ID
+                    instanceLogger.debug('Initializing with element ID', { elementId: containerElm });
+                    const fullConfig = { ...config, id: containerElm };
+                    super(fullConfig);
+                } else {
+                    throw new Error('Invalid constructor parameters');
+                }
+            } catch (error) {
+                instanceLogger.error('Failed to initialize ChessboardWrapper', { error });
+                throw error;
             }
         }
     }
 
-    // Attach the class to the factory function for direct access
+    /**
+     * Refactored Chessboard API - see Chessboard.js for full method docs
+     * @typedef {import('./Chessboard.js').Chessboard} Chessboard
+     */
+
+    // --- STATIC/FACTORY METHODS ---
+    /**
+     * Create a new Chessboard instance
+     * @param {string|Object} containerElm
+     * @param {Object} [config]
+     * @returns {Chessboard}
+     */
+    Chessboard.create = createChessboard;
+    /**
+     * Create a Chessboard from a template
+     * @param {string|Object} containerElm
+     * @param {string} templateName
+     * @param {Object} [config]
+     * @returns {Chessboard}
+     */
+    Chessboard.fromTemplate = createChessboardFromTemplate;
+    Chessboard.factory = chessboardFactory;
+
+    // --- INSTANCE MANAGEMENT ---
+    Chessboard.getInstance = (containerId) => chessboardFactory.getInstance(containerId);
+    Chessboard.destroyInstance = (containerId) => chessboardFactory.destroy(containerId);
+    Chessboard.destroyAll = () => chessboardFactory.destroyAll();
+    Chessboard.listInstances = () => chessboardFactory.listInstances();
+
+    // --- TEMPLATE MANAGEMENT ---
+    Chessboard.registerTemplate = (name, config) => chessboardFactory.registerTemplate(name, config);
+    Chessboard.removeTemplate = (name) => chessboardFactory.removeTemplate(name);
+    Chessboard.getTemplate = (name) => chessboardFactory.getTemplate(name);
+    Chessboard.listTemplates = () => chessboardFactory.listTemplates();
+
+    // --- STATS & DEBUG ---
+    Chessboard.getStats = () => chessboardFactory.getStats();
+
+    // --- DEPRECATED/LEGACY ALIASES ---
+    /**
+     * @deprecated Use Chessboard.create instead
+     */
     Chessboard.Class = ChessboardWrapper;
     Chessboard.Chessboard = ChessboardWrapper;
+    Chessboard.Config = ChessboardConfig;
+    Chessboard.Factory = ChessboardFactory;
 
     /**
      * Coordinate utilities for Chessboard.js
@@ -7396,87 +9810,459 @@
 
     /**
      * Validation utilities for Chessboard.js
+     * @module utils/validation
+     * @since 2.0.0
      */
 
+
     /**
-     * Validate piece notation
+     * Validation cache for performance optimization
+     * @type {Map}
+     */
+    const validationCache = new Map();
+    const CACHE_MAX_SIZE = 1000;
+
+    /**
+     * Caches validation result
+     * @param {string} key - Cache key
+     * @param {boolean} result - Validation result
+     */
+    function cacheResult(key, result) {
+        if (validationCache.size >= CACHE_MAX_SIZE) {
+            const firstKey = validationCache.keys().next().value;
+            validationCache.delete(firstKey);
+        }
+        validationCache.set(key, result);
+    }
+
+    /**
+     * Validate piece notation with caching
      * @param {string} piece - Piece notation (e.g., 'wP', 'bK')
      * @returns {boolean} True if piece notation is valid
      */
     function isValidPiece(piece) {
-      if (typeof piece !== 'string' || piece.length !== 2) return false;
-      
-      const color = piece[0];
-      const type = piece[1];
-      
-      return ['w', 'b'].includes(color) && ['P', 'R', 'N', 'B', 'Q', 'K'].includes(type);
+        if (typeof piece !== 'string' || piece.length !== 2) {
+            return false;
+        }
+        
+        const cacheKey = `piece:${piece}`;
+        if (validationCache.has(cacheKey)) {
+            return validationCache.get(cacheKey);
+        }
+        
+        const color = piece[0];
+        const type = piece[1];
+        
+        const isValid = ['w', 'b'].includes(color) && 
+                       ['P', 'R', 'N', 'B', 'Q', 'K'].includes(type);
+        
+        cacheResult(cacheKey, isValid);
+        return isValid;
     }
 
     /**
-     * Validate position object
+     * Validate position object with comprehensive checks
      * @param {Object} position - Position object with square-piece mappings
      * @returns {boolean} True if position is valid
      */
     function isValidPosition(position) {
-      if (typeof position !== 'object' || position === null) return false;
-      
-      for (const [square, piece] of Object.entries(position)) {
-        if (!isValidSquare(square) || !isValidPiece(piece)) {
-          return false;
+        if (typeof position !== 'object' || position === null) {
+            return false;
         }
-      }
-      
-      return true;
+        
+        // Check for circular references
+        try {
+            JSON.stringify(position);
+        } catch (error) {
+            return false;
+        }
+        
+        // Validate each square-piece mapping
+        for (const [square, piece] of Object.entries(position)) {
+            if (!isValidSquare(square) || !isValidPiece(piece)) {
+                return false;
+            }
+        }
+        
+        // Optional: Check for chess-specific rules
+        return isValidChessPosition(position);
     }
 
     /**
-     * Validate FEN string format
+     * Validates chess-specific position rules
+     * @param {Object} position - Position object
+     * @returns {boolean} True if position follows chess rules
+     */
+    function isValidChessPosition(position) {
+        const pieces = Object.values(position);
+        
+        // Count kings
+        const whiteKings = pieces.filter(p => p === 'wK').length;
+        const blackKings = pieces.filter(p => p === 'bK').length;
+        
+        // Must have exactly one king of each color
+        if (whiteKings !== 1 || blackKings !== 1) {
+            return false;
+        }
+        
+        // Count pawns (max 8 per side)
+        const whitePawns = pieces.filter(p => p === 'wP').length;
+        const blackPawns = pieces.filter(p => p === 'bP').length;
+        
+        if (whitePawns > 8 || blackPawns > 8) {
+            return false;
+        }
+        
+        // Check pawn placement (not on first or last rank)
+        for (const [square, piece] of Object.entries(position)) {
+            if (piece === 'wP' || piece === 'bP') {
+                const rank = square[1];
+                if (rank === '1' || rank === '8') {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Validate FEN string format with comprehensive checks
      * @param {string} fen - FEN string
      * @returns {Object} Validation result with success and error properties
      */
     function validateFenFormat(fen) {
-      if (typeof fen !== 'string') {
-        return { success: false, error: 'FEN must be a string' };
-      }
-      
-      const parts = fen.split(' ');
-      if (parts.length !== 6) {
-        return { success: false, error: 'FEN must have 6 parts separated by spaces' };
-      }
-      
-      // Validate piece placement
-      const ranks = parts[0].split('/');
-      if (ranks.length !== 8) {
-        return { success: false, error: 'Piece placement must have 8 ranks' };
-      }
-      
-      return { success: true };
+        if (typeof fen !== 'string') {
+            return { success: false, error: 'FEN must be a string' };
+        }
+        
+        const cacheKey = `fen:${fen}`;
+        if (validationCache.has(cacheKey)) {
+            return validationCache.get(cacheKey);
+        }
+        
+        const parts = fen.trim().split(' ');
+        if (parts.length !== 6) {
+            const result = { success: false, error: 'FEN must have 6 parts separated by spaces' };
+            cacheResult(cacheKey, result);
+            return result;
+        }
+        
+        // Validate piece placement
+        const ranks = parts[0].split('/');
+        if (ranks.length !== 8) {
+            const result = { success: false, error: 'Piece placement must have 8 ranks' };
+            cacheResult(cacheKey, result);
+            return result;
+        }
+        
+        // Validate each rank
+        for (let i = 0; i < ranks.length; i++) {
+            const rankResult = validateRank(ranks[i]);
+            if (!rankResult.success) {
+                const result = { success: false, error: `Invalid rank ${i + 1}: ${rankResult.error}` };
+                cacheResult(cacheKey, result);
+                return result;
+            }
+        }
+        
+        // Validate active color
+        if (!['w', 'b'].includes(parts[1])) {
+            const result = { success: false, error: 'Active color must be "w" or "b"' };
+            cacheResult(cacheKey, result);
+            return result;
+        }
+        
+        // Validate castling availability
+        if (!/^[KQkq-]*$/.test(parts[2])) {
+            const result = { success: false, error: 'Invalid castling availability' };
+            cacheResult(cacheKey, result);
+            return result;
+        }
+        
+        // Validate en passant target square
+        if (parts[3] !== '-' && !isValidSquare(parts[3])) {
+            const result = { success: false, error: 'Invalid en passant target square' };
+            cacheResult(cacheKey, result);
+            return result;
+        }
+        
+        // Validate halfmove clock
+        const halfmove = parseInt(parts[4], 10);
+        if (isNaN(halfmove) || halfmove < 0) {
+            const result = { success: false, error: 'Invalid halfmove clock' };
+            cacheResult(cacheKey, result);
+            return result;
+        }
+        
+        // Validate fullmove number
+        const fullmove = parseInt(parts[5], 10);
+        if (isNaN(fullmove) || fullmove < 1) {
+            const result = { success: false, error: 'Invalid fullmove number' };
+            cacheResult(cacheKey, result);
+            return result;
+        }
+        
+        const result = { success: true };
+        cacheResult(cacheKey, result);
+        return result;
     }
 
     /**
-     * Validate configuration object
+     * Validates a single rank in FEN notation
+     * @param {string} rank - Rank string
+     * @returns {Object} Validation result
+     */
+    function validateRank(rank) {
+        if (typeof rank !== 'string') {
+            return { success: false, error: 'Rank must be a string' };
+        }
+        
+        let squareCount = 0;
+        
+        for (let i = 0; i < rank.length; i++) {
+            const char = rank[i];
+            
+            if (/[1-8]/.test(char)) {
+                squareCount += parseInt(char, 10);
+            } else if (/[prnbqkPRNBQK]/.test(char)) {
+                squareCount += 1;
+            } else {
+                return { success: false, error: `Invalid character "${char}" in rank` };
+            }
+        }
+        
+        if (squareCount !== 8) {
+            return { success: false, error: `Rank must represent exactly 8 squares, got ${squareCount}` };
+        }
+        
+        return { success: true };
+    }
+
+    /**
+     * Validate move notation in various formats
+     * @param {string} move - Move string (e.g., 'e2e4', 'Nf3', 'O-O')
+     * @returns {Object} Validation result
+     */
+    function validateMove(move) {
+        if (typeof move !== 'string') {
+            return { success: false, error: 'Move must be a string' };
+        }
+        
+        const trimmed = move.trim();
+        if (trimmed.length === 0) {
+            return { success: false, error: 'Move cannot be empty' };
+        }
+        
+        // Check for castling
+        if (trimmed === 'O-O' || trimmed === 'O-O-O') {
+            return { success: true, type: 'castling' };
+        }
+        
+        // Check for coordinate notation (e.g., e2e4, e7e8q)
+        if (/^[a-h][1-8][a-h][1-8][qrnbQRNB]?$/.test(trimmed)) {
+            return { success: true, type: 'coordinate' };
+        }
+        
+        // Check for algebraic notation (e.g., Nf3, Qxd5, e4)
+        if (/^[PRNBQK]?[a-h]?[1-8]?x?[a-h][1-8](\+|#)?$/.test(trimmed)) {
+            return { success: true, type: 'algebraic' };
+        }
+        
+        return { success: false, error: 'Invalid move format' };
+    }
+
+    /**
+     * Validate configuration object with detailed error reporting
      * @param {Object} config - Configuration object
      * @returns {Object} Validation result with success and errors array
      */
     function validateConfig(config) {
-      const errors = [];
-      
-      if (config.orientation && !['white', 'black', 'w', 'b'].includes(config.orientation)) {
-        errors.push('Invalid orientation. Must be "white", "black", "w", or "b"');
-      }
-      
-      if (config.position && config.position !== 'start' && typeof config.position !== 'object') {
-        errors.push('Invalid position. Must be "start" or a position object');
-      }
-      
-      if (config.size && typeof config.size !== 'string' && typeof config.size !== 'number') {
-        errors.push('Invalid size. Must be a string or number');
-      }
-      
-      return {
-        success: errors.length === 0,
-        errors
-      };
+        const errors = [];
+        
+        if (!config || typeof config !== 'object') {
+            return { success: false, errors: ['Configuration must be an object'] };
+        }
+        
+        // Required fields
+        if (!config.id && !config.id_div) {
+            errors.push('Configuration must include "id" or "id_div"');
+        }
+        
+        // Optional field validation
+        if (config.orientation && !['white', 'black', 'w', 'b'].includes(config.orientation)) {
+            errors.push('Invalid orientation. Must be "white", "black", "w", or "b"');
+        }
+        
+        if (config.position && config.position !== 'start' && typeof config.position !== 'object') {
+            errors.push('Invalid position. Must be "start" or a position object');
+        }
+        
+        if (config.position && typeof config.position === 'object' && !isValidPosition(config.position)) {
+            errors.push('Invalid position object format');
+        }
+        
+        if (config.size && !isValidSize(config.size)) {
+            errors.push('Invalid size. Must be "auto", a positive number, or a valid CSS size');
+        }
+        
+        if (config.movableColors && !['white', 'black', 'w', 'b', 'both', 'none'].includes(config.movableColors)) {
+            errors.push('Invalid movableColors. Must be "white", "black", "w", "b", "both", or "none"');
+        }
+        
+        if (config.dropOffBoard && !['snapback', 'trash'].includes(config.dropOffBoard)) {
+            errors.push('Invalid dropOffBoard. Must be "snapback" or "trash"');
+        }
+        
+        // Validate callback functions
+        const callbacks = ['onMove', 'onMoveEnd', 'onChange', 'onDragStart', 'onDragMove', 'onDrop', 'onSnapbackEnd'];
+        for (const callback of callbacks) {
+            if (config[callback] && typeof config[callback] !== 'function') {
+                errors.push(`Invalid ${callback}. Must be a function`);
+            }
+        }
+        
+        // Validate color values
+        const colorFields = ['whiteSquare', 'blackSquare', 'highlight', 'hintColor'];
+        for (const field of colorFields) {
+            if (config[field] && !isValidColor(config[field])) {
+                errors.push(`Invalid ${field}. Must be a valid CSS color`);
+            }
+        }
+        
+        // Validate animation settings
+        if (config.moveAnimation && !isValidEasing(config.moveAnimation)) {
+            errors.push('Invalid moveAnimation. Must be a valid easing function');
+        }
+        
+        if (config.animationStyle && !['sequential', 'simultaneous'].includes(config.animationStyle)) {
+            errors.push('Invalid animationStyle. Must be "sequential" or "simultaneous"');
+        }
+        
+        return {
+            success: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * Validates size value
+     * @param {number|string} size - Size value
+     * @returns {boolean} True if valid
+     */
+    function isValidSize(size) {
+        if (size === 'auto') {
+            return true;
+        }
+        
+        if (typeof size === 'number') {
+            return size > 0 && size <= 5000; // Reasonable upper limit
+        }
+        
+        if (typeof size === 'string') {
+            // Check for CSS size values
+            return /^\d+(px|em|rem|%|vh|vw)$/.test(size);
+        }
+        
+        return false;
+    }
+
+    /**
+     * Validates CSS color value
+     * @param {string} color - Color value
+     * @returns {boolean} True if valid
+     */
+    function isValidColor(color) {
+        if (typeof color !== 'string') {
+            return false;
+        }
+        
+        // Hex colors
+        if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color)) {
+            return true;
+        }
+        
+        // RGB/RGBA
+        if (/^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[0-1](\.\d+)?)?\s*\)$/.test(color)) {
+            return true;
+        }
+        
+        // HSL/HSLA
+        if (/^hsla?\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*(,\s*[0-1](\.\d+)?)?\s*\)$/.test(color)) {
+            return true;
+        }
+        
+        // Named colors (basic set)
+        const namedColors = [
+            'white', 'black', 'red', 'green', 'blue', 'yellow', 'cyan', 'magenta',
+            'transparent', 'gray', 'grey', 'brown', 'orange', 'purple', 'pink'
+        ];
+        
+        return namedColors.includes(color.toLowerCase());
+    }
+
+    /**
+     * Validates easing function
+     * @param {string} easing - Easing function name
+     * @returns {boolean} True if valid
+     */
+    function isValidEasing(easing) {
+        const validEasing = [
+            'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out',
+            'cubic-bezier'
+        ];
+        
+        return validEasing.includes(easing) || 
+               /^cubic-bezier\(\s*[\d.-]+\s*,\s*[\d.-]+\s*,\s*[\d.-]+\s*,\s*[\d.-]+\s*\)$/.test(easing);
+    }
+
+    /**
+     * Batch validates multiple items
+     * @param {Array} items - Array of validation items
+     * @returns {Array} Array of validation results
+     */
+    function batchValidate(items) {
+        return items.map(item => {
+            const { type, value } = item;
+            
+            switch (type) {
+                case 'piece':
+                    return { ...item, valid: isValidPiece(value) };
+                case 'square':
+                    return { ...item, valid: isValidSquare(value) };
+                case 'position':
+                    return { ...item, valid: isValidPosition(value) };
+                case 'fen':
+                    const fenResult = validateFenFormat(value);
+                    return { ...item, valid: fenResult.success, error: fenResult.error };
+                case 'move':
+                    const moveResult = validateMove(value);
+                    return { ...item, valid: moveResult.success, error: moveResult.error };
+                case 'config':
+                    const configResult = validateConfig(value);
+                    return { ...item, valid: configResult.success, errors: configResult.errors };
+                default:
+                    return { ...item, valid: false, error: 'Unknown validation type' };
+            }
+        });
+    }
+
+    /**
+     * Clears validation cache
+     */
+    function clearValidationCache() {
+        validationCache.clear();
+    }
+
+    /**
+     * Gets validation cache statistics
+     * @returns {Object} Cache statistics
+     */
+    function getValidationCacheStats() {
+        return {
+            size: validationCache.size,
+            maxSize: CACHE_MAX_SIZE
+        };
     }
 
     /**
@@ -7526,6 +10312,24 @@
      * @license ISC
      */
 
+
+    // Version information
+    const version = '2.2.1';
+    const build = 'dev';
+    const buildDate = new Date().toISOString();
+
+    // Library information
+    const info = {
+        name: 'Chessboard.js',
+        version,
+        build,
+        buildDate,
+        author: 'alepot55',
+        license: 'ISC',
+        repository: 'https://github.com/alepot55/Chessboardjs',
+        homepage: 'https://chessboardjs.com'
+    };
+
     exports.AnimationService = AnimationService;
     exports.BOARD_LETTERS = BOARD_LETTERS;
     exports.BOARD_SIZE = BOARD_SIZE;
@@ -7534,15 +10338,23 @@
     exports.Chessboard = Chessboard;
     exports.ChessboardConfig = ChessboardConfig;
     exports.ChessboardError = ChessboardError;
+    exports.ChessboardFactory = ChessboardFactory;
+    exports.ConfigurationError = ConfigurationError;
     exports.CoordinateService = CoordinateService;
     exports.DEFAULT_STARTING_POSITION = DEFAULT_STARTING_POSITION;
+    exports.DOMError = DOMError;
     exports.EventService = EventService;
+    exports.LOG_LEVELS = LOG_LEVELS;
+    exports.Logger = Logger;
     exports.Move = Move$1;
+    exports.MoveError = MoveError;
     exports.MoveService = MoveService;
     exports.PIECE_COLORS = PIECE_COLORS;
     exports.PIECE_TYPES = PIECE_TYPES;
     exports.PROMOTION_PIECES = PROMOTION_PIECES;
+    exports.PerformanceMonitor = PerformanceMonitor;
     exports.Piece = Piece;
+    exports.PieceError = PieceError;
     exports.PieceService = PieceService;
     exports.PositionService = PositionService;
     exports.STANDARD_POSITIONS = STANDARD_POSITIONS;
@@ -7551,13 +10363,28 @@
     exports.ValidationService = ValidationService;
     exports.algebraicToCoords = algebraicToCoords;
     exports.animationPromise = animationPromise;
+    exports.batchDOMOperations = batchDOMOperations;
+    exports.batchValidate = batchValidate;
+    exports.build = build;
+    exports.buildDate = buildDate;
+    exports.chessboardFactory = chessboardFactory;
+    exports.clearValidationCache = clearValidationCache;
     exports.coordsToAlgebraic = coordsToAlgebraic;
+    exports.createChessboard = createChessboard;
+    exports.createChessboardFromTemplate = createChessboardFromTemplate;
+    exports.createLogger = createLogger;
+    exports.debounce = debounce;
     exports.default = Chessboard;
+    exports.getMemoryUsage = getMemoryUsage;
     exports.getSquareColor = getSquareColor;
+    exports.getValidationCacheStats = getValidationCacheStats;
+    exports.info = info;
+    exports.isElementVisible = isElementVisible;
     exports.isValidCoords = isValidCoords;
     exports.isValidPiece = isValidPiece;
     exports.isValidPosition = isValidPosition;
     exports.isValidSquare = isValidSquare$1;
+    exports.logger = logger;
     exports.parseAnimation = parseAnimation;
     exports.parseTime = parseTime;
     exports.rafThrottle = rafThrottle;
@@ -7567,6 +10394,8 @@
     exports.validateConfig = validateConfig;
     exports.validateFen = validateFen;
     exports.validateFenFormat = validateFenFormat;
+    exports.validateMove = validateMove;
+    exports.version = version;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

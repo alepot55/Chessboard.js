@@ -7,6 +7,7 @@
 import Piece from '../components/Piece.js';
 import { PieceError, ValidationError } from '../errors/ChessboardError.js';
 import { ERROR_MESSAGES } from '../errors/messages.js';
+import { PIECE_TYPES, PIECE_COLORS } from '../constants/positions.js';
 
 /**
  * Service responsible for piece management and operations
@@ -29,7 +30,7 @@ export class PieceService {
      */
     getPiecePath(piece) {
         const { piecesPath } = this.config;
-        
+
         if (typeof piecesPath === 'string') {
             return `${piecesPath}/${piece}.svg`;
         } else if (typeof piecesPath === 'object' && piecesPath !== null) {
@@ -51,13 +52,28 @@ export class PieceService {
         if (piece instanceof Piece) {
             return piece;
         }
-        
+
         if (typeof piece === 'string' && piece.length === 2) {
-            const [type, color] = piece.split('');
-            const piecePath = this.getPiecePath(piece);
+            const [first, second] = piece.split('');
+            let type, color;
+
+            // Check format: [type][color] (e.g., 'pw')
+            if (PIECE_TYPES.includes(first.toLowerCase()) && PIECE_COLORS.includes(second)) {
+                type = first.toLowerCase();
+                color = second;
+            }
+            // Check format: [color][type] (e.g., 'wP')
+            else if (PIECE_COLORS.includes(first) && PIECE_TYPES.includes(second.toLowerCase())) {
+                color = first;
+                type = second.toLowerCase();
+            } else {
+                throw new PieceError(ERROR_MESSAGES.invalid_piece + piece, piece);
+            }
+
+            const piecePath = this.getPiecePath(type + color);
             return new Piece(color, type, piecePath);
         }
-        
+
         throw new PieceError(ERROR_MESSAGES.invalid_piece + piece, piece);
     }
 
@@ -70,8 +86,9 @@ export class PieceService {
      * @param {Function} [callback] - Callback when animation completes
      */
     addPieceOnSquare(square, piece, fade = true, dragFunction, callback) {
+        console.debug(`[PieceService] addPieceOnSquare: ${piece.id} to ${square.id}`);
         square.putPiece(piece);
-        
+
         if (dragFunction) {
             piece.setDrag(dragFunction(square, piece));
         }
@@ -99,8 +116,9 @@ export class PieceService {
      * @throws {PieceError} When square has no piece to remove
      */
     removePieceFromSquare(square, fade = true, callback) {
+        console.debug(`[PieceService] removePieceFromSquare: ${square.id}`);
         square.check();
-        
+
         const piece = square.piece;
         if (!piece) {
             if (callback) callback();
@@ -130,17 +148,18 @@ export class PieceService {
      * @param {Function} [callback] - Callback function when animation completes
      */
     movePiece(piece, targetSquare, duration, callback) {
+        console.debug(`[PieceService] movePiece: ${piece.id} to ${targetSquare.id}`);
         if (!piece) {
             console.warn('PieceService.movePiece: piece is null, skipping animation');
             if (callback) callback();
             return;
         }
-        
+
         piece.translate(
-            targetSquare, 
-            duration, 
-            this._getTransitionTimingFunction(), 
-            this.config.moveAnimation, 
+            targetSquare,
+            duration,
+            this._getTransitionTimingFunction(),
+            this.config.moveAnimation,
             callback
         );
     }
@@ -154,6 +173,7 @@ export class PieceService {
      * @param {Function} [callback] - Callback function when complete
      */
     translatePiece(move, removeTarget, animate, dragFunction = null, callback = null) {
+        console.debug(`[PieceService] translatePiece: ${move.piece.id} from ${move.from.id} to ${move.to.id}`);
         if (!move.piece) {
             console.warn('PieceService.translatePiece: move.piece is null, skipping translation');
             if (callback) callback();
@@ -169,25 +189,25 @@ export class PieceService {
         const changeSquareCallback = () => {
             // Check if piece still exists and is on the source square
             if (move.from.piece === move.piece) {
-                move.from.removePiece();
+                move.from.removePiece(true); // Preserve the piece when moving
             }
-            
+
             // Only put piece if destination square doesn't already have it
             if (move.to.piece !== move.piece) {
                 move.to.putPiece(move.piece);
-                
+
                 // Re-attach drag handler if provided
-                if (dragFunction && this.config.draggable) {
+                if (dragFunction && this.config.draggable && move.piece.element) {
                     move.piece.setDrag(dragFunction(move.to, move.piece));
                 }
             }
-            
+
             if (callback) callback();
         };
 
         // Check if piece is currently being dragged
         const isDragging = move.piece.element.classList.contains('dragging');
-        
+
         if (isDragging) {
             // If piece is being dragged, don't animate - just move it immediately
             // The piece is already visually in the correct position from the drag
@@ -208,14 +228,13 @@ export class PieceService {
         if (!square || !square.piece) {
             return;
         }
-        
         const piece = square.piece;
         const duration = animate ? this.config.snapbackTime : 0;
-        
+        console.debug(`[PieceService] snapbackPiece: ${piece.id} on ${square.id}`);
         piece.translate(
-            square, 
-            duration, 
-            this._getTransitionTimingFunction(), 
+            square,
+            duration,
+            this._getTransitionTimingFunction(),
             this.config.snapbackAnimation
         );
     }
@@ -229,17 +248,17 @@ export class PieceService {
         if (!square || !square.piece) {
             return;
         }
-        
         const piece = square.piece;
         const duration = animate ? this.config.dropCenterTime : 0;
-        
+        console.debug(`[PieceService] centerPiece: ${piece.id} on ${square.id}`);
         piece.translate(
-            square, 
-            duration, 
-            this._getTransitionTimingFunction(), 
+            square,
+            duration,
+            this._getTransitionTimingFunction(),
             this.config.dropCenterAnimation,
             () => {
                 // After animation, reset all drag-related styles
+                if (!piece.element) return;
                 piece.element.style.position = '';
                 piece.element.style.left = '';
                 piece.element.style.top = '';
@@ -257,7 +276,7 @@ export class PieceService {
     _getTransitionTimingFunction() {
         return (elapsed, duration, type = 'ease') => {
             const x = elapsed / duration;
-            
+
             switch (type) {
                 case 'linear':
                     return x;

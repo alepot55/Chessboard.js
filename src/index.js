@@ -8,7 +8,14 @@
  */
 
 // Core components
-export { Chessboard, ChessboardConfig } from './core/index.js';
+export { 
+    Chessboard, 
+    ChessboardConfig, 
+    ChessboardFactory,
+    chessboardFactory,
+    createChessboard,
+    createChessboardFromTemplate 
+} from './core/index.js';
 
 // Component exports
 export { default as Square } from './components/Square.js';
@@ -31,15 +38,66 @@ export {
 export * from './constants/index.js';
 
 // Error handling exports
-export { ChessboardError, ValidationError } from './errors/index.js';
+export { 
+    ChessboardError, 
+    ValidationError, 
+    ConfigurationError,
+    MoveError,
+    DOMError,
+    PieceError
+} from './errors/index.js';
 
 // Utility exports
 export { Chess, validateFen } from './utils/chess.js';
-export * from './utils/performance.js';
+export { 
+    PerformanceMonitor,
+    throttle,
+    debounce,
+    rafThrottle,
+    setTransform,
+    resetTransform,
+    batchDOMOperations,
+    isElementVisible,
+    getMemoryUsage
+} from './utils/performance.js';
 export * from './utils/coordinates.js';
-export * from './utils/validation.js';
+export { 
+    isValidPiece,
+    isValidPosition,
+    validateFenFormat,
+    validateMove,
+    validateConfig,
+    batchValidate,
+    clearValidationCache,
+    getValidationCacheStats
+} from './utils/validation.js';
 export * from './utils/animations.js';
+
+// Logging system exports
+export { 
+    Logger,
+    logger,
+    createLogger,
+    LOG_LEVELS
+} from './utils/logger.js';
 
 // Default export for IIFE compatibility
 import { Chessboard as ChessboardClass } from './core/index.js';
 export default ChessboardClass;
+
+// Version information
+export const version = '2.2.1';
+export const build = process.env.BUILD_NUMBER || 'dev';
+export const buildDate = process.env.BUILD_DATE || new Date().toISOString();
+
+// Library information
+export const info = {
+    name: 'Chessboard.js',
+    version,
+    build,
+    buildDate,
+    author: 'alepot55',
+    license: 'ISC',
+    repository: 'https://github.com/alepot55/Chessboardjs',
+    homepage: 'https://chessboardjs.com'
+};

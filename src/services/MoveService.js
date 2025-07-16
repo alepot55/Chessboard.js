@@ -42,6 +42,11 @@ export class MoveService {
         
         if (!onlyLegalMoves) return true;
         
+        // Check if position service and game are available
+        if (!this.positionService || !this.positionService.getGame()) {
+            return false;
+        }
+        
         const game = this.positionService.getGame();
         return square.piece.color === game.turn();
     }
@@ -94,6 +99,11 @@ export class MoveService {
      * @returns {Array} Array of legal moves
      */
     getLegalMoves(from = null, verbose = true) {
+        // Check if position service and game are available
+        if (!this.positionService || !this.positionService.getGame()) {
+            return [];
+        }
+        
         const game = this.positionService.getGame();
         
         if (!game) return [];
@@ -112,6 +122,11 @@ export class MoveService {
      * @returns {Array} Array of legal moves
      */
     getCachedLegalMoves(square) {
+        // Check if position service and game are available
+        if (!this.positionService || !this.positionService.getGame()) {
+            return [];
+        }
+        
         const game = this.positionService.getGame();
         if (!game) return [];
         
@@ -141,6 +156,11 @@ export class MoveService {
      * @returns {Object|null} Move result from chess.js or null if invalid
      */
     executeMove(move) {
+        // Check if position service and game are available
+        if (!this.positionService || !this.positionService.getGame()) {
+            return null;
+        }
+        
         const game = this.positionService.getGame();
         if (!game) return null;
         
@@ -324,6 +344,11 @@ export class MoveService {
      */
     setupPromotion(move, squares, onPromotionSelect, onPromotionCancel) {
         if (!this.requiresPromotion(move)) return false;
+        
+        // Check if position service and game are available
+        if (!this.positionService || !this.positionService.getGame()) {
+            return false;
+        }
         
         const game = this.positionService.getGame();
         const piece = game.get(move.from.id);

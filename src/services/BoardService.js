@@ -30,12 +30,12 @@ export class BoardService {
      */
     buildBoard() {
         console.log('BoardService.buildBoard: Looking for element with ID:', this.config.id_div);
-        
+
         this.element = document.getElementById(this.config.id_div);
         if (!this.element) {
             throw new DOMError(ERROR_MESSAGES.invalid_id_div + this.config.id_div, this.config.id_div);
         }
-        
+
         this.resize(this.config.size);
         this.element.className = "board";
     }
@@ -49,7 +49,7 @@ export class BoardService {
             for (let col = 0; col < BOARD_SIZE.COLS; col++) {
                 const [squareRow, squareCol] = coordConverter(row, col);
                 const square = new Square(squareRow, squareCol);
-                
+
                 this.squares[square.getId()] = square;
                 this.element.appendChild(square.element);
             }
@@ -57,25 +57,26 @@ export class BoardService {
     }
 
     /**
+     * Removes all squares from the board and cleans up their resources
+     * Best practice: always destroy JS objects and DOM nodes, and clear references.
+     */
+    removeSquares() {
+        for (const square of Object.values(this.squares)) {
+            // Always call destroy to remove DOM and clear piece reference
+            square.destroy();
+        }
+        this.squares = {};
+    }
+
+    /**
      * Removes all content from the board element
+     * Best practice: clear DOM and force element to be re-fetched on next build.
      */
     removeBoard() {
         if (this.element) {
             this.element.innerHTML = '';
+            this.element = null;
         }
-    }
-
-    /**
-     * Removes all squares from the board and cleans up their resources
-     */
-    removeSquares() {
-        for (const square of Object.values(this.squares)) {
-            if (this.element && square.element) {
-                this.element.removeChild(square.element);
-            }
-            square.destroy();
-        }
-        this.squares = {};
     }
 
     /**
@@ -101,9 +102,9 @@ export class BoardService {
      */
     _calculateAutoSize() {
         if (!this.element) return 400; // Default fallback
-        
+
         const { offsetWidth, offsetHeight } = this.element;
-        
+
         if (offsetWidth === 0) {
             return offsetHeight || 400;
         } else if (offsetHeight === 0) {

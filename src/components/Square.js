@@ -54,35 +54,34 @@ class Square {
         return this.element.getBoundingClientRect();
     }
 
-    removePiece() {
+    removePiece(preserve = false) {
         if (!this.piece) {
             return null;
         }
-        
-        // Remove the piece element from DOM
-        if (this.piece.element && this.piece.element.parentNode === this.element) {
-            this.element.removeChild(this.piece.element);
+        // Only destroy the piece if not preserving (i.e., not moving)
+        if (!preserve && typeof this.piece.destroy === 'function') {
+            this.piece.destroy();
         }
-        
-        const piece = this.piece;
         this.piece = null;
-        return piece;
+        return null;
     }
 
     /**
      * Forcefully removes all pieces from this square
      */
     forceRemoveAllPieces() {
-        // Remove all img elements with class 'piece'
+        // Best practice: destroy the piece object if present
+        if (this.piece && typeof this.piece.destroy === 'function') {
+            this.piece.destroy();
+            this.piece = null;
+        }
+        // Remove any orphaned img.piece elements from the DOM
         const pieceElements = this.element.querySelectorAll('img.piece');
         pieceElements.forEach(element => {
             if (element.parentNode === this.element) {
                 this.element.removeChild(element);
             }
         });
-        
-        // Clear the piece reference
-        this.piece = null;
     }
 
     /**
@@ -94,10 +93,10 @@ class Square {
         if (this.piece) {
             this.removePiece();
         }
-        
+
         // Add the new piece
         this.putPiece(newPiece);
-        
+
         // Ensure the piece is properly displayed
         newPiece.element.style.opacity = '1';
     }
@@ -107,11 +106,10 @@ class Square {
     }
 
     putPiece(piece) {
-        // If there's already a piece, remove it first
+        // If there's already a piece, remove it first, but preserve if moving
         if (this.piece) {
-            this.removePiece();
+            this.removePiece(true);
         }
-        
         this.piece = piece;
         if (piece && piece.element) {
             this.element.appendChild(piece.element);
@@ -211,7 +209,10 @@ class Square {
     }
 
     destroy() {
+        // Remove all piece DOM nodes and clear reference
+        this.forceRemoveAllPieces();
         this.element.remove();
+        this.piece = null;
     }
 
     hasPiece() {
@@ -229,7 +230,7 @@ class Square {
         if (this.col < 1 || this.col > 8) {
             throw new Error("Invalid square: col is out of bounds");
         }
-        
+
     }
 }
 

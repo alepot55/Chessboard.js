@@ -27,7 +27,7 @@ export class AnimationService {
     createTimingFunction(type = 'ease') {
         return (elapsed, duration) => {
             const x = elapsed / duration;
-            
+
             switch (type) {
                 case 'linear':
                     return x;
@@ -59,17 +59,17 @@ export class AnimationService {
         const timingFunction = this.createTimingFunction(easing);
         const startTime = performance.now();
         const startValues = {};
-        
+
         // Store initial values
         Object.keys(properties).forEach(prop => {
             startValues[prop] = this._getInitialValue(element, prop);
         });
-        
+
         const animate = (currentTime) => {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
             const easedProgress = timingFunction(elapsed, duration);
-            
+
             // Apply animated values
             Object.keys(properties).forEach(prop => {
                 const startValue = startValues[prop];
@@ -77,7 +77,7 @@ export class AnimationService {
                 const currentValue = this._interpolateValue(startValue, endValue, easedProgress);
                 this._applyValue(element, prop, currentValue);
             });
-            
+
             if (progress < 1 && this.activeAnimations.has(animationId)) {
                 requestAnimationFrame(animate);
             } else {
@@ -85,10 +85,10 @@ export class AnimationService {
                 if (callback) callback();
             }
         };
-        
+
         this.activeAnimations.set(animationId, { element, animate, callback });
         requestAnimationFrame(animate);
-        
+
         return animationId;
     }
 
@@ -117,6 +117,7 @@ export class AnimationService {
      * @returns {number} Initial value
      */
     _getInitialValue(element, property) {
+        if (!element || !element.style) return 0;
         switch (property) {
             case 'opacity':
                 return parseFloat(getComputedStyle(element).opacity) || 1;
@@ -151,6 +152,7 @@ export class AnimationService {
      * @param {number} value - Value to apply
      */
     _applyValue(element, property, value) {
+        if (!element || !element.style) return;
         switch (property) {
             case 'opacity':
                 element.style.opacity = value;

@@ -1,10 +1,10 @@
-import Piece from "./chessboard.piece.js";
-import Square from "./chessboard.square.js";
+import Piece from "./Piece.js";
+import Square from "./Square.js";
 
 class Move {
 
     constructor(from, to, promotion = null, check = false) {
-        this.piece = from.getPiece();
+        this.piece = from ? from.getPiece() : null;
         this.from = from;
         this.to = to;
         this.promotion = promotion;

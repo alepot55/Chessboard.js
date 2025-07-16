@@ -1,7 +1,2 @@
-export default {
-    testEnvironment: 'jsdom',
-    transform: {
-        "^.+\\.js$": "babel-jest"
-    }
-    // ...existing config...
-};
+// Re-export the configuration from the config directory
+export { default } from './config/jest.config.js';

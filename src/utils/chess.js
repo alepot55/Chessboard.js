@@ -914,8 +914,8 @@ export class Chess {
             return true;
         }
         else if (
-        // k vs. kn .... or .... k vs. kb
-        numPieces === 3 &&
+            // k vs. kn .... or .... k vs. kb
+            numPieces === 3 &&
             (pieces[BISHOP] === 1 || pieces[KNIGHT] === 1)) {
             return true;
         }
@@ -1548,14 +1548,14 @@ export class Chess {
         function toHex(s) {
             return Array.from(s)
                 .map(function (c) {
-                /*
-                 * encodeURI doesn't transform most ASCII characters, so we handle
-                 * these ourselves
-                 */
-                return c.charCodeAt(0) < 128
-                    ? c.charCodeAt(0).toString(16)
-                    : encodeURIComponent(c).replace(/%/g, '').toLowerCase();
-            })
+                    /*
+                     * encodeURI doesn't transform most ASCII characters, so we handle
+                     * these ourselves
+                     */
+                    return c.charCodeAt(0) < 128
+                        ? c.charCodeAt(0).toString(16)
+                        : encodeURIComponent(c).replace(/%/g, '').toLowerCase();
+                })
                 .join('');
         }
         function fromHex(s) {
@@ -1576,12 +1576,12 @@ export class Chess {
         let ms = pgn
             .replace(headerString, '')
             .replace(
-        // encode comments so they don't get deleted below
-        new RegExp(`({[^}]*})+?|;([^${mask(newlineChar)}]*)`, 'g'), function (_match, bracket, semicolon) {
-            return bracket !== undefined
-                ? encodeComment(bracket)
-                : ' ' + encodeComment(`{${semicolon.slice(1)}}`);
-        })
+                // encode comments so they don't get deleted below
+                new RegExp(`({[^}]*})+?|;([^${mask(newlineChar)}]*)`, 'g'), function (_match, bracket, semicolon) {
+                    return bracket !== undefined
+                        ? encodeComment(bracket)
+                        : ' ' + encodeComment(`{${semicolon.slice(1)}}`);
+                })
             .replace(new RegExp(mask(newlineChar), 'g'), ' ');
         // delete recursive annotation variations
         const ravRegex = /(\([^()]+\))+?/g;

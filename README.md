@@ -3,444 +3,168 @@
 [Chessboard.js](https://sites.google.com/view/chessboard-js/home) is a lightweight and versatile NPM package that lets you easily integrate an interactive, customizable chessboard into your web applications. Use it for game displays, chess lessons, analysis tools, or any project that needs a visual chess interface.
 
 ## Overview
+
 [Chessboard.js](https://sites.google.com/view/chessboard-js/home) is designed with simplicity and flexibility in mind. Configure board appearance, piece sets, orientation, highlighting, animations, and more through a rich API. The board updates dynamically with user interactions and programmatic moves.
 
 ## Installation
+
 ```bash
 npm i @alepot55/chessboardjs
 ```
 
 ## Usage
+
 Import and initialize the chessboard into your project:
+
 ```javascript
-import Chessboard from 'chessboardjs';
+import Chessboard from "chessboardjs";
 
 const config = {
-    id: 'board',          // HTML element id for the board
-    piecesPath: 'path/to/pieces', // Path or object/function returning piece image paths
-    position: 'start',        // Valid FEN string or predefined position ('start' for initial setup)
-    size: 400,                // Board size in pixels or 'auto'
-    orientation: 'w',         // Board orientation: 'w' for white at bottom, 'b' for black at bottom
-    draggable: true,          // Enable drag and drop for pieces
-    clickable: true,          // Allow clickable moves and interactions
-    onlyLegalMoves: true,     // Restrict piece moves to legal moves only
-    onMove: (move) => {       // Callback when a move is attempted
-        console.log('Move attempted:', move);
-        return true;        // Accept the move
-    },
-    onMoveEnd: (move) => {
-        console.log('Move executed:', move);
-    },
-    // ...other configuration options...
+  id: "board",
+  piecesPath: "path/to/pieces",
+  position: "start",
+  size: 400,
+  orientation: "w",
+  draggable: true,
+  clickable: true,
+  onlyLegalMoves: true,
+  onMove: (move) => {
+    console.log("Move attempted:", move);
+    return true;
+  },
+  onMoveEnd: (move) => {
+    console.log("Move executed:", move);
+  },
+  // ...other configuration options...
 };
 
 const board = new Chessboard(config);
 ```
 
-## Configuration
+## API Quick Reference
 
-Configuration is done by passing an object to the constructor. Below is an example with the main attributes and a brief description:
+| Category              | Method                          | Description                        |
+| --------------------- | ------------------------------- | ---------------------------------- |
+| **Position & State**  | `getPosition()`                 | Get FEN string of current position |
+|                       | `setPosition(fen, opts)`        | Set board position (FEN/object)    |
+|                       | `reset(opts)`                   | Reset to starting position         |
+|                       | `clear(opts)`                   | Clear the board                    |
+| **Move Management**   | `movePiece(move, opts)`         | Make a move (string/object)        |
+|                       | `undoMove(opts)`                | Undo last move                     |
+|                       | `redoMove(opts)`                | Redo last undone move              |
+|                       | `getLegalMoves(square)`         | Get legal moves for a square       |
+| **Piece Management**  | `getPiece(square)`              | Get piece at a square              |
+|                       | `putPiece(piece, square, opts)` | Put a piece on a square            |
+|                       | `removePiece(square, opts)`     | Remove a piece from a square       |
+| **Board Control**     | `flipBoard(opts)`               | Flip the board orientation         |
+|                       | `setOrientation(color, opts)`   | Set board orientation              |
+|                       | `getOrientation()`              | Get current orientation            |
+|                       | `resizeBoard(size)`             | Resize the board                   |
+| **Highlighting & UI** | `highlight(square, opts)`       | Highlight a square                 |
+|                       | `dehighlight(square, opts)`     | Remove highlight from a square     |
+| **Game Info**         | `fen()`                         | Get FEN string                     |
+|                       | `turn()`                        | Get current turn ('w' or 'b')      |
+|                       | `isGameOver()`                  | Is the game over?                  |
+|                       | `isCheckmate()`                 | Is it checkmate?                   |
+|                       | `isDraw()`                      | Is it draw?                        |
+|                       | `getHistory()`                  | Get move history                   |
+| **Lifecycle**         | `destroy()`                     | Destroy the board and cleanup      |
+|                       | `rebuild()`                     | Re-initialize the board            |
+| **Configuration**     | `getConfig()`                   | Get current config                 |
+|                       | `setConfig(newConfig)`          | Update config                      |
 
-```javascript
-const config = {
-  id: 'board',                   // ID of the HTML element where the chessboard is rendered
-  piecesPath: 'path/to/pieces',   // Path (or function) to retrieve piece images
-  position: 'start',              // Initial position ('start' for standard setup or a FEN string)
-  size: 400,                     // Chessboard size (pixels number or 'auto')
-  orientation: 'w',              // Board orientation: 'w' (white at the bottom) or 'b' (black at the bottom)
-  draggable: true,               // Enable dragging of pieces
-  clickable: true,               // Enable piece selection via click
-  onlyLegalMoves: true,          // Allow only legal moves
-  moveAnimation: 'ease',         // Transition function for move animations (e.g., 'ease', 'linear')
-  moveTime: 'fast',              // Duration for move animation ('fast', 'normal', 'slow', etc.)
-  snapbackAnimation: 'ease',     // Transition function for snapback animation (when an invalid move occurs)
-  snapbackTime: 'fast',          // Duration for snapback animation
-  fadeAnimation: 'ease',         // Transition function for fade animations
-  fadeTime: 'fast',              // Duration for fade animation
-  whiteSquare: '#f0d9b5',        // Color of white squares
-  blackSquare: '#b58863',        // Color of black squares
-  highlight: 'yellow',           // Color used to highlight moves
-  selectedSquareWhite: '#ababaa',// Highlight color for selected white squares
-  selectedSquareBlack: '#ababaa',// Highlight color for selected black squares
-  movedSquareWhite: '#f1f1a0',   // Color to indicate moved white squares
-  movedSquareBlack: '#e9e981',   // Color to indicate moved black squares
-  choiceSquare: 'white',         // Color used to indicate square selection
-  coverSquare: 'black',          // Color used to cover squares during certain interactions
-  hintColor: '#ababaa',          // Color for move hints
-  // Optional event callbacks:
-  onMove: (move) => {            // Called when a move is attempted
-      console.log('Move attempted:', move);
-      return true;
-  },
-  onMoveEnd: (move) => {         // Called when a move is completed
-      console.log('Move executed:', move);
-  },
-  // ...other callbacks and options...
-};
-
-// Usage:
-const board = new Chessboard(config);
-```
+> **Note:** Legacy methods like `move`, `clear`, `start`, `insert`, `get`, `piece`, etc. are still available as aliases but are deprecated. Use the new API for all new code.
 
 ## API Documentation
 
-### Constructor
-- **new Chessboard(config)**
-  - Initializes a new chessboard using the provided configuration object.
+### Position & State
 
-### Public Functions for Users
+```js
+board.getPosition(); // Get FEN string
+board.setPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"); // Set position
+board.reset(); // Reset to starting position
+board.clear(); // Clear the board
+```
 
-- **move(move, animation)**
-  - Moves a piece from one square to another.
-  - Example:
-    ```javascript
-    board.move('e2e4', true);
-    ```
+### Move Management
 
-- **clear(animation)**
-  - Clears the board of all pieces.
-  - Example:
-    ```javascript
-    board.clear();
-    ```
+```js
+board.movePiece("e2e4"); // Make a move
+board.undoMove(); // Undo last move
+board.redoMove(); // Redo last undone move
+board.getLegalMoves("e2"); // Get legal moves for a square
+```
 
-- **insert(square, piece)**
-  - Inserts a piece on a given square.
-  - Example:
-    ```javascript
-    board.insert('d4', 'qw');
-    ```
+### Piece Management
 
-- **get(square)**
-  - Returns the identifier of the piece at the given square.
-  - Example:
-    ```javascript
-    const pieceId = board.get('e4');
-    console.log('Piece at e4:', pieceId);
-    ```
+```js
+board.getPiece("e4"); // Get piece at e4
+board.putPiece("qw", "d4"); // Put a queen on d4
+board.removePiece("d4"); // Remove piece from d4
+```
 
-- **position(position, color)**
-  - Updates the board position. Optionally, flips orientation if a color parameter is provided.
-  - Example:
-    ```javascript
-    board.position('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-    ```
+### Board Control
 
-- **flip()**
-  - Flips the board orientation between white and black.
-  - Example:
-    ```javascript
-    board.flip();
-    ```
+```js
+board.flipBoard(); // Flip orientation
+board.setOrientation("b"); // Set orientation to black
+console.log(board.getOrientation()); // Get current orientation
+board.resizeBoard(500); // Resize board
+```
 
-- **build()**
-  - Rebuilds or initializes the board and its elements.
-  - Example:
-    ```javascript
-    board.build();
-    ```
-    
-- **resize(value)**
-  - Dynamically resizes the board. Accepts a number (pixels) or 'auto'.
-  - Example:
-    ```javascript
-    board.resize(500);
-    ```
+### Highlighting & UI
 
-- **destroy()**
-  - Destroys the board, removes all event listeners, and cleans up the DOM.
-  - Example:
-    ```javascript
-    board.destroy();
-    ```
+```js
+board.highlight("e4"); // Highlight e4
+board.dehighlight("e4"); // Remove highlight from e4
+```
 
-- **piece(square)**
-  - Returns the piece identifier at the specified square.
-  - Example:
-    ```javascript
-    const currentPiece = board.piece('f6');
-    ```
+### Game Info
 
-- **highlight(square) and dehighlight(square)**
-  - Highlights or removes highlight from a given square.
-  - Example:
-    ```javascript
-    board.highlight('e4');
-    board.dehighlight('e4');
-    ```
+```js
+console.log(board.fen()); // Get FEN
+console.log(board.turn()); // Get turn
+console.log(board.isGameOver()); // Is game over?
+console.log(board.isCheckmate()); // Is checkmate?
+console.log(board.isDraw()); // Is draw?
+console.log(board.getHistory()); // Get move history
+```
 
-- **turn() and fen()**
-  - `turn()` returns the color whose turn it is ('w' or 'b').
-  - `fen()` returns the current board state in FEN notation.
-  - Example:
-    ```javascript
-    console.log('Current turn:', board.turn());
-    console.log('FEN:', board.fen());
-    ```
+### Lifecycle
+
+```js
+board.destroy(); // Destroy the board
+board.rebuild(); // Re-initialize the board
+```
+
+### Configuration
+
+```js
+console.log(board.getConfig()); // Get config
+board.setConfig({ size: 600 }); // Update config
+```
+
+## Deprecated Aliases
+
+- `move(move, animation)` → use `movePiece(move, { animate: animation })`
+- `clear(animation)` → use `clear({ animate: animation })`
+- `start(animation)` → use `reset({ animate: animation })`
+- `insert(square, piece)` → use `putPiece(piece, square)`
+- `get(square)`/`piece(square)` → use `getPiece(square)`
+
+## Static/Factory Methods
+
+```js
+// Create a new board
+const board = Chessboard.create("board", config);
+// Create from template
+const board2 = Chessboard.fromTemplate("board2", "default", config);
+// List all instances
+const allBoards = Chessboard.listInstances();
+// Destroy all boards
+Chessboard.destroyAll();
+```
+
+---
 
 For further details, refer to the full API documentation at the project website or within the source code.
-
-# Chessboard.js – User API & Chess.js Integration
-
-This document details the functions available to users for interacting with the Chessboard.js instance and the underlying Chess.js game. The functions are grouped by purpose and presented in a logical order.
-
----
-
-## 1. Board Setup & Initialization
-
-- **build()**  
-  Initializes (or rebuilds) the board and its elements.  
-  _Example:_  
-  ```js
-  board.build();
-  ```
-
-- **clear(options = {}, animation = true)**  
-  Clears the board of all pieces and updates the display.  
-  _Example:_  
-  ```js
-  board.clear();
-  ```
-
-- **reset(animation = true)**  
-  Resets the game to the starting position.  
-  _Example:_  
-  ```js
-  board.reset();
-  ```
-
----
-
-## 2. Orientation
-
-- **getOrientation()**  
-  Returns the current board orientation.  
-  _Example:_  
-  ```js
-  console.log("Orientation:", board.getOrientation());
-  ```
-
-- **setOrientation(color, animation = true)**  
-  Sets the board’s orientation. If an invalid color is passed, it flips the board.  
-  _Example:_  
-  ```js
-  try {
-    board.setOrientation('w');
-  } catch (e) {
-    console.error(e.message);
-  }
-  ```
-
-- **flip(animation = true)**  
-  Flips the board orientation (updates pieces and clears highlights).  
-  _Example:_  
-  ```js
-  board.flip();
-  ```
-
----
-
-## 3. Game State & Display
-
-- **ascii()**  
-  Returns an ASCII diagram representing the current position.  
-  _Example:_  
-  ```js
-  console.log(board.ascii());
-  ```
-
-- **board()**  
-  Returns the current board as a 2D array.  
-  _Example:_  
-  ```js
-  console.table(board.board());
-  ```
-
-- **fen()**  
-  Retrieves the FEN string for the current board state.  
-  _Example:_  
-  ```js
-  console.log("FEN:", board.fen());
-  ```
-
----
-
-## 4. Accessors & History
-
-- **get(squareId)**  
-  Returns the piece on the specified square.  
-  _Example:_  
-  ```js
-  const piece = board.get('e4');
-  console.log("Piece at e4:", piece);
-  ```
-
-- **getCastlingRights(color)**  
-  Returns the castling rights for the given color.  
-  _Example:_  
-  ```js
-  console.log("Castling rights for white:", board.getCastlingRights('w'));
-  ```
-
-- **getComment()** and **getComments()**  
-  Retrieves a single comment or all comments attached to positions.  
-  _Example:_  
-  ```js
-  console.log("Comment:", board.getComment());
-  ```
-
-- **history(options = {})**  
-  Returns the moves history, optionally verbose.  
-  _Example:_  
-  ```js
-  console.log("History:", board.history({ verbose: true }));
-  ```
-
-- **lastMove()**  
-  Returns the last move made.  
-  _Example:_  
-  ```js
-  console.log("Last move:", board.lastMove());
-  ```
-
-- **moveNumber()**  
-  Returns the current move number.  
-  _Example:_  
-  ```js
-  console.log("Move number:", board.moveNumber());
-  ```
-
-- **moves(options = {})**  
-  Provides a list of legal moves.  
-  _Example:_  
-  ```js
-  console.log("Legal moves:", board.moves());
-  ```
-
-- **pgn(options = {})**  
-  Returns the game in PGN format.  
-  _Example:_  
-  ```js
-  console.log("PGN:", board.pgn());
-  ```
-
-- **squareColor(squareId)**  
-  Returns the color (light or dark) of the specified square.  
-  _Example:_  
-  ```js
-  console.log("Square e4 is:", board.squareColor('e4'));
-  ```
-
-- **turn()**  
-  Indicates which side's turn it is ('w' or 'b').  
-  _Example:_  
-  ```js
-  console.log("Turn:", board.turn());
-  ```
-
----
-
-## 5. Game State Checks
-
-- **isCheckmate()**  
-  Checks if the current position is checkmate.  
-  _Example:_  
-  ```js
-  if (board.isCheckmate()) console.log("Checkmate!");
-  ```
-
-- **isDraw()**  
-  Checks if the game is drawn.  
-- **isDrawByFiftyMoves()**  
-- **isInsufficientMaterial()**  
-- **isGameOver()**  
-- **isStalemate()**  
-- **isThreefoldRepetition()**  
-  Each returns a Boolean indicating the respective state.  
-  _Example:_  
-  ```js
-  if (board.isGameOver()) console.log("Game over!");
-  ```
-
----
-
-## 6. Game Modification
-
-- **load(fen, options = {}, animation = true)**  
-  Loads a new position from a FEN string.  
-  _Example:_  
-  ```js
-  board.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR');
-  ```
-
-- **loadPgn(pgn, options = {}, animation = true)**  
-  Loads a game using a PGN string.  
-  _Example:_  
-  ```js
-  board.loadPgn(pgnData);
-  ```
-
-- **put(pieceId, squareId, animation = true)**  
-  Places a piece on the board.  
-  _Example:_  
-  ```js
-  board.put('pw', 'd4');
-  ```
-
-- **remove(squareId, animation = true)**  
-  Removes the piece from the given square.  
-  _Example:_  
-  ```js
-  const removed = board.remove('d4');
-  console.log("Removed:", removed);
-  ```
-
-- **removeComment()**, **removeComments()**, **removeHeader(field)**  
-  Remove comments or PGN headers from the game.  
-  _Example:_  
-  ```js
-  board.removeComment();
-  ```
-
-- **setCastlingRights(color, rights)**  
-  Sets castling rights for a specified color.  
-  _Example:_  
-  ```js
-  board.setCastlingRights('w', { k: false, q: true });
-  ```
-
-- **setComment(comment)** and **setHeader(key, value)**  
-  Attach a comment to the current position or set a PGN header.  
-  _Example:_  
-  ```js
-  board.setComment("King's pawn opening");
-  board.setHeader('White', 'PlayerOne');
-  ```
-
----
-
-## 7. Move Reversal
-
-- **undo()**  
-  Reverts the last move played.  
-  _Example:_  
-  ```js
-  const undone = board.undo();
-  if (undone) console.log("Move undone:", undone);
-  ```
-
----
-
-## 8. Utility
-
-- **validateFen(fen)**  
-  Validates a given FEN string.  
-  _Example:_  
-  ```js
-  const result = board.validateFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-  console.log("FEN valid?", result.ok);
-  ```
-  
----
-
-This documentation groups the API functions by their purpose. Developers can mix these methods to query the game state, update the board, load new positions, and more.

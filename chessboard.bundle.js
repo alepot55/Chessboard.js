@@ -1,4 +1,4 @@
-var Chessboard = (function () {
+var Chessboard = (function (exports) {
     'use strict';
 
     /**
@@ -1992,6 +1992,14 @@ var Chessboard = (function () {
         'veryFast': 100
     };
 
+    const boolValues = {
+        'true': true,
+        'false': false,
+        'none': false,
+        1: true,
+        0: false
+    };
+
     const transitionFunctions = {
         'ease': 'ease',
         'linear': 'linear',
@@ -2023,7 +2031,7 @@ var Chessboard = (function () {
                 fadeTime: 'fast',
                 fadeAnimation: 'ease',
                 ratio: 0.9,
-                piecesPath: 'https://cdn.jsdelivr.net/npm/@alepot55/chessboardjs/default_pieces',
+                piecesPath: '../assets/themes/default',
                 onMove: () => true,
                 onMoveEnd: () => true,
                 onChange: () => true,
@@ -2113,11 +2121,26 @@ var Chessboard = (function () {
 
         setBoolean(value) {
             if (typeof value === 'boolean') return value;
+            if (value in boolValues) return boolValues[value];
             throw new Error('Invalid boolean value');
         }
 
         setTransitionFunction(value) {
-            if (Object.keys(transitionFunctions).indexOf(value) !== -1) return transitionFunctions[value];
+            // Handle boolean values - true means use default 'ease', false/null means no animation
+            if (typeof value === 'boolean') {
+                return value ? transitionFunctions['ease'] : null;
+            }
+            
+            // Handle string values
+            if (typeof value === 'string' && value in transitionFunctions) {
+                return transitionFunctions[value];
+            }
+            
+            // Handle null/undefined
+            if (value === null || value === undefined) {
+                return null;
+            }
+            
             throw new Error('Invalid transition function');
         }
     }
@@ -2166,7 +2189,20 @@ var Chessboard = (function () {
         }
 
         fadeOut(duration, speed, transition_f) {
-            performance.now();
+            let start = performance.now();
+            let opacity = 1;
+            let piece = this;
+            let fade = function () {
+                let elapsed = performance.now() - start;
+                opacity = 1 - transition_f(elapsed, duration, speed);
+                piece.element.style.opacity = opacity;
+                if (elapsed < duration) {
+                    requestAnimationFrame(fade);
+                } else {
+                    piece.element.style.opacity = 0;
+                }
+            };
+            fade();
         }
 
         setDrag(f) {
@@ -2279,6 +2315,9 @@ var Chessboard = (function () {
         }
 
         removePiece() {
+            if (!this.piece) {
+                return null;
+            }
             this.element.removeChild(this.piece.element);
             const piece = this.piece;
             this.piece = null;
@@ -2408,7 +2447,7 @@ var Chessboard = (function () {
     class Move {
 
         constructor(from, to, promotion = null, check = false) {
-            this.piece = from.getPiece();
+            this.piece = from ? from.getPiece() : null;
             this.from = from;
             this.to = to;
             this.promotion = promotion;
@@ -2444,7 +2483,136 @@ var Chessboard = (function () {
 
     }
 
-    class Chessboard {
+    /**
+     * Performance utilities for smooth interactions
+     */
+
+    /**
+     * Throttle function to limit how often a function can be called
+     * @param {Function} func - Function to throttle
+     * @param {number} limit - Time limit in milliseconds
+     * @returns {Function} Throttled function
+     */
+    function throttle(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        };
+    }
+
+    /**
+     * Request animation frame throttle for smooth animations
+     * @param {Function} func - Function to throttle
+     * @returns {Function} RAF throttled function
+     */
+    function rafThrottle(func) {
+        let isThrottled = false;
+        return function() {
+            if (isThrottled) return;
+            
+            const args = arguments;
+            const context = this;
+            
+            isThrottled = true;
+            requestAnimationFrame(() => {
+                func.apply(context, args);
+                isThrottled = false;
+            });
+        };
+    }
+
+    /**
+     * High performance transform utility
+     * @param {HTMLElement} element - Element to transform
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @param {number} scale - Scale factor
+     */
+    function setTransform(element, x, y, scale = 1) {
+        // Use transform3d for hardware acceleration
+        element.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+    }
+
+    /**
+     * Reset element position efficiently
+     * @param {HTMLElement} element - Element to reset
+     */
+    function resetTransform(element) {
+        element.style.transform = '';
+        element.style.left = '';
+        element.style.top = '';
+    }
+
+    /**
+     * Cross-browser utilities for consistent drag & drop behavior
+     */
+
+    /**
+     * Detect browser type and version
+     * @returns {Object} Browser information
+     */
+    function getBrowserInfo() {
+        const ua = navigator.userAgent;
+        const isChrome = ua.includes('Chrome') && !ua.includes('Edg');
+        const isFirefox = ua.includes('Firefox');
+        const isSafari = ua.includes('Safari') && !ua.includes('Chrome');
+        const isEdge = ua.includes('Edg');
+        
+        return {
+            isChrome,
+            isFirefox,
+            isSafari,
+            isEdge,
+            devicePixelRatio: window.devicePixelRatio || 1,
+            userAgent: ua
+        };
+    }
+
+    /**
+     * Browser-specific drag optimizations
+     */
+    const DragOptimizations = {
+        /**
+         * Apply browser-specific optimizations to an element
+         * @param {HTMLElement} element - Element to optimize
+         */
+        enableForDrag(element) {
+            const browserInfo = getBrowserInfo();
+            
+            // Base optimizations for all browsers
+            element.style.willChange = 'left, top';
+            element.style.pointerEvents = 'none'; // Prevent conflicts
+            
+            // Chrome-specific optimizations
+            if (browserInfo.isChrome) {
+                element.style.transform = 'translateZ(0)'; // Force hardware acceleration
+            }
+            
+            // Firefox-specific optimizations
+            if (browserInfo.isFirefox) {
+                element.style.backfaceVisibility = 'hidden';
+            }
+        },
+        
+        /**
+         * Clean up optimizations after drag
+         * @param {HTMLElement} element - Element to clean up
+         */
+        cleanupAfterDrag(element) {
+            element.style.willChange = 'auto';
+            element.style.pointerEvents = '';
+            element.style.transform = '';
+            element.style.backfaceVisibility = '';
+        }
+    };
+
+    let Chessboard$1 = class Chessboard {
 
         standard_positions = {
             'start': 'start',
@@ -2491,7 +2659,10 @@ var Chessboard = (function () {
         // Initialization
         // -------------------
         constructor(config) {
+            // Debug: log the config to see what we're receiving
+            console.log('Chessboard constructor received config:', config);
             this.config = new ChessboardConfig(config);
+            console.log('Processed config.id_div:', this.config.id_div);
             this.init();
         }
 
@@ -2511,12 +2682,17 @@ var Chessboard = (function () {
             this.clicked = null;
             this.mosseIndietro = [];
             this.clicked = null;
+            this._updateTimeout = null; // For debouncing board updates
+            this._movesCache = new Map(); // Cache per le mosse per migliorare le prestazioni
+            this._cacheTimeout = null; // Timeout per pulire la cache
+            this._isAnimating = false; // Flag to track if animations are in progress
         }
 
         // -------------------
         // Board Setup
         // -------------------
         buildBoard() {
+            console.log('buildBoard: Looking for element with ID:', this.config.id_div, 'Type:', typeof this.config.id_div);
             this.element = document.getElementById(this.config.id_div);
             if (!this.element) {
                 throw new Error(this.error_messages['invalid_id_div'] + this.config.id_div);
@@ -2672,17 +2848,38 @@ var Chessboard = (function () {
         }
 
         movePiece(piece, to, duration, callback) {
+            if (!piece) {
+                console.warn('movePiece: piece is null, skipping animation');
+                if (callback) callback();
+                return;
+            }
+            
             piece.translate(to, duration, this.transitionTimingFunction, this.config.moveAnimation, callback);
         }
 
         translatePiece(move, removeTo, animate, callback = null) {
+            if (!move.piece) {
+                console.warn('translatePiece: move.piece is null, skipping translation');
+                if (callback) callback();
+                return;
+            }
 
-            if (removeTo) this.removePieceFromSquare(move.to, false);
+            if (removeTo) {
+                // Deselect the captured piece before removing it
+                move.to.deselect();
+                this.removePieceFromSquare(move.to, false);
+            }
 
             let change_square = () => {
-                move.from.removePiece();
-                move.to.putPiece(move.piece);
-                move.piece.setDrag(this.dragFunction(move.to, move.piece));
+                // Check if piece still exists and is on the source square
+                if (move.from.piece === move.piece) {
+                    move.from.removePiece();
+                }
+                // Only put piece if destination square doesn't already have it
+                if (move.to.piece !== move.piece) {
+                    move.to.putPiece(move.piece);
+                    move.piece.setDrag(this.dragFunction(move.to, move.piece));
+                }
                 if (callback) callback();
             };
 
@@ -2693,14 +2890,49 @@ var Chessboard = (function () {
         }
 
         snapbackPiece(square, animate = this.config.snapbackAnimation) {
-            let move = new Move(square, square);
-            this.translatePiece(move, false, animate);
+            if (!square || !square.piece) {
+                return;
+            }
+            
+            const piece = square.piece;
+            
+            // Use the piece's translate method to properly animate back to the square
+            const duration = animate ? this.config.snapbackTime : 0;
+            
+            // The translate method will calculate the proper distance from current visual position 
+            // back to the square's position
+            piece.translate(square, duration, this.transitionTimingFunction, animate);
         }
 
         // -------------------
         // Board Update Functions
         // -------------------
         updateBoardPieces(animation = false) {
+            // Clear any pending update to avoid duplicate calls
+            if (this._updateTimeout) {
+                clearTimeout(this._updateTimeout);
+                this._updateTimeout = null;
+            }
+
+            // Pulisce la cache delle mosse quando la posizione cambia
+            this._movesCache.clear();
+            if (this._cacheTimeout) {
+                clearTimeout(this._cacheTimeout);
+                this._cacheTimeout = null;
+            }
+
+            // For click-to-move, add a small delay to avoid lag
+            if (animation && this.clicked === null) {
+                this._updateTimeout = setTimeout(() => {
+                    this._doUpdateBoardPieces(animation);
+                    this._updateTimeout = null;
+                }, 10);
+            } else {
+                this._doUpdateBoardPieces(animation);
+            }
+        }
+
+        _doUpdateBoardPieces(animation = false) {
             let { updatedFlags, escapeFlags, movableFlags, pendingTranslations } = this.prepareBoardUpdateData();
 
             let change = Object.values(updatedFlags).some(flag => !flag);
@@ -2840,30 +3072,91 @@ var Chessboard = (function () {
 
                 if (!this.config.draggable || !piece) return;
 
+                // Store the original from square for the entire drag operation
+                const originalFrom = square;
                 let prec;
-                let from = square;
+                let from = originalFrom;
                 let to = square;
 
                 const img = piece.element;
 
                 if (!this.canMove(from)) return;
-                if (!this.config.clickable) this.clicked = null;
-                if (this.onClick(from, true, true)) return;
+                
+                // Track if this is actually a drag operation or just a click
+                let isDragging = false;
+                let startX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0);
+                let startY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0);
+                
+                // Don't interfere with click system immediately
+                console.log('dragFunction: mousedown detected, waiting to see if it becomes drag');
 
-                img.style.position = 'absolute';
-                img.style.zIndex = 100;
-
-                const moveAt = (pageX, pageY) => {
-                    const halfWidth = img.offsetWidth / 2;
-                    const halfHeight = img.offsetHeight / 2;
-                    img.style.left = `${pageX - halfWidth}px`;
-                    img.style.top = `${pageY - halfHeight}px`;
+                const moveAt = (event) => {
+                    const squareSize = this.element.offsetWidth / 8;
+                    
+                    // Get mouse coordinates - use clientX/Y for better Chrome compatibility
+                    let clientX, clientY;
+                    if (event.touches && event.touches[0]) {
+                        clientX = event.touches[0].clientX;
+                        clientY = event.touches[0].clientY;
+                    } else {
+                        clientX = event.clientX;
+                        clientY = event.clientY;
+                    }
+                    
+                    // Get board position using getBoundingClientRect for accuracy
+                    const boardRect = this.element.getBoundingClientRect();
+                    
+                    // Calculate position relative to board with piece centered on cursor
+                    // Add window scroll offset for correct positioning
+                    window.pageXOffset || document.documentElement.scrollLeft;
+                    window.pageYOffset || document.documentElement.scrollTop;
+                    
+                    const x = clientX - boardRect.left - (squareSize / 2);
+                    const y = clientY - boardRect.top - (squareSize / 2);
+                    
+                    img.style.left = x + 'px';
+                    img.style.top = y + 'px';
                     return true;
                 };
 
                 const onMouseMove = (event) => {
+                    // Check if mouse has moved enough to be considered a drag
+                    let currentX = event.clientX;
+                    let currentY = event.clientY;
+                    let deltaX = Math.abs(currentX - startX);
+                    let deltaY = Math.abs(currentY - startY);
+                    
+                    // Only start dragging if mouse moved more than 3 pixels
+                    if (!isDragging && (deltaX > 3 || deltaY > 3)) {
+                        console.log('dragFunction: starting actual drag operation');
+                        isDragging = true;
+                        
+                        // Now set up drag state
+                        if (!this.config.clickable) {
+                            this.clicked = null;
+                            this.clicked = from;
+                        } else if (!this.clicked) {
+                            this.clicked = from;
+                        }
+                        console.log('dragFunction: clicked state after drag activation =', this.clicked ? this.clicked.id : 'none');
+                        
+                        // Highlight the source square and show hints
+                        if (this.config.clickable) {
+                            from.select();
+                            this.hintMoves(from);
+                        }
+
+                        img.style.position = 'absolute';
+                        img.style.zIndex = 100;
+                        img.classList.add('dragging');
+                        
+                        DragOptimizations.enableForDrag(img);
+                    }
+                    
+                    if (!isDragging) return;
+                    
                     if (!this.config.onDragStart(square, piece)) return;
-                    if (!moveAt(event.pageX, event.pageY)) ;
+                    if (!moveAt(event)) ;
 
                     const boardRect = this.element.getBoundingClientRect();
                     const { offsetWidth: boardWidth, offsetHeight: boardHeight } = this.element;
@@ -2891,19 +3184,44 @@ var Chessboard = (function () {
                     prec?.dehighlight();
                     document.removeEventListener('mousemove', onMouseMove);
                     window.removeEventListener('mouseup', onMouseUp);
+                    
+                    // If this was just a click (not a drag), don't interfere
+                    if (!isDragging) {
+                        console.log('dragFunction: was just a click, not interfering');
+                        return;
+                    }
+                    
+                    console.log('dragFunction: ending drag operation');
                     img.style.zIndex = 20;
+                    img.classList.remove('dragging');
+                    img.style.willChange = 'auto';
 
-                    const dropResult = this.config.onDrop(from, to, piece);
+                    const dropResult = this.config.onDrop(originalFrom, to, piece);
                     const isTrashDrop = !to && (this.config.dropOffBoard === 'trash' || dropResult === 'trash');
 
                     if (isTrashDrop) {
                         this.allSquares("unmoved");
                         this.allSquares('removeHint');
-                        from.deselect();
-                        this.remove(from);
-                    } else if (!to || !this.onClick(to, true, true)) {
-                        this.snapbackPiece(from);
-                        if (to !== from) this.config.onSnapbackEnd(from, piece);
+                        originalFrom.deselect();
+                        this.remove(originalFrom);
+                    } else if (!to) {
+                        // No target square - snapback
+                        if (originalFrom && originalFrom.piece) {
+                            this.snapbackPiece(originalFrom);
+                            if (to !== originalFrom) this.config.onSnapbackEnd(originalFrom, piece);
+                        }
+                    } else {
+                        // Set clicked to originalFrom before attempting move
+                        this.clicked = originalFrom;
+                        // Try to make the move
+                        const onClickResult = this.onClick(to, true, true);
+                        if (!onClickResult) {
+                            // Move failed - snapback
+                            if (originalFrom && originalFrom.piece) {
+                                this.snapbackPiece(originalFrom);
+                                if (to !== originalFrom) this.config.onSnapbackEnd(originalFrom, piece);
+                            }
+                        }
                     }
                 };
 
@@ -2916,32 +3234,38 @@ var Chessboard = (function () {
         addListeners() {
             for (const square of Object.values(this.squares)) {
 
-                let piece = square.piece;
+                square.piece;
 
-                square.element.addEventListener("mouseover", (e) => {
-                    if (!this.clicked) this.hintMoves(square);
+                // Applica throttling ai listener di mouseover e mouseout per migliori prestazioni
+                const throttledHintMoves = rafThrottle((e) => {
+                    if (!this.clicked && this.config.hints) this.hintMoves(square);
                 });
-                square.element.addEventListener("mouseout", (e) => {
-                    if (!this.clicked) this.dehintMoves(square);
+
+                const throttledDehintMoves = rafThrottle((e) => {
+                    if (!this.clicked && this.config.hints) this.dehintMoves(square);
                 });
+
+                square.element.addEventListener("mouseover", throttledHintMoves);
+                square.element.addEventListener("mouseout", throttledDehintMoves);
 
                 const handleClick = (e) => {
                     e.stopPropagation();
-                    if (this.config.clickable && (!piece || this.config.onlyLegalMoves)) this.onClick(square);
+                    if (this.config.clickable) {
+                        this.onClick(square);
+                    }
                 };
 
-                square.element.addEventListener("mousedown", handleClick);
+                square.element.addEventListener("click", handleClick);
                 square.element.addEventListener("touch", handleClick);
             }
         }
 
         onClick(square, animation = this.config.moveAnimation, dragged = false) {
             
-            if (this.clicked === square) return false;
-
+            console.log('onClick START: square =', square.id, 'clicked =', this.clicked ? this.clicked.id : 'none');
+            
             let from = this.clicked;
-            this.clicked = null;
-
+            
             let promotion = null;
 
             if (this.promoting) {
@@ -2953,36 +3277,75 @@ var Chessboard = (function () {
                 this.allSquares("removeCover");
             }
 
-            if (!from) {
+            console.log('onClick: from =', from ? from.id : 'none');
 
+            if (!from) {
+                console.log('onClick: no from, trying to select piece');
                 if (this.canMove(square)) {
+                    console.log('onClick: canMove = true, selecting');
                     if (this.config.clickable) {
                         square.select();
                         this.hintMoves(square);
                     }
                     this.clicked = square;
+                    console.log('onClick: *** CLICKED SET TO ***', square.id);
+                    console.log('onClick: set clicked to', square.id);
+                } else {
+                    console.log('onClick: canMove = false');
                 }
-
                 return false;
             }
 
+            // If clicking on the same square that's already selected, deselect it
+            if (this.clicked === square) {
+                console.log('onClick: deselecting same square');
+                square.deselect();
+                this.allSquares("removeHint");
+                this.clicked = null;
+                console.log('onClick: *** CLICKED RESET TO NULL (deselect) ***');
+                return false;
+            }
+
+            console.log('onClick: attempting move from', from.id, 'to', square.id);
             let move = new Move(from, square, promotion);
 
-            move.from.deselect();
+            if (!move.check()) {
+                console.log('onClick: move check FAILED');
+                from.deselect();
+                this.allSquares("removeHint");
+                this.clicked = null;
+                return false;
+            }
 
-            if (!move.check()) return false;
+            if (this.config.onlyLegalMoves && !move.isLegal(this.game)) {
+                console.log('onClick: move is NOT LEGAL');
+                from.deselect();
+                this.allSquares("removeHint");
+                this.clicked = null;
+                return false;
+            }
 
-            this.allSquares("removeHint");
+            if (!move.hasPromotion() && this.promote(move)) {
+                console.log('onClick: promotion required');
+                return false;
+            }
 
-            if (this.config.onlyLegalMoves && !move.isLegal(this.game)) return false;
-
-            if (!move.hasPromotion() && this.promote(move)) return false;
-
+            console.log('onClick: calling onMove');
             if (this.config.onMove(move)) {
+                console.log('onClick: SUCCESS - move executed');
+                // Clean up UI state
+                from.deselect();
+                this.allSquares("removeHint");
+                this.clicked = null;
+                console.log('onClick: *** CLICKED RESET TO NULL (success) ***');
                 this.move(move, animation);
                 return true;
             }
 
+            console.log('onClick: onMove returned FALSE');
+            from.deselect();
+            this.allSquares("removeHint");
+            this.clicked = null;
             return false;
         }
 
@@ -3033,12 +3396,14 @@ var Chessboard = (function () {
             let from = move.from;
             let to = move.to;
 
+            // Store the current state to avoid unnecessary recalculations
+            const gameStateBefore = this.game.fen();
+
             if (!this.config.onlyLegalMoves) {
                 let piece = this.getGamePieceId(from.id);
                 this.game.remove(from.id);
                 this.game.remove(to.id);
                 this.game.put({ type: move.hasPromotion() ? move.promotion : piece[0], color: piece[1] }, to.id);
-                this.updateBoardPieces(animation);
             } else {
                 this.allSquares("unmoved");
 
@@ -3052,12 +3417,18 @@ var Chessboard = (function () {
                     throw new Error("Invalid move: move could not be executed");
                 }
 
-                this.updateBoardPieces(animation);
-
                 from.moved();
                 to.moved();
                 this.allSquares("removeHint");
+            }
 
+            // Only update the board if the game state actually changed
+            const gameStateAfter = this.game.fen();
+            if (gameStateBefore !== gameStateAfter) {
+                this.updateBoardPieces(animation);
+            }
+
+            if (this.config.onlyLegalMoves) {
                 this.config.onMoveEnd(move);
             }
         }
@@ -3073,14 +3444,37 @@ var Chessboard = (function () {
 
         hintMoves(square) {
             if (!this.canMove(square)) return;
-            let mosse = this.game.moves({ square: square.id, verbose: true });
+            
+            // Usa la cache per evitare calcoli ripetuti delle mosse
+            const cacheKey = `${square.id}-${this.game.fen()}`;
+            let mosse = this._movesCache.get(cacheKey);
+            
+            if (!mosse) {
+                mosse = this.game.moves({ square: square.id, verbose: true });
+                this._movesCache.set(cacheKey, mosse);
+                
+                // Pulisci la cache dopo un breve ritardo per evitare accumulo di memoria
+                if (this._cacheTimeout) clearTimeout(this._cacheTimeout);
+                this._cacheTimeout = setTimeout(() => {
+                    this._movesCache.clear();
+                }, 1000);
+            }
+            
             for (let mossa of mosse) {
                 if (mossa['to'].length === 2) this.hint(mossa['to']);
             }
         }
 
         dehintMoves(square) {
-            let mosse = this.game.moves({ square: square.id, verbose: true });
+            // Usa la cache anche per dehint per coerenza
+            const cacheKey = `${square.id}-${this.game.fen()}`;
+            let mosse = this._movesCache.get(cacheKey);
+            
+            if (!mosse) {
+                mosse = this.game.moves({ square: square.id, verbose: true });
+                this._movesCache.set(cacheKey, mosse);
+            }
+            
             for (let mossa of mosse) {
                 let to = this.squares[mossa['to']];
                 to.removeHint();
@@ -3413,10 +3807,266 @@ var Chessboard = (function () {
 
         isWhiteOriented() { return this.config.orientation === 'w' }
 
+    };
+
+    /**
+     * Chessboard.js - A beautiful, customizable chessboard widget
+     * Entry point for the core library
+     */
+
+
+    // Factory function to maintain backward compatibility
+    function Chessboard(containerElm, config = {}) {
+        // If first parameter is an object, treat it as config
+        if (typeof containerElm === 'object' && containerElm !== null) {
+            return new Chessboard$1(containerElm);
+        }
+        
+        // Otherwise, treat first parameter as element ID
+        const fullConfig = { ...config, id: containerElm };
+        return new Chessboard$1(fullConfig);
     }
 
-    return Chessboard;
+    // Wrapper class that handles both calling conventions
+    class ChessboardWrapper extends Chessboard$1 {
+        constructor(containerElm, config = {}) {
+            // If first parameter is an object, treat it as config
+            if (typeof containerElm === 'object' && containerElm !== null) {
+                super(containerElm);
+            } else {
+                // Otherwise, treat first parameter as element ID
+                const fullConfig = { ...config, id: containerElm };
+                super(fullConfig);
+            }
+        }
+    }
 
-})();
+    // Attach the class to the factory function for direct access
+    Chessboard.Class = ChessboardWrapper;
+    Chessboard.Chessboard = ChessboardWrapper;
 
-window.Chessboard.Chessboard = Chessboard;
+    /**
+     * Coordinate utilities for Chessboard.js
+     */
+
+    /**
+     * Convert algebraic notation to array coordinates
+     * @param {string} square - Square in algebraic notation (e.g., 'a1', 'h8')
+     * @returns {Object} Object with row and col properties
+     */
+    function algebraicToCoords(square) {
+      const file = square.charCodeAt(0) - 97; // 'a' = 0, 'b' = 1, etc.
+      const rank = parseInt(square[1]) - 1;    // '1' = 0, '2' = 1, etc.
+      
+      return { row: 7 - rank, col: file };
+    }
+
+    /**
+     * Convert array coordinates to algebraic notation
+     * @param {number} row - Row index (0-7)
+     * @param {number} col - Column index (0-7)
+     * @returns {string} Square in algebraic notation
+     */
+    function coordsToAlgebraic(row, col) {
+      const file = String.fromCharCode(97 + col); // 0 = 'a', 1 = 'b', etc.
+      const rank = (8 - row).toString();          // 0 = '8', 1 = '7', etc.
+      
+      return file + rank;
+    }
+
+    /**
+     * Get the color of a square
+     * @param {string} square - Square in algebraic notation
+     * @returns {string} 'light' or 'dark'
+     */
+    function getSquareColor(square) {
+      const { row, col } = algebraicToCoords(square);
+      return (row + col) % 2 === 0 ? 'dark' : 'light';
+    }
+
+    /**
+     * Check if coordinates are valid
+     * @param {number} row - Row index
+     * @param {number} col - Column index
+     * @returns {boolean} True if coordinates are valid
+     */
+    function isValidCoords(row, col) {
+      return row >= 0 && row <= 7 && col >= 0 && col <= 7;
+    }
+
+    /**
+     * Check if algebraic notation is valid
+     * @param {string} square - Square in algebraic notation
+     * @returns {boolean} True if square notation is valid
+     */
+    function isValidSquare$1(square) {
+      if (typeof square !== 'string' || square.length !== 2) return false;
+      
+      const file = square[0];
+      const rank = square[1];
+      
+      return file >= 'a' && file <= 'h' && rank >= '1' && rank <= '8';
+    }
+
+    /**
+     * Validation utilities for Chessboard.js
+     */
+
+    /**
+     * Validate piece notation
+     * @param {string} piece - Piece notation (e.g., 'wP', 'bK')
+     * @returns {boolean} True if piece notation is valid
+     */
+    function isValidPiece(piece) {
+      if (typeof piece !== 'string' || piece.length !== 2) return false;
+      
+      const color = piece[0];
+      const type = piece[1];
+      
+      return ['w', 'b'].includes(color) && ['P', 'R', 'N', 'B', 'Q', 'K'].includes(type);
+    }
+
+    /**
+     * Validate position object
+     * @param {Object} position - Position object with square-piece mappings
+     * @returns {boolean} True if position is valid
+     */
+    function isValidPosition(position) {
+      if (typeof position !== 'object' || position === null) return false;
+      
+      for (const [square, piece] of Object.entries(position)) {
+        if (!isValidSquare(square) || !isValidPiece(piece)) {
+          return false;
+        }
+      }
+      
+      return true;
+    }
+
+    /**
+     * Validate FEN string format
+     * @param {string} fen - FEN string
+     * @returns {Object} Validation result with success and error properties
+     */
+    function validateFenFormat(fen) {
+      if (typeof fen !== 'string') {
+        return { success: false, error: 'FEN must be a string' };
+      }
+      
+      const parts = fen.split(' ');
+      if (parts.length !== 6) {
+        return { success: false, error: 'FEN must have 6 parts separated by spaces' };
+      }
+      
+      // Validate piece placement
+      const ranks = parts[0].split('/');
+      if (ranks.length !== 8) {
+        return { success: false, error: 'Piece placement must have 8 ranks' };
+      }
+      
+      return { success: true };
+    }
+
+    /**
+     * Validate configuration object
+     * @param {Object} config - Configuration object
+     * @returns {Object} Validation result with success and errors array
+     */
+    function validateConfig(config) {
+      const errors = [];
+      
+      if (config.orientation && !['white', 'black', 'w', 'b'].includes(config.orientation)) {
+        errors.push('Invalid orientation. Must be "white", "black", "w", or "b"');
+      }
+      
+      if (config.position && config.position !== 'start' && typeof config.position !== 'object') {
+        errors.push('Invalid position. Must be "start" or a position object');
+      }
+      
+      if (config.size && typeof config.size !== 'string' && typeof config.size !== 'number') {
+        errors.push('Invalid size. Must be a string or number');
+      }
+      
+      return {
+        success: errors.length === 0,
+        errors
+      };
+    }
+
+    /**
+     * Animation utilities for Chessboard.js
+     */
+
+    /**
+     * Get the CSS transition duration in milliseconds
+     * @param {string|number} time - Time value ('fast', 'slow', or number in ms)
+     * @returns {number} Duration in milliseconds
+     */
+    function parseTime(time) {
+      if (typeof time === 'number') return time;
+      
+      switch (time) {
+        case 'fast': return 150;
+        case 'slow': return 500;
+        default: return 200;
+      }
+    }
+
+    /**
+     * Get the CSS transition function
+     * @param {string} animation - Animation type ('ease', 'linear', etc.)
+     * @returns {string} CSS transition function
+     */
+    function parseAnimation(animation) {
+      const validAnimations = ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear'];
+      return validAnimations.includes(animation) ? animation : 'ease';
+    }
+
+    /**
+     * Create a promise that resolves after animation completion
+     * @param {number} duration - Duration in milliseconds
+     * @returns {Promise} Promise that resolves after the duration
+     */
+    function animationPromise(duration) {
+      return new Promise(resolve => setTimeout(resolve, duration));
+    }
+
+    /**
+     * Chessboard.js - A beautiful, customizable chessboard widget
+     * Main entry point for the library
+     * 
+     * @version 2.2.1
+     * @author alepot55
+     * @license ISC
+     */
+
+    exports.Chess = Chess;
+    exports.Chessboard = Chessboard;
+    exports.ChessboardConfig = ChessboardConfig;
+    exports.Move = Move;
+    exports.Piece = Piece;
+    exports.Square = Square;
+    exports.algebraicToCoords = algebraicToCoords;
+    exports.animationPromise = animationPromise;
+    exports.coordsToAlgebraic = coordsToAlgebraic;
+    exports.default = Chessboard;
+    exports.getSquareColor = getSquareColor;
+    exports.isValidCoords = isValidCoords;
+    exports.isValidPiece = isValidPiece;
+    exports.isValidPosition = isValidPosition;
+    exports.isValidSquare = isValidSquare$1;
+    exports.parseAnimation = parseAnimation;
+    exports.parseTime = parseTime;
+    exports.rafThrottle = rafThrottle;
+    exports.resetTransform = resetTransform;
+    exports.setTransform = setTransform;
+    exports.throttle = throttle;
+    exports.validateConfig = validateConfig;
+    exports.validateFen = validateFen;
+    exports.validateFenFormat = validateFenFormat;
+
+    Object.defineProperty(exports, '__esModule', { value: true });
+
+    return exports;
+
+})({});

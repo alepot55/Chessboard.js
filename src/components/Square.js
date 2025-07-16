@@ -1,4 +1,4 @@
-import Piece from "./chessboard.piece.js";
+import Piece from "./Piece.js";
 
 class Square {
 
@@ -54,11 +54,51 @@ class Square {
         return this.element.getBoundingClientRect();
     }
 
-    removePiece() {
-        this.element.removeChild(this.piece.element);
-        const piece = this.piece;
+    removePiece(preserve = false) {
+        if (!this.piece) {
+            return null;
+        }
+        // Only destroy the piece if not preserving (i.e., not moving)
+        if (!preserve && typeof this.piece.destroy === 'function') {
+            this.piece.destroy();
+        }
         this.piece = null;
-        return piece;
+        return null;
+    }
+
+    /**
+     * Forcefully removes all pieces from this square
+     */
+    forceRemoveAllPieces() {
+        // Best practice: destroy the piece object if present
+        if (this.piece && typeof this.piece.destroy === 'function') {
+            this.piece.destroy();
+            this.piece = null;
+        }
+        // Remove any orphaned img.piece elements from the DOM
+        const pieceElements = this.element.querySelectorAll('img.piece');
+        pieceElements.forEach(element => {
+            if (element.parentNode === this.element) {
+                this.element.removeChild(element);
+            }
+        });
+    }
+
+    /**
+     * Replaces the current piece with a new one efficiently
+     * @param {Piece} newPiece - The new piece to place
+     */
+    replacePiece(newPiece) {
+        // If there's an existing piece, remove it first
+        if (this.piece) {
+            this.removePiece();
+        }
+
+        // Add the new piece
+        this.putPiece(newPiece);
+
+        // Ensure the piece is properly displayed
+        newPiece.element.style.opacity = '1';
     }
 
     addEventListener(event, callback) {
@@ -66,8 +106,14 @@ class Square {
     }
 
     putPiece(piece) {
+        // If there's already a piece, remove it first, but preserve if moving
+        if (this.piece) {
+            this.removePiece(true);
+        }
         this.piece = piece;
-        this.element.appendChild(piece.element);
+        if (piece && piece.element) {
+            this.element.appendChild(piece.element);
+        }
     }
 
     putHint(catchable) {
@@ -150,6 +196,10 @@ class Square {
 
     }
 
+    hasPromotion() {
+        return this.element.querySelector('.choice') !== null;
+    }
+
     removePromotion() {
         let choice = this.element.querySelector('.choice');
         if (choice) {
@@ -159,7 +209,10 @@ class Square {
     }
 
     destroy() {
+        // Remove all piece DOM nodes and clear reference
+        this.forceRemoveAllPieces();
         this.element.remove();
+        this.piece = null;
     }
 
     hasPiece() {
@@ -177,7 +230,7 @@ class Square {
         if (this.col < 1 || this.col > 8) {
             throw new Error("Invalid square: col is out of bounds");
         }
-        
+
     }
 }
 

@@ -1,0 +1,42 @@
+{
+  "name": "default",
+  "displayName": "Default Theme",
+  "description": "The classic chessboard theme with traditional pieces",
+  "author": "alepot55",
+  "version": "1.0.0",
+  "pieces": {
+    "format": "svg",
+    "path": "./",
+    "mapping": {
+      "wp": "pw.svg",
+      "wr": "rw.svg", 
+      "wn": "nw.svg",
+      "wb": "bw.svg",
+      "wq": "qw.svg",
+      "wk": "kw.svg",
+      "bp": "pb.svg",
+      "br": "rb.svg",
+      "bn": "nb.svg",
+      "bb": "bb.svg",
+      "bq": "qb.svg",
+      "bk": "kb.svg"
+    }
+  },
+  "colors": {
+    "whiteSquare": "#f0d9b5",
+    "blackSquare": "#b58863",
+    "highlight": "yellow",
+    "selectedSquareWhite": "#ababaa",
+    "selectedSquareBlack": "#ababaa",
+    "movedSquareWhite": "#f1f1a0",
+    "movedSquareBlack": "#e9e981",
+    "choiceSquare": "white",
+    "coverSquare": "black",
+    "hintColor": "#ababaa"
+  },
+  "animations": {
+    "moveTime": 200,
+    "fadeTime": 150,
+    "snapbackTime": 150
+  }
+}

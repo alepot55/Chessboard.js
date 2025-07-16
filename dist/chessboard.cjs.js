@@ -8533,28 +8533,7 @@ let Chessboard$1 = class Chessboard {
     setConfig(newConfig) { this.setConfig(newConfig); }
 
     // --- ALIASES/DEPRECATED ---
-    /**
-     * Alias for move (deprecated)
-     */
-    move(move, animate = true) {
-        // On any new move, clear the redo stack
-        this._undoneMoves = [];
-        return this.movePiece(move, { animate });
-    }
-    /**
-     * Alias for clear (deprecated)
-     */
-    clearBoard(animate = true) {
-        this._updateBoardPieces(animate);
-        return this.clear({ animate });
-    }
-    /**
-     * Alias for reset (deprecated)
-     */
-    start(animate = true) {
-        this._updateBoardPieces(animate);
-        return this.reset({ animate });
-    }
+    // Note: These methods are now implemented as aliases at the end of the class
 
     /**
      * Alias for flipBoard (for backward compatibility)
@@ -8835,89 +8814,20 @@ let Chessboard$1 = class Chessboard {
     // Additional API methods would be added here following the same pattern
     // This is a good starting point for the refactored architecture
 
-    // Ensure all public API methods from README are present and routed
+    // Additional API methods and aliases for backward compatibility
     insert(square, piece) { return this.putPiece(piece, square); }
-    get(square) { return this.getPiece(square); }
-    position(position, color) {
-        if (color) this.setOrientation(color);
-        return this.setPosition(position);
-    }
-    flip(animation = true) { return this.flipBoard({ animate: animation }); }
     build() { return this._initialize(); }
-    resize(value) { return this.resizeBoard(value); }
-    destroy() { return this._cleanup(); }
-    piece(square) { return this.getPiece(square); }
-    highlight(square) { return true; }
-    dehighlight(square) { return true; }
-    turn() { return this.positionService.getGame().turn(); }
     ascii() { return this.positionService.getGame().ascii(); }
     board() { return this.positionService.getGame().board(); }
     getCastlingRights(color) { return this.positionService.getGame().getCastlingRights(color); }
     getComment() { return this.positionService.getGame().getComment(); }
     getComments() { return this.positionService.getGame().getComments(); }
-    history(options = {}) { return this.positionService.getGame().history(options); }
     lastMove() { return this.positionService.getGame().lastMove(); }
     moveNumber() { return this.positionService.getGame().moveNumber(); }
     moves(options = {}) { return this.positionService.getGame().moves(options); }
-    pgn(options = {}) { return this.positionService.getGame().pgn(options); }
     squareColor(squareId) { return this.boardService.getSquare(squareId).isWhite() ? 'light' : 'dark'; }
-    isCheckmate() { return this.positionService.getGame().isCheckmate(); }
-    isDraw() { return this.positionService.getGame().isDraw(); }
     isDrawByFiftyMoves() { return this.positionService.getGame().isDrawByFiftyMoves(); }
     isInsufficientMaterial() { return this.positionService.getGame().isInsufficientMaterial(); }
-    isGameOver() { return this.positionService.getGame().isGameOver(); }
-    isStalemate() { return this.positionService.getGame().isStalemate(); }
-    isThreefoldRepetition() { return this.positionService.getGame().isThreefoldRepetition(); }
-    load(fen, options = {}, animation = true) { return this.setPosition(fen, { ...options, animate: animation }); }
-    loadPgn(pgn, options = {}, animation = true) { return this.positionService.getGame().loadPgn(pgn, animation); }
-    put(pieceId, squareId, animation = true) {
-        console.debug('[put] called with:', { pieceId, squareId, animation });
-        let pieceObj = null;
-        // Helper to normalize string like 'wQ', 'Qw', 'Wq', 'qw', etc.
-        function parsePieceString(str) {
-            if (typeof str !== 'string' || str.length !== 2) return null;
-            const a = str[0].toLowerCase();
-            const b = str[1].toLowerCase();
-            const types = 'kqrbnp';
-            const colors = 'wb';
-            if (types.includes(a) && colors.includes(b)) {
-                return { type: a, color: b };
-            } else if (colors.includes(a) && types.includes(b)) {
-                return { type: b, color: a };
-            }
-            return null;
-        }
-        if (typeof pieceId === 'string') {
-            pieceObj = parsePieceString(pieceId);
-            console.debug('[put] parsed piece string:', pieceObj);
-            if (!pieceObj) {
-                console.error(`[put] Invalid piece string: '${pieceId}'. Use e.g. 'wQ', 'Qw', 'bK', 'kb'`);
-                return false;
-            }
-        } else if (typeof pieceId === 'object' && pieceId.type && pieceId.color) {
-            const type = String(pieceId.type).toLowerCase();
-            const color = String(pieceId.color).toLowerCase();
-            if ('kqrbnp'.includes(type) && 'wb'.includes(color)) {
-                pieceObj = { type, color };
-                console.debug('[put] normalized piece object:', pieceObj);
-            } else {
-                console.error(`[put] Invalid piece object: {type: '${pieceId.type}', color: '${pieceId.color}'}`);
-                return false;
-            }
-        } else {
-            console.error('[put] Invalid pieceId:', pieceId);
-            return false;
-        }
-        if (typeof squareId !== 'string' || squareId.length !== 2) {
-            console.error('[put] Invalid squareId:', squareId);
-            return false;
-        }
-        // Call the internal putPiece method
-        const result = this.putPiece(pieceObj, squareId, { animate: animation });
-        console.debug('[put] putPiece result:', result);
-        return result;
-    }
-    remove(squareId, animation = true) { return this.removePiece(squareId, { animate: animation }); }
     removeComment() { return this.positionService.getGame().removeComment(); }
     removeComments() { return this.positionService.getGame().removeComments(); }
     removeHeader(field) { return this.positionService.getGame().removeHeader(field); }
@@ -8934,6 +8844,65 @@ let Chessboard$1 = class Chessboard {
         return this.boardService.dehighlight(square);
     }
     forceSync() { this._updateBoardPieces(true, true); }
+
+    // Metodi mancanti che causano fallimenti nei test
+    /**
+     * Move a piece from one square to another
+     * @param {string|Object} move - Move in format 'e2e4' or {from: 'e2', to: 'e4'}
+     * @param {Object} [opts] - Options
+     * @param {boolean} [opts.animate=true] - Whether to animate
+     * @returns {boolean} True if move was successful
+     */
+    movePiece(move, opts = {}) {
+        const animate = opts.animate !== undefined ? opts.animate : true;
+
+        // Parse move string if needed
+        let fromSquare, toSquare, promotion;
+        if (typeof move === 'string') {
+            if (move.length === 4) {
+                fromSquare = move.substring(0, 2);
+                toSquare = move.substring(2, 4);
+            } else if (move.length === 5) {
+                fromSquare = move.substring(0, 2);
+                toSquare = move.substring(2, 4);
+                promotion = move.substring(4, 5);
+            } else {
+                throw new Error(`Invalid move format: ${move}`);
+            }
+        } else if (typeof move === 'object' && move.from && move.to) {
+            fromSquare = move.from;
+            toSquare = move.to;
+            promotion = move.promotion;
+        } else {
+            throw new Error(`Invalid move: ${move}`);
+        }
+
+        // Get square objects
+        const fromSquareObj = this.boardService.getSquare(fromSquare);
+        const toSquareObj = this.boardService.getSquare(toSquare);
+
+        if (!fromSquareObj || !toSquareObj) {
+            throw new Error(`Invalid squares: ${fromSquare} or ${toSquare}`);
+        }
+
+        // Execute the move
+        return this._onMove(fromSquareObj, toSquareObj, promotion, animate);
+    }
+
+    // Aliases for backward compatibility
+    move(move, animate = true) {
+        // On any new move, clear the redo stack
+        this._undoneMoves = [];
+        return this.movePiece(move, { animate });
+    }
+    get(square) { return this.getPiece(square); }
+    piece(square) { return this.getPiece(square); }
+    put(piece, square, opts = {}) { return this.putPiece(piece, square, opts); }
+    remove(square, opts = {}) { return this.removePiece(square, opts); }
+    load(position, opts = {}) { return this.setPosition(position, opts); }
+    resize(size) { return this.resizeBoard(size); }
+    start(opts = {}) { return this.reset(opts); }
+    clearBoard(opts = {}) { return this.clear(opts); }
 };
 
 /**

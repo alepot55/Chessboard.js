@@ -1676,6 +1676,7 @@ var Chessboard = (function (exports) {
             if (!this.element) { console.debug(`[Piece] setDrag: ${this.id} - element is null`); return; }
             this.element.ondragstart = (e) => { e.preventDefault(); };
             this.element.onmousedown = f;
+            this.element.ontouchstart = f; // Drag touch
             console.debug(`[Piece] setDrag: ${this.id}`);
         }
 
@@ -3159,9 +3160,57 @@ var Chessboard = (function (exports) {
 
             // Click handler
             const handleClick = (e) => {
+                // Ghost click prevention: ignora il click se appena gestito un touch
+                if (square._ignoreNextClick) {
+                    square._ignoreNextClick = false;
+                    return;
+                }
                 e.stopPropagation();
                 if (this.config.clickable && !this.isAnimating) {
                     onSquareClick(square);
+                }
+            };
+
+            // --- Touch tap/drag separation ---
+            let touchMoved = false;
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchTimeout = null;
+
+            const handleTouchStart = (e) => {
+                if (!e.touches || e.touches.length > 1) return; // solo primo dito
+                touchMoved = false;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                // Timeout: se il dito non si muove, dopo 150ms sarà considerato tap
+                touchTimeout = setTimeout(() => {
+                    if (!touchMoved) {
+                        // Prevenzione ghost click: ignora il prossimo click
+                        square._ignoreNextClick = true;
+                        setTimeout(() => { square._ignoreNextClick = false; }, 400);
+                        handleClick(e); // Tap breve = selezione
+                    }
+                }, 150);
+            };
+
+            const handleTouchMove = (e) => {
+                if (!e.touches || e.touches.length > 1) return;
+                const dx = Math.abs(e.touches[0].clientX - touchStartX);
+                const dy = Math.abs(e.touches[0].clientY - touchStartY);
+                if (dx > 5 || dy > 5) {
+                    touchMoved = true;
+                    if (touchTimeout) {
+                        clearTimeout(touchTimeout);
+                        touchTimeout = null;
+                    }
+                    // Il drag vero e proprio è gestito da createDragFunction sul pezzo
+                }
+            };
+
+            const handleTouchEnd = (e) => {
+                if (touchTimeout) {
+                    clearTimeout(touchTimeout);
+                    touchTimeout = null;
                 }
             };
 
@@ -3169,14 +3218,19 @@ var Chessboard = (function (exports) {
             square.element.addEventListener('mouseover', throttledHover);
             square.element.addEventListener('mouseout', throttledLeave);
             square.element.addEventListener('click', handleClick);
-            square.element.addEventListener('touchstart', handleClick);
+            // Touch: separa tap e drag
+            square.element.addEventListener('touchstart', handleTouchStart);
+            square.element.addEventListener('touchmove', handleTouchMove);
+            square.element.addEventListener('touchend', handleTouchEnd);
 
             // Store listeners for cleanup
             listeners.push(
                 { element: square.element, type: 'mouseover', handler: throttledHover },
                 { element: square.element, type: 'mouseout', handler: throttledLeave },
                 { element: square.element, type: 'click', handler: handleClick },
-                { element: square.element, type: 'touchstart', handler: handleClick }
+                { element: square.element, type: 'touchstart', handler: handleTouchStart },
+                { element: square.element, type: 'touchmove', handler: handleTouchMove },
+                { element: square.element, type: 'touchend', handler: handleTouchEnd }
             );
 
             this.eventListeners.set(square.id, listeners);
@@ -3215,14 +3269,24 @@ var Chessboard = (function (exports) {
                 }
 
                 // Track initial position for drag threshold
+                const isTouch = event.type && event.type.startsWith('touch');
                 const startX = event.clientX || (event.touches && event.touches[0]?.clientX) || 0;
                 const startY = event.clientY || (event.touches && event.touches[0]?.clientY) || 0;
 
+                // --- Touch scroll lock helper ---
+                const addScrollLock = () => {
+                    document.body.classList.add('chessboardjs-dragging');
+                };
+                const removeScrollLock = () => {
+                    document.body.classList.remove('chessboardjs-dragging');
+                };
+
+                // --- MOVE HANDLER (mouse + touch unified) ---
                 const moveAt = (event) => {
                     const boardElement = this.boardService.element;
                     const squareSize = boardElement.offsetWidth / 8;
 
-                    // Get mouse coordinates
+                    // Get mouse/touch coordinates
                     let clientX, clientY;
                     if (event.touches && event.touches[0]) {
                         clientX = event.touches[0].clientX;
@@ -3243,15 +3307,26 @@ var Chessboard = (function (exports) {
                     return true;
                 };
 
-                const onMouseMove = (event) => {
-                    const currentX = event.clientX || 0;
-                    const currentY = event.clientY || 0;
+                // --- DRAG MOVE (mouse + touch) ---
+                const onPointerMove = (event) => {
+                    // For touch, only handle the first finger
+                    if (event.touches && event.touches.length > 1) return;
+                    if (event.touches && !event.touches[0]) return;
+                    if (event.type && event.type.startsWith('touch')) event.preventDefault();
+
+                    const currentX = event.clientX || (event.touches && event.touches[0]?.clientX) || 0;
+                    const currentY = event.clientY || (event.touches && event.touches[0]?.clientY) || 0;
                     const deltaX = Math.abs(currentX - startX);
                     const deltaY = Math.abs(currentY - startY);
 
-                    // Start dragging if mouse moved enough
+                    // Start dragging if mouse/touch moved enough
                     if (!isDragging && (deltaX > 3 || deltaY > 3)) {
                         isDragging = true;
+
+                        // Mostra hint all'inizio del drag se attivi
+                        if (this.config.hints && typeof this.chessboard._boundOnPieceHover === 'function') {
+                            this.chessboard._boundOnPieceHover(from);
+                        }
 
                         // Set up drag state
                         if (!this.config.clickable) {
@@ -3264,7 +3339,6 @@ var Chessboard = (function (exports) {
                         // Visual feedback
                         if (this.config.clickable) {
                             from.select();
-                            // Show hints would be handled by the main class
                         }
 
                         // Prepare piece for dragging
@@ -3273,6 +3347,9 @@ var Chessboard = (function (exports) {
                         img.classList.add('dragging');
 
                         DragOptimizations.enableForDrag(img);
+
+                        // Lock scroll for touch
+                        if (isTouch) addScrollLock();
 
                         // Call drag start callback
                         if (!onDragStart(square, piece)) {
@@ -3287,8 +3364,16 @@ var Chessboard = (function (exports) {
                     // Update target square
                     const boardElement = this.boardService.element;
                     const boardRect = boardElement.getBoundingClientRect();
-                    const x = event.clientX - boardRect.left;
-                    const y = event.clientY - boardRect.top;
+                    let clientX, clientY;
+                    if (event.touches && event.touches[0]) {
+                        clientX = event.touches[0].clientX;
+                        clientY = event.touches[0].clientY;
+                    } else {
+                        clientX = event.clientX;
+                        clientY = event.clientY;
+                    }
+                    const x = clientX - boardRect.left;
+                    const y = clientY - boardRect.top;
 
                     let newTo = null;
                     if (x >= 0 && x <= boardRect.width && y >= 0 && y <= boardRect.height) {
@@ -3307,18 +3392,24 @@ var Chessboard = (function (exports) {
                     }
                 };
 
-                const onMouseUp = () => {
-                    // Clean up visual feedback
+                // --- DRAG END (mouse + touch) ---
+                const onPointerUp = (event) => {
                     previousHighlight?.dehighlight();
-                    document.removeEventListener('mousemove', onMouseMove);
-                    window.removeEventListener('mouseup', onMouseUp);
+                    document.removeEventListener('mousemove', onPointerMove);
+                    window.removeEventListener('mouseup', onPointerUp);
+                    document.removeEventListener('touchmove', onPointerMove);
+                    window.removeEventListener('touchend', onPointerUp);
+                    if (isTouch) removeScrollLock();
 
-                    // If this was just a click, don't interfere
+                    // Rimuovi hint alla fine del drag se attivi
+                    if (this.config.hints && typeof this.chessboard._boundOnPieceLeave === 'function') {
+                        this.chessboard._boundOnPieceLeave(from);
+                    }
+
                     if (!isDragging) {
                         return;
                     }
 
-                    // Clean up drag state
                     img.style.zIndex = '20';
                     img.classList.remove('dragging');
                     img.style.willChange = 'auto';
@@ -3330,23 +3421,26 @@ var Chessboard = (function (exports) {
                     if (isTrashDrop) {
                         this._handleTrashDrop(originalFrom, onRemove);
                     } else if (!to) {
-                        // Reset piece position instantly for snapback
                         img.style.position = '';
                         img.style.left = '';
                         img.style.top = '';
                         img.style.transform = '';
-
                         this._handleSnapback(originalFrom, piece, onSnapback);
                     } else {
-                        // Handle drop like a click - simple and reliable
                         this._handleDrop(originalFrom, to, piece, onMove, onSnapback);
                     }
                 };
 
-                // Attach event listeners
-                window.addEventListener('mouseup', onMouseUp, { once: true });
-                document.addEventListener('mousemove', onMouseMove);
-                img.addEventListener('mouseup', onMouseUp, { once: true });
+                // --- Attach listeners (mouse + touch) ---
+                window.addEventListener('mouseup', onPointerUp, { once: true });
+                document.addEventListener('mousemove', onPointerMove);
+                img.addEventListener('mouseup', onPointerUp, { once: true });
+                // Touch events
+                window.addEventListener('touchend', onPointerUp, { once: true });
+                document.addEventListener('touchmove', onPointerMove, { passive: false });
+
+                // Per robustezza: se il drag parte da touch, blocca subito lo scroll
+                if (isTouch) addScrollLock();
             };
         }
 
@@ -3569,6 +3663,7 @@ var Chessboard = (function (exports) {
             if (!from) {
                 if (this.moveService.canMove(square)) {
                     if (this.config.clickable) {
+                        this.boardService.applyToAllSquares('removeHint'); // Rimuovi hint prima di selezionare
                         onSelect(square);
                     }
                     this.clicked = square;
@@ -3578,9 +3673,13 @@ var Chessboard = (function (exports) {
                 }
             }
 
-            // Clicking same square - deselect
+            // --- Touch: non deselezionare su doppio tap sulla stessa casella ---
             if (this.clicked === square) {
+                if (window.event && window.event.type && window.event.type.startsWith('touch')) {
+                    return false;
+                }
                 onDeselect(square);
+                this.boardService.applyToAllSquares('removeHint');
                 this.clicked = null;
                 return false;
             }
@@ -3589,68 +3688,52 @@ var Chessboard = (function (exports) {
             if (!promotion && this.moveService.requiresPromotion(new Move$1(from, square))) {
                 console.log('Move requires promotion:', from.id, '->', square.id);
 
-                // Set up promotion UI
                 this.moveService.setupPromotion(
                     new Move$1(from, square),
                     this.boardService.squares,
                     (selectedPromotion) => {
                         console.log('Promotion selected:', selectedPromotion);
-
-                        // Clear promotion UI first
                         this.boardService.applyToAllSquares('removePromotion');
                         this.boardService.applyToAllSquares('removeCover');
-
-                        // Execute the move with promotion
                         const moveResult = onMove(from, square, selectedPromotion, animate);
-
                         if (moveResult) {
-                            // After a successful promotion move, we need to replace the piece
-                            // after the drop animation completes
                             this._schedulePromotionPieceReplacement(square, selectedPromotion);
-
                             onDeselect(from);
+                            this.boardService.applyToAllSquares('removeHint');
                             this.clicked = null;
                         }
                     },
                     () => {
                         console.log('Promotion cancelled');
-
-                        // Clear promotion UI on cancel
                         this.boardService.applyToAllSquares('removePromotion');
                         this.boardService.applyToAllSquares('removeCover');
-
                         onDeselect(from);
+                        this.boardService.applyToAllSquares('removeHint');
                         this.clicked = null;
                     }
                 );
                 return false;
             }
 
-            // Attempt to make move
             const moveResult = onMove(from, square, promotion, animate);
 
             if (moveResult) {
-                // Move successful
                 onDeselect(from);
+                this.boardService.applyToAllSquares('removeHint');
                 this.clicked = null;
                 return true;
             } else {
-                // Move failed - check if clicked square has a piece we can move
                 if (this.moveService.canMove(square)) {
-                    // Deselect the previous piece
                     onDeselect(from);
-
-                    // Select the new piece if clicking is enabled
+                    this.boardService.applyToAllSquares('removeHint');
                     if (this.config.clickable) {
                         onSelect(square);
                     }
-
-                    // Set the new piece as clicked
                     this.clicked = square;
                     return false;
                 } else {
-                    // Move failed and no valid piece to select
                     onDeselect(from);
+                    this.boardService.applyToAllSquares('removeHint');
                     this.clicked = null;
                     return false;
                 }

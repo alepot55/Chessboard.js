@@ -201,6 +201,7 @@ class Piece {
         if (!this.element) { console.debug(`[Piece] setDrag: ${this.id} - element is null`); return; }
         this.element.ondragstart = (e) => { e.preventDefault() };
         this.element.onmousedown = f;
+        this.element.ontouchstart = f; // Drag touch
         console.debug(`[Piece] setDrag: ${this.id}`);
     }
 

@@ -2,3 +2,11 @@
 @import './board.css';
 @import './pieces.css';
 @import './animations.css';
+
+/* Blocca lo scroll e le gesture durante il drag touch su mobile */
+.chessboardjs-dragging {
+  touch-action: none !important;
+  overflow: hidden !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: auto !important;
+}

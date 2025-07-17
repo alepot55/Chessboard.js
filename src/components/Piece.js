@@ -194,6 +194,8 @@ class Piece {
                 if (callback) callback();
             }
         }
+        // Se l'elemento è già stato rimosso, esci subito
+        if (!this.element) { console.debug(`[Piece] fadeOut: ${this.id} - element is null (init)`); if (callback) callback(); return; }
         fade();
     }
 
@@ -206,20 +208,17 @@ class Piece {
     }
 
     destroy() {
+        if (!this.element) return; // Idempotente: già rimosso
         console.debug(`[Piece] Destroy: ${this.id}`);
         // Remove all event listeners
-        if (this.element) {
-            this.element.onmousedown = null;
-            this.element.ondragstart = null;
-
-            // Remove from DOM
-            if (this.element.parentNode) {
-                this.element.parentNode.removeChild(this.element);
-            }
-
-            // Clear references
-            this.element = null;
+        this.element.onmousedown = null;
+        this.element.ondragstart = null;
+        // Remove from DOM
+        if (this.element.parentNode) {
+            this.element.parentNode.removeChild(this.element);
         }
+        // Clear references
+        this.element = null;
     }
 
     translate(to, duration, transition_f, speed, callback = null) {

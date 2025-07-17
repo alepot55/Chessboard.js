@@ -116,11 +116,30 @@ export class BoardService {
 
     /**
      * Gets a square by its ID
-     * @param {string} squareId - Square identifier (e.g., 'e4')
+     * @param {string} squareId - Square identifier (API pubblica)
      * @returns {Square|null} The square or null if not found
      */
     getSquare(squareId) {
         return this.squares[squareId] || null;
+    }
+
+    /**
+     * Highlight a square (solo oggetto)
+     * @param {Square} square
+     * @param {Object} [opts]
+     */
+    highlightSquare(square, opts = {}) {
+        if (!square) throw new Error('highlightSquare richiede oggetto Square');
+        // ... logica esistente ...
+    }
+    /**
+     * Dehighlight a square (solo oggetto)
+     * @param {Square} square
+     * @param {Object} [opts]
+     */
+    dehighlightSquare(square, opts = {}) {
+        if (!square) throw new Error('dehighlightSquare richiede oggetto Square');
+        // ... logica esistente ...
     }
 
     /**

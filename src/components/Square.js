@@ -73,8 +73,8 @@ class Square {
         // Best practice: destroy the piece object if present
         if (this.piece && typeof this.piece.destroy === 'function') {
             this.piece.destroy();
-            this.piece = null;
         }
+        this.piece = null;
         // Remove any orphaned img.piece elements from the DOM
         const pieceElements = this.element.querySelectorAll('img.piece');
         pieceElements.forEach(element => {

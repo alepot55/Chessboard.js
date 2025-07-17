@@ -1669,6 +1669,8 @@ var Chessboard = (function (exports) {
                     if (callback) callback();
                 }
             };
+            // Se l'elemento è già stato rimosso, esci subito
+            if (!this.element) { console.debug(`[Piece] fadeOut: ${this.id} - element is null (init)`); if (callback) callback(); return; }
             fade();
         }
 
@@ -1681,20 +1683,17 @@ var Chessboard = (function (exports) {
         }
 
         destroy() {
+            if (!this.element) return; // Idempotente: già rimosso
             console.debug(`[Piece] Destroy: ${this.id}`);
             // Remove all event listeners
-            if (this.element) {
-                this.element.onmousedown = null;
-                this.element.ondragstart = null;
-
-                // Remove from DOM
-                if (this.element.parentNode) {
-                    this.element.parentNode.removeChild(this.element);
-                }
-
-                // Clear references
-                this.element = null;
+            this.element.onmousedown = null;
+            this.element.ondragstart = null;
+            // Remove from DOM
+            if (this.element.parentNode) {
+                this.element.parentNode.removeChild(this.element);
             }
+            // Clear references
+            this.element = null;
         }
 
         translate(to, duration, transition_f, speed, callback = null) {
@@ -1819,8 +1818,8 @@ var Chessboard = (function (exports) {
             // Best practice: destroy the piece object if present
             if (this.piece && typeof this.piece.destroy === 'function') {
                 this.piece.destroy();
-                this.piece = null;
             }
+            this.piece = null;
             // Remove any orphaned img.piece elements from the DOM
             const pieceElements = this.element.querySelectorAll('img.piece');
             pieceElements.forEach(element => {
@@ -2314,11 +2313,30 @@ var Chessboard = (function (exports) {
 
         /**
          * Gets a square by its ID
-         * @param {string} squareId - Square identifier (e.g., 'e4')
+         * @param {string} squareId - Square identifier (API pubblica)
          * @returns {Square|null} The square or null if not found
          */
         getSquare(squareId) {
             return this.squares[squareId] || null;
+        }
+
+        /**
+         * Highlight a square (solo oggetto)
+         * @param {Square} square
+         * @param {Object} [opts]
+         */
+        highlightSquare(square, opts = {}) {
+            if (!square) throw new Error('highlightSquare richiede oggetto Square');
+            // ... logica esistente ...
+        }
+        /**
+         * Dehighlight a square (solo oggetto)
+         * @param {Square} square
+         * @param {Object} [opts]
+         */
+        dehighlightSquare(square, opts = {}) {
+            if (!square) throw new Error('dehighlightSquare richiede oggetto Square');
+            // ... logica esistente ...
         }
 
         /**
@@ -3322,6 +3340,8 @@ var Chessboard = (function (exports) {
                     // Start dragging if mouse/touch moved enough
                     if (!isDragging && (deltaX > 3 || deltaY > 3)) {
                         isDragging = true;
+                        // Inizio drag: blocca update board
+                        if (this.chessboard) this.chessboard._isDragging = true;
 
                         // Mostra hint all'inizio del drag se attivi
                         if (this.config.hints && typeof this.chessboard._boundOnPieceHover === 'function') {
@@ -3400,6 +3420,8 @@ var Chessboard = (function (exports) {
                     document.removeEventListener('touchmove', onPointerMove);
                     window.removeEventListener('touchend', onPointerUp);
                     if (isTouch) removeScrollLock();
+                    // Fine drag: sblocca update board
+                    if (this.chessboard) this.chessboard._isDragging = false;
 
                     // Rimuovi hint alla fine del drag se attivi
                     if (this.config.hints && typeof this.chessboard._boundOnPieceLeave === 'function') {
@@ -3997,27 +4019,27 @@ var Chessboard = (function (exports) {
          */
         canMove(square) {
             if (!square.piece) return false;
-            
+
             const { movableColors, onlyLegalMoves } = this.config;
-            
+
             if (movableColors === 'none') return false;
             if (movableColors === 'w' && square.piece.color === 'b') return false;
             if (movableColors === 'b' && square.piece.color === 'w') return false;
-            
+
             if (!onlyLegalMoves) return true;
-            
+
             // Check if position service and game are available
             if (!this.positionService || !this.positionService.getGame()) {
                 return false;
             }
-            
+
             const game = this.positionService.getGame();
             return square.piece.color === game.turn();
         }
 
         /**
          * Converts various move formats to a Move instance
-         * @param {string|Move} move - Move in various formats
+         * @param {string|Move|Object} move - Move in various formats
          * @param {Object} squares - All board squares
          * @returns {Move} Move instance
          * @throws {MoveError} When move format is invalid
@@ -4026,19 +4048,22 @@ var Chessboard = (function (exports) {
             if (move instanceof Move$1) {
                 return move;
             }
-            
+            if (typeof move === 'object' && move.from && move.to) {
+                // Se sono id, converto in oggetti; se sono già oggetti, li uso direttamente
+                const fromSquare = typeof move.from === 'string' ? squares[move.from] : move.from;
+                const toSquare = typeof move.to === 'string' ? squares[move.to] : move.to;
+                if (!fromSquare || !toSquare) throw new MoveError(ERROR_MESSAGES.invalid_move_format, move.from, move.to);
+                return new Move$1(fromSquare, toSquare, move.promotion);
+            }
             if (typeof move === 'string' && move.length >= 4) {
                 const fromId = move.slice(0, 2);
                 const toId = move.slice(2, 4);
                 const promotion = move.slice(4, 5) || null;
-                
                 if (!squares[fromId] || !squares[toId]) {
                     throw new MoveError(ERROR_MESSAGES.invalid_move_format, fromId, toId);
                 }
-                
                 return new Move$1(squares[fromId], squares[toId], promotion);
             }
-            
             throw new MoveError(ERROR_MESSAGES.invalid_move_format, 'unknown', 'unknown');
         }
 
@@ -4049,9 +4074,9 @@ var Chessboard = (function (exports) {
          */
         isLegalMove(move) {
             const legalMoves = this.getLegalMoves(move.from.id);
-            
-            return legalMoves.some(legalMove => 
-                legalMove.to === move.to.id && 
+
+            return legalMoves.some(legalMove =>
+                legalMove.to === move.to.id &&
                 move.promotion === legalMove.promotion
             );
         }
@@ -4067,16 +4092,16 @@ var Chessboard = (function (exports) {
             if (!this.positionService || !this.positionService.getGame()) {
                 return [];
             }
-            
+
             const game = this.positionService.getGame();
-            
+
             if (!game) return [];
-            
+
             const options = { verbose };
             if (from) {
                 options.square = from;
             }
-            
+
             return game.moves(options);
         }
 
@@ -4090,115 +4115,99 @@ var Chessboard = (function (exports) {
             if (!this.positionService || !this.positionService.getGame()) {
                 return [];
             }
-            
+
             const game = this.positionService.getGame();
             if (!game) return [];
-            
+
             const cacheKey = `${square.id}-${game.fen()}`;
             let moves = this._movesCache.get(cacheKey);
-            
+
             if (!moves) {
                 moves = game.moves({ square: square.id, verbose: true });
                 this._movesCache.set(cacheKey, moves);
-                
+
                 // Clear cache after a short delay to prevent memory buildup
                 if (this._cacheTimeout) {
                     clearTimeout(this._cacheTimeout);
                 }
-                
+
                 this._cacheTimeout = setTimeout(() => {
                     this._movesCache.clear();
                 }, 1000);
             }
-            
+
             return moves;
         }
 
         /**
          * Executes a move on the game
-         * @param {Move} move - Move to execute
+         * @param {Move} move - Move to execute (deve essere oggetto Move)
          * @returns {Object|null} Move result from chess.js or null if invalid
          */
         executeMove(move) {
-            // Check if position service and game are available
+            if (!(move instanceof Move$1)) throw new Error('executeMove richiede un oggetto Move');
             if (!this.positionService || !this.positionService.getGame()) {
                 return null;
             }
-            
             const game = this.positionService.getGame();
             if (!game) return null;
-            
             const moveOptions = {
                 from: move.from.id,
                 to: move.to.id
             };
-            
-            console.log('executeMove - move.promotion:', move.promotion);
-            console.log('executeMove - move.hasPromotion():', move.hasPromotion());
-            
             if (move.hasPromotion()) {
                 moveOptions.promotion = move.promotion;
             }
-            
-            console.log('executeMove - moveOptions:', moveOptions);
-            
             const result = game.move(moveOptions);
-            console.log('executeMove - result:', result);
-            
-            // Check what's actually on the board after the move
-            if (result) {
-                const pieceOnDestination = game.get(move.to.id);
-                console.log('executeMove - piece on destination after move:', pieceOnDestination);
-            }
-            
             return result;
         }
 
         /**
-         * Checks if a move requires promotion
-         * @param {Move} move - Move to check
-         * @returns {boolean} True if promotion is required
+         * Determina se una mossa richiede promozione
+         * @param {Move} move - Deve essere oggetto Move
+         * @returns {boolean}
          */
         requiresPromotion(move) {
+            if (!(move instanceof Move$1)) throw new Error('requiresPromotion richiede un oggetto Move');
             console.log('Checking if move requires promotion:', move.from.id, '->', move.to.id);
-            
+
             if (!this.config.onlyLegalMoves) {
                 console.log('Not in legal moves mode, no promotion required');
                 return false;
             }
-            
+
             const game = this.positionService.getGame();
             if (!game) {
                 console.log('No game instance available');
                 return false;
             }
-            
+
             const piece = game.get(move.from.id);
             if (!piece || piece.type !== 'p') {
                 console.log('Not a pawn move, no promotion required');
                 return false;
             }
-            
+
             const targetRank = move.to.row;
             if (targetRank !== 1 && targetRank !== 8) {
                 console.log('Not reaching promotion rank, no promotion required');
                 return false;
             }
-            
+
             console.log('Pawn reaching promotion rank, validating move...');
-            
+
             // Additional validation: check if the pawn can actually reach this square
             if (!this._isPawnMoveValid(move.from, move.to, piece.color)) {
                 console.log('Pawn move not valid, no promotion required');
                 return false;
             }
-            
+
             // First check if the move is legal without promotion
             const simpleMoveObj = {
                 from: move.from.id,
                 to: move.to.id
             };
-            
+
             try {
                 console.log('Testing move without promotion:', simpleMoveObj);
                 // Test if the move is legal without promotion first
@@ -4206,25 +4215,25 @@ var Chessboard = (function (exports) {
                 if (testMove) {
                     // Move was successful, but check if it was a promotion
                     const wasPromotion = testMove.promotion;
-                    
+
                     // Undo the test move
                     game.undo();
-                    
+
                     console.log('Move successful without promotion, was promotion:', wasPromotion !== undefined);
-                    
+
                     // If it was a promotion, return true
                     return wasPromotion !== undefined;
                 }
             } catch (error) {
                 console.log('Move failed without promotion, trying with promotion:', error.message);
-                
+
                 // If simple move fails, try with promotion
                 const promotionMoveObj = {
                     from: move.from.id,
                     to: move.to.id,
                     promotion: 'q' // test with queen
                 };
-                
+
                 try {
                     console.log('Testing move with promotion:', promotionMoveObj);
                     const testMove = game.move(promotionMoveObj);
@@ -4240,7 +4249,7 @@ var Chessboard = (function (exports) {
                     return false;
                 }
             }
-            
+
             console.log('Move validation complete, no promotion required');
             return false;
         }
@@ -4258,27 +4267,27 @@ var Chessboard = (function (exports) {
             const toRank = to.row;
             const fromFile = from.col;
             const toFile = to.col;
-            
+
             console.log(`Validating pawn move: ${from.id} -> ${to.id} (${color})`);
             console.log(`Ranks: ${fromRank} -> ${toRank}, Files: ${fromFile} -> ${toFile}`);
-            
+
             // Direction of pawn movement
             const direction = color === 'w' ? 1 : -1;
             const rankDiff = toRank - fromRank;
             const fileDiff = Math.abs(toFile - fromFile);
-            
+
             // Pawn can only move forward
             if (rankDiff * direction <= 0) {
                 console.log('Invalid: Pawn cannot move backward or stay in place');
                 return false;
             }
-            
+
             // Pawn can only move 1 rank at a time (except for double move from starting position)
             if (Math.abs(rankDiff) > 2) {
                 console.log('Invalid: Pawn cannot move more than 2 ranks');
                 return false;
             }
-            
+
             // If moving 2 ranks, must be from starting position
             if (Math.abs(rankDiff) === 2) {
                 const startingRank = color === 'w' ? 2 : 7;
@@ -4287,13 +4296,13 @@ var Chessboard = (function (exports) {
                     return false;
                 }
             }
-            
+
             // Pawn can only move to adjacent files (diagonal capture) or same file (forward move)
             if (fileDiff > 1) {
                 console.log('Invalid: Pawn cannot move more than 1 file');
                 return false;
             }
-            
+
             console.log('Pawn move validation passed');
             return true;
         }
@@ -4308,45 +4317,45 @@ var Chessboard = (function (exports) {
          */
         setupPromotion(move, squares, onPromotionSelect, onPromotionCancel) {
             if (!this.requiresPromotion(move)) return false;
-            
+
             // Check if position service and game are available
             if (!this.positionService || !this.positionService.getGame()) {
                 return false;
             }
-            
+
             const game = this.positionService.getGame();
             const piece = game.get(move.from.id);
             const targetSquare = move.to;
-            
+
             // Clear any existing promotion UI
             Object.values(squares).forEach(square => {
                 square.removePromotion();
                 square.removeCover();
             });
-            
+
             // Always show promotion choices in a column
             this._showPromotionInColumn(targetSquare, piece, squares, onPromotionSelect, onPromotionCancel);
-            
+
             return true;
         }
-        
+
         /**
          * Shows promotion choices in a column
          * @private
          */
         _showPromotionInColumn(targetSquare, piece, squares, onPromotionSelect, onPromotionCancel) {
             console.log('Setting up promotion for', targetSquare.id, 'piece color:', piece.color);
-            
+
             // Set up promotion choices starting from border row
             PROMOTION_PIECES.forEach((pieceType, index) => {
                 const choiceSquare = this._findPromotionSquare(targetSquare, index, squares);
-                
+
                 if (choiceSquare) {
                     const pieceId = pieceType + piece.color;
                     const piecePath = this._getPiecePathForPromotion(pieceId);
-                    
+
                     console.log('Setting up promotion choice:', pieceType, 'on square:', choiceSquare.id);
-                    
+
                     choiceSquare.putPromotion(piecePath, () => {
                         console.log('Promotion choice selected:', pieceType);
                         onPromotionSelect(pieceType);
@@ -4355,7 +4364,7 @@ var Chessboard = (function (exports) {
                     console.log('Could not find square for promotion choice:', pieceType, 'index:', index);
                 }
             });
-            
+
             // Set up cover squares (for cancellation)
             Object.values(squares).forEach(square => {
                 if (!square.hasPromotion()) {
@@ -4364,7 +4373,7 @@ var Chessboard = (function (exports) {
                     });
                 }
             });
-            
+
             return true;
         }
 
@@ -4379,9 +4388,9 @@ var Chessboard = (function (exports) {
         _findPromotionSquare(targetSquare, index, squares) {
             const col = targetSquare.col;
             const baseRow = targetSquare.row;
-            
+
             console.log('Looking for promotion square - target:', targetSquare.id, 'index:', index, 'col:', col, 'baseRow:', baseRow);
-            
+
             // Calculate row based on index and promotion direction
             // Start from the border row (1 or 8) and go inward
             let row;
@@ -4395,15 +4404,15 @@ var Chessboard = (function (exports) {
                 console.log('Invalid promotion row:', baseRow);
                 return null;
             }
-            
+
             console.log('Calculated row:', row);
-            
+
             // Ensure row is within bounds
             if (row < 1 || row > 8) {
                 console.log('Row out of bounds:', row);
                 return null;
             }
-            
+
             // Find square by row/col
             for (const square of Object.values(squares)) {
                 if (square.col === col && square.row === row) {
@@ -4411,7 +4420,7 @@ var Chessboard = (function (exports) {
                     return square;
                 }
             }
-            
+
             console.log('No square found for col:', col, 'row:', row);
             return null;
         }
@@ -4426,11 +4435,11 @@ var Chessboard = (function (exports) {
             // This would typically use the PieceService
             // For now, we'll use a simple implementation
             const { piecesPath } = this.config;
-            
+
             if (typeof piecesPath === 'string') {
                 return `${piecesPath}/${pieceId}.svg`;
             }
-            
+
             // Fallback for other path types
             return `assets/pieces/${pieceId}.svg`;
         }
@@ -4444,20 +4453,20 @@ var Chessboard = (function (exports) {
             if (typeof moveString !== 'string' || moveString.length < 4 || moveString.length > 5) {
                 return null;
             }
-            
+
             const from = moveString.slice(0, 2);
             const to = moveString.slice(2, 4);
             const promotion = moveString.slice(4, 5);
-            
+
             // Basic validation
             if (!/^[a-h][1-8]$/.test(from) || !/^[a-h][1-8]$/.test(to)) {
                 return null;
             }
-            
+
             if (promotion && !['q', 'r', 'b', 'n'].includes(promotion.toLowerCase())) {
                 return null;
             }
-            
+
             return {
                 from: from,
                 to: to,
@@ -4483,10 +4492,10 @@ var Chessboard = (function (exports) {
             if (!this.isCastle(gameMove)) {
                 return null;
             }
-            
+
             const isKingSide = gameMove.isKingsideCastle();
             const isWhite = gameMove.color === 'w';
-            
+
             if (isKingSide) {
                 // King side castle
                 if (isWhite) {
@@ -4522,11 +4531,11 @@ var Chessboard = (function (exports) {
             if (!this.isEnPassant(gameMove)) {
                 return null;
             }
-            
+
             const toSquare = gameMove.to;
             const rank = parseInt(toSquare[1]);
             const file = toSquare[0];
-            
+
             // The captured pawn is on the same file but different rank
             if (gameMove.color === 'w') {
                 // White captures black pawn one rank below
@@ -4634,13 +4643,14 @@ var Chessboard = (function (exports) {
 
         /**
          * Adds a piece to a square with optional fade-in animation
-         * @param {Square} square - Target square
-         * @param {Piece} piece - Piece to add
+         * @param {Square} square - Target square (oggetto)
+         * @param {Piece} piece - Piece to add (oggetto)
          * @param {boolean} [fade=true] - Whether to fade in the piece
          * @param {Function} dragFunction - Function to handle drag events
          * @param {Function} [callback] - Callback when animation completes
          */
         addPieceOnSquare(square, piece, fade = true, dragFunction, callback) {
+            if (!square || !piece) throw new Error('addPieceOnSquare richiede oggetti Square e Piece');
             console.debug(`[PieceService] addPieceOnSquare: ${piece.id} to ${square.id}`);
             square.putPiece(piece);
 
@@ -4663,14 +4673,14 @@ var Chessboard = (function (exports) {
         }
 
         /**
-         * Removes a piece from a square with optional fade-out animation
-         * @param {Square} square - Source square
-         * @param {boolean} [fade=true] - Whether to fade out the piece
-         * @param {Function} [callback] - Callback when animation completes
-         * @returns {Piece} The removed piece
-         * @throws {PieceError} When square has no piece to remove
+         * Rimuove un pezzo da una casella
+         * @param {Square} square - Oggetto Square
+         * @param {boolean} [fade=true]
+         * @param {Function} [callback]
+         * @returns {Piece} Il pezzo rimosso
          */
         removePieceFromSquare(square, fade = true, callback) {
+            if (!square) throw new Error('removePieceFromSquare richiede oggetto Square');
             console.debug(`[PieceService] removePieceFromSquare: ${square.id}`);
             square.check();
 
@@ -7717,68 +7727,48 @@ var Chessboard = (function (exports) {
          * @param {boolean} [isPositionLoad=false] - Whether this is a position load (affects delay)
          */
         _doUpdateBoardPieces(animation = false, isPositionLoad = false) {
+            // Blocca update se un drag è in corso
+            if (this._isDragging) return;
             // Skip update if we're in the middle of a promotion
             if (this._isPromoting) {
-                console.log('Skipping board update during promotion');
                 return;
             }
-
-            // Check if services are available
             if (!this.positionService || !this.positionService.getGame()) {
-                console.log('Cannot update board pieces - position service not available');
                 return;
             }
-
             const squares = this.boardService.getAllSquares();
             const gameStateBefore = this.positionService.getGame().fen();
-
-            // PATCH ROBUSTA: se la board è completamente vuota, forza la rimozione di TUTTI i pezzi
             if (/^8\/8\/8\/8\/8\/8\/8\/8/.test(gameStateBefore)) {
-                console.log('Board vuota rilevata - rimozione forzata di tutti i pezzi dal DOM');
-
-                // 1. Rimuovi tutti gli elementi DOM dei pezzi dal contenitore della board
                 const boardContainer = document.getElementById(this.config.id_div);
                 if (boardContainer) {
                     const pieceElements = boardContainer.querySelectorAll('.piece');
                     pieceElements.forEach(element => {
-                        console.log('Rimozione forzata elemento DOM pezzo:', element);
                         element.remove();
                     });
                 }
-
-                // 2. Azzera tutti i riferimenti JS ai pezzi
                 Object.values(squares).forEach(sq => {
                     if (sq && sq.piece) {
-                        console.log('Azzero riferimento pezzo su casella:', sq.id);
                         sq.piece = null;
                     }
                 });
-
-                // 3. Forza la pulizia di eventuali selezioni/hint
                 this._clearVisualState();
-
-                // 4. Aggiungi i listener e notifica il cambio
                 this._addListeners();
                 if (this.config.onChange) this.config.onChange(gameStateBefore);
-
-                console.log('Rimozione forzata completata');
                 return;
             }
-
-            console.log('_doUpdateBoardPieces - current FEN:', gameStateBefore);
-            console.log('_doUpdateBoardPieces - animation:', animation, 'style:', this.config.animationStyle, 'isPositionLoad:', isPositionLoad);
-
-            // Determine which animation style to use
             const useSimultaneous = this.config.animationStyle === 'simultaneous';
-            console.log('_doUpdateBoardPieces - useSimultaneous:', useSimultaneous);
-
             if (useSimultaneous) {
-                console.log('Using simultaneous animation');
                 this._doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad);
             } else {
-                console.log('Using sequential animation');
                 this._doSequentialUpdate(squares, gameStateBefore, animation);
             }
+            // Pulizia finale robusta: rimuovi tutti i pezzi orfani dal DOM e dal riferimento JS
+            Object.values(this.boardService.getAllSquares()).forEach(square => {
+                const expectedPieceId = this.positionService.getGamePieceId(square.id);
+                if (!expectedPieceId && typeof square.forceRemoveAllPieces === 'function') {
+                    square.forceRemoveAllPieces();
+                }
+            });
         }
 
         /**
@@ -7807,7 +7797,12 @@ var Chessboard = (function (exports) {
 
                 // Se c'è un pezzo attuale ma non è quello atteso, rimuovilo
                 if (currentPiece && currentPieceId !== expectedPieceId) {
-                    this.pieceService.removePieceFromSquare(square, animation);
+                    // Rimozione robusta: elimina tutti i pezzi orfani dal DOM e dal riferimento JS
+                    if (typeof square.forceRemoveAllPieces === 'function') {
+                        square.forceRemoveAllPieces();
+                    } else {
+                        this.pieceService.removePieceFromSquare(square, animation);
+                    }
                 }
 
                 // Se c'è un pezzo atteso ma non è quello attuale, aggiungilo
@@ -7936,7 +7931,13 @@ var Chessboard = (function (exports) {
                 for (let i = 0; i < fromList.length; i++) {
                     if (!fromMatched[i]) {
                         setTimeout(() => {
-                            this.pieceService.removePieceFromSquare(fromList[i].square, true, onAnimationComplete);
+                            // Rimozione robusta: elimina tutti i pezzi orfani dal DOM e dal riferimento JS
+                            if (typeof fromList[i].square.forceRemoveAllPieces === 'function') {
+                                fromList[i].square.forceRemoveAllPieces();
+                            } else {
+                                this.pieceService.removePieceFromSquare(fromList[i].square, true, onAnimationComplete);
+                            }
+                            onAnimationComplete();
                         }, animationIndex * animationDelay);
                         animationIndex++;
                     }
@@ -8328,6 +8329,8 @@ var Chessboard = (function (exports) {
             if (this._updateBoardPieces) {
                 this._updateBoardPieces(animate, true);
             }
+            // Forza la sincronizzazione dopo setPosition
+            this._updateBoardPieces(true, false);
             return true;
         }
         /**
@@ -8341,7 +8344,10 @@ var Chessboard = (function (exports) {
             // Use the default starting position from config or fallback
             const startPosition = this.config && this.config.position ? this.config.position : 'start';
             this._updateBoardPieces(animate);
-            return this.setPosition(startPosition, { animate });
+            const result = this.setPosition(startPosition, { animate });
+            // Forza la sincronizzazione dopo reset
+            this._updateBoardPieces(true, false);
+            return result;
         }
         /**
          * Clear the board
@@ -8365,6 +8371,8 @@ var Chessboard = (function (exports) {
             if (this._updateBoardPieces) {
                 this._updateBoardPieces(animate, true);
             }
+            // Forza la sincronizzazione dopo clear
+            this._updateBoardPieces(true, false);
             return true;
         }
 
@@ -8379,7 +8387,8 @@ var Chessboard = (function (exports) {
             const undone = this.positionService.getGame().undo();
             if (undone) {
                 this._undoneMoves.push(undone);
-                this._updateBoardPieces(opts.animate !== false);
+                // Forza refresh completo di tutti i pezzi dopo undo
+                this._updateBoardPieces(true, true);
                 return undone;
             }
             return null;
@@ -8396,7 +8405,8 @@ var Chessboard = (function (exports) {
                 const moveObj = { from: move.from, to: move.to };
                 if (move.promotion) moveObj.promotion = move.promotion;
                 const result = this.positionService.getGame().move(moveObj);
-                this._updateBoardPieces(opts.animate !== false);
+                // Forza refresh completo di tutti i pezzi dopo redo
+                this._updateBoardPieces(true, true);
                 return result;
             }
             return false;
@@ -8415,17 +8425,19 @@ var Chessboard = (function (exports) {
          * @returns {string|null}
          */
         getPiece(square) {
-            // Restituisce sempre 'wq' (colore prima, tipo dopo, lowercase) o null
-            const sq = this.boardService.getSquare(square);
-            if (!sq) return null;
-            const piece = sq.piece;
+            // Sempre leggi lo stato aggiornato dal boardService
+            const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+            if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[getPiece] Parametro square non valido');
+            // Forza sync prima di leggere
+            this._updateBoardPieces(false, false);
+            const piece = squareObj.piece;
             if (!piece) return null;
             return (piece.color + piece.type).toLowerCase();
         }
         /**
          * Put a piece on a square
-         * @param {string} piece
-         * @param {string} square
+         * @param {string|Piece} piece
+         * @param {string|Square} square
          * @param {Object} [opts]
          * @param {boolean} [opts.animate=true]
          * @returns {boolean}
@@ -8436,7 +8448,6 @@ var Chessboard = (function (exports) {
             if (typeof piece === 'object' && piece.type && piece.color) {
                 pieceStr = (piece.color + piece.type).toLowerCase();
             } else if (typeof piece === 'string' && piece.length === 2) {
-                // Accetta sia 'wq' che 'qw', normalizza a 'wq'
                 const a = piece[0].toLowerCase();
                 const b = piece[1].toLowerCase();
                 const types = 'kqrbnp';
@@ -8449,42 +8460,36 @@ var Chessboard = (function (exports) {
                     throw new Error(`[putPiece] Invalid piece: ${piece}`);
                 }
             }
-            const validSquare = this.validationService.isValidSquare(square);
-            const validPiece = this.validationService.isValidPiece(pieceStr);
-            if (!validSquare) throw new Error(`[putPiece] Invalid square: ${square}`);
-            if (!validPiece) throw new Error(`[putPiece] Invalid piece: ${pieceStr}`);
-            if (!this.positionService || !this.positionService.getGame()) {
-                throw new Error('[putPiece] No positionService or game');
-            }
+            const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+            if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[putPiece] Parametro square non valido');
             const pieceObj = this.pieceService.convertPiece(pieceStr);
-            const squareObj = this.boardService.getSquare(square);
-            if (!squareObj) throw new Error(`[putPiece] Square not found: ${square}`);
-            squareObj.piece = pieceObj;
+            if (!pieceObj || typeof pieceObj !== 'object' || !('type' in pieceObj)) throw new Error('[putPiece] Parametro piece non valido');
+            // Aggiorna solo il motore chess.js
             const chessJsPiece = { type: pieceObj.type, color: pieceObj.color };
             const game = this.positionService.getGame();
-            const result = game.put(chessJsPiece, square);
-            if (!result) throw new Error(`[putPiece] Game.put failed for ${pieceStr} on ${square}`);
+            const result = game.put(chessJsPiece, squareObj.id);
+            if (!result) throw new Error(`[putPiece] Game.put failed for ${pieceStr} on ${squareObj.id}`);
+            // Non aggiornare direttamente square.piece!
+            // Riallinea la board JS allo stato del motore
             this._updateBoardPieces(animate);
             return true;
         }
         /**
          * Remove a piece from a square
-         * @param {string} square
+         * @param {string|Square} square
          * @param {Object} [opts]
          * @param {boolean} [opts.animate=true]
          * @returns {string|null}
          */
         removePiece(square, opts = {}) {
             const animate = opts.animate !== undefined ? opts.animate : true;
-            if (!this.validationService.isValidSquare(square)) {
-                throw new Error(`[removePiece] Invalid square: ${square}`);
-            }
-            const squareObj = this.boardService.getSquare(square);
-            if (!squareObj) return true;
-            if (!squareObj.piece) return true;
-            squareObj.piece = null;
+            const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+            if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[removePiece] Parametro square non valido');
+            // Aggiorna solo il motore chess.js
             const game = this.positionService.getGame();
-            game.remove(square);
+            game.remove(squareObj.id);
+            // Non aggiornare direttamente square.piece!
+            // Riallinea la board JS allo stato del motore
             this._updateBoardPieces(animate);
             return true;
         }
@@ -8549,28 +8554,32 @@ var Chessboard = (function (exports) {
         // --- HIGHLIGHTING & UI ---
         /**
          * Highlight a square
-         * @param {string} square
+         * @param {string|Square} square
          * @param {Object} [opts]
          */
         highlight(square, opts = {}) {
-            if (!this.validationService.isValidSquare(square)) return;
+            // API: accetta id, converte subito in oggetto
+            const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+            if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[highlight] Parametro square non valido');
             if (this.boardService && this.boardService.highlightSquare) {
-                this.boardService.highlightSquare(square, opts);
+                this.boardService.highlightSquare(squareObj, opts);
             } else if (this.eventService && this.eventService.highlightSquare) {
-                this.eventService.highlightSquare(square, opts);
+                this.eventService.highlightSquare(squareObj, opts);
             }
         }
         /**
          * Remove highlight from a square
-         * @param {string} square
+         * @param {string|Square} square
          * @param {Object} [opts]
          */
         dehighlight(square, opts = {}) {
-            if (!this.validationService.isValidSquare(square)) return;
+            // API: accetta id, converte subito in oggetto
+            const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+            if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[dehighlight] Parametro square non valido');
             if (this.boardService && this.boardService.dehighlightSquare) {
-                this.boardService.dehighlightSquare(square, opts);
+                this.boardService.dehighlightSquare(squareObj, opts);
             } else if (this.eventService && this.eventService.dehighlightSquare) {
-                this.eventService.dehighlightSquare(square, opts);
+                this.eventService.dehighlightSquare(squareObj, opts);
             }
         }
 
@@ -8595,6 +8604,8 @@ var Chessboard = (function (exports) {
          * @returns {boolean}
          */
         isGameOver() {
+            // Forza sync prima di interrogare il motore
+            this._updateBoardPieces(false, false);
             const game = this.positionService.getGame();
             if (!game) return false;
             if (game.isGameOver) return game.isGameOver();
@@ -8964,7 +8975,7 @@ var Chessboard = (function (exports) {
         dehighlightSquare(square) {
             return this.boardService.dehighlight(square);
         }
-        forceSync() { this._updateBoardPieces(true, true); }
+        forceSync() { this._updateBoardPieces(true, true); this._updateBoardPieces(true, false); }
 
         // Metodi mancanti che causano fallimenti nei test
         /**
@@ -8977,37 +8988,37 @@ var Chessboard = (function (exports) {
         movePiece(move, opts = {}) {
             const animate = opts.animate !== undefined ? opts.animate : true;
 
-            // Parse move string if needed
-            let fromSquare, toSquare, promotion;
+            // --- API: accetta id/stringhe, ma converte subito in oggetti ---
+            let fromSquareObj, toSquareObj, promotion;
             if (typeof move === 'string') {
                 if (move.length === 4) {
-                    fromSquare = move.substring(0, 2);
-                    toSquare = move.substring(2, 4);
+                    fromSquareObj = this.boardService.getSquare(move.substring(0, 2));
+                    toSquareObj = this.boardService.getSquare(move.substring(2, 4));
                 } else if (move.length === 5) {
-                    fromSquare = move.substring(0, 2);
-                    toSquare = move.substring(2, 4);
+                    fromSquareObj = this.boardService.getSquare(move.substring(0, 2));
+                    toSquareObj = this.boardService.getSquare(move.substring(2, 4));
                     promotion = move.substring(4, 5);
                 } else {
                     throw new Error(`Invalid move format: ${move}`);
                 }
             } else if (typeof move === 'object' && move.from && move.to) {
-                fromSquare = move.from;
-                toSquare = move.to;
+                // Se sono id, converto in oggetti; se sono già oggetti, li uso direttamente
+                fromSquareObj = typeof move.from === 'string' ? this.boardService.getSquare(move.from) : move.from;
+                toSquareObj = typeof move.to === 'string' ? this.boardService.getSquare(move.to) : move.to;
                 promotion = move.promotion;
             } else {
                 throw new Error(`Invalid move: ${move}`);
             }
 
-            // Get square objects
-            const fromSquareObj = this.boardService.getSquare(fromSquare);
-            const toSquareObj = this.boardService.getSquare(toSquare);
-
             if (!fromSquareObj || !toSquareObj) {
-                throw new Error(`Invalid squares: ${fromSquare} or ${toSquare}`);
+                throw new Error(`Invalid squares: ${move.from || move.substring(0, 2)} or ${move.to || move.substring(2, 4)}`);
             }
 
-            // Execute the move
-            return this._onMove(fromSquareObj, toSquareObj, promotion, animate);
+            // --- Internamente: lavora solo con oggetti ---
+            const result = this._onMove(fromSquareObj, toSquareObj, promotion, animate);
+            // Dopo ogni mossa, forza la sincronizzazione della board
+            this._updateBoardPieces(true, false);
+            return result;
         }
 
         // Aliases for backward compatibility

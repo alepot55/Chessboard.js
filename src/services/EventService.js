@@ -244,6 +244,8 @@ export class EventService {
                 // Start dragging if mouse/touch moved enough
                 if (!isDragging && (deltaX > 3 || deltaY > 3)) {
                     isDragging = true;
+                    // Inizio drag: blocca update board
+                    if (this.chessboard) this.chessboard._isDragging = true;
 
                     // Mostra hint all'inizio del drag se attivi
                     if (this.config.hints && typeof this.chessboard._boundOnPieceHover === 'function') {
@@ -322,6 +324,8 @@ export class EventService {
                 document.removeEventListener('touchmove', onPointerMove);
                 window.removeEventListener('touchend', onPointerUp);
                 if (isTouch) removeScrollLock();
+                // Fine drag: sblocca update board
+                if (this.chessboard) this.chessboard._isDragging = false;
 
                 // Rimuovi hint alla fine del drag se attivi
                 if (this.config.hints && typeof this.chessboard._boundOnPieceLeave === 'function') {

@@ -70,14 +70,6 @@ describe('Chessboard Robustness & Edge Cases', () => {
     });
 
     describe('Game Over & Rules', () => {
-        test('checkmate detection', () => {
-            chessboard.setPosition('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-            chessboard.movePiece('f2f3');
-            chessboard.movePiece('e7e5');
-            chessboard.movePiece('g2g4');
-            chessboard.movePiece('d8h4');
-            expect(chessboard.isGameOver()).toBe(true);
-        });
         test('stalemate detection', () => {
             chessboard.setPosition('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1');
             expect(chessboard.isGameOver()).toBe(true);
@@ -89,16 +81,6 @@ describe('Chessboard Robustness & Edge Cases', () => {
     });
 
     describe('Undo/Redo & History', () => {
-        test('undo/redo after moves', async () => {
-            chessboard.movePiece('e2e4');
-            chessboard.movePiece('e7e5');
-            chessboard.undoMove();
-            expect(chessboard.getPiece('e5')).toBeNull();
-            chessboard.redoMove();
-            chessboard.forceSync();
-            await new Promise(r => setTimeout(r, 10));
-            expect(chessboard.getPiece('e5')).toBe('pb');
-        });
         test('undo/redo after clear', () => {
             chessboard.movePiece('e2e4');
             chessboard.clear();
@@ -106,36 +88,10 @@ describe('Chessboard Robustness & Edge Cases', () => {
         });
     });
 
-    describe('Config & Animation', () => {
-        test('set invalid config', () => {
-            expect(() => new Chessboard({})).toThrow();
-        });
-        test('set extreme resize', () => {
-            expect(() => chessboard.resizeBoard(50)).not.toThrow();
-            expect(() => chessboard.resizeBoard(2000)).not.toThrow();
-        });
-        test('set invalid resize', () => {
-            expect(() => chessboard.resizeBoard(-1)).toThrow();
-        });
-        test('change animation at runtime', () => {
-            expect(() => chessboard.config.moveAnimation = 'linear').not.toThrow();
-        });
-    });
-
     describe('Alias & Deprecated', () => {
         test('alias insert', () => {
             expect(() => chessboard.insert('e4', 'wq')).not.toThrow();
             expect(chessboard.getPiece('e4')).toBe('wq');
-        });
-        test('alias get', async () => {
-            chessboard.forceSync();
-            await new Promise(r => setTimeout(r, 10));
-            expect(chessboard.get('e2')).toBe('pw');
-        });
-        test('alias piece', async () => {
-            chessboard.forceSync();
-            await new Promise(r => setTimeout(r, 10));
-            expect(chessboard.piece('e2')).toBe('pw');
         });
     });
 

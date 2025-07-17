@@ -33,27 +33,27 @@ export class MoveService {
      */
     canMove(square) {
         if (!square.piece) return false;
-        
+
         const { movableColors, onlyLegalMoves } = this.config;
-        
+
         if (movableColors === 'none') return false;
         if (movableColors === 'w' && square.piece.color === 'b') return false;
         if (movableColors === 'b' && square.piece.color === 'w') return false;
-        
+
         if (!onlyLegalMoves) return true;
-        
+
         // Check if position service and game are available
         if (!this.positionService || !this.positionService.getGame()) {
             return false;
         }
-        
+
         const game = this.positionService.getGame();
         return square.piece.color === game.turn();
     }
 
     /**
      * Converts various move formats to a Move instance
-     * @param {string|Move} move - Move in various formats
+     * @param {string|Move|Object} move - Move in various formats
      * @param {Object} squares - All board squares
      * @returns {Move} Move instance
      * @throws {MoveError} When move format is invalid
@@ -62,19 +62,22 @@ export class MoveService {
         if (move instanceof Move) {
             return move;
         }
-        
+        if (typeof move === 'object' && move.from && move.to) {
+            // Se sono id, converto in oggetti; se sono già oggetti, li uso direttamente
+            const fromSquare = typeof move.from === 'string' ? squares[move.from] : move.from;
+            const toSquare = typeof move.to === 'string' ? squares[move.to] : move.to;
+            if (!fromSquare || !toSquare) throw new MoveError(ERROR_MESSAGES.invalid_move_format, move.from, move.to);
+            return new Move(fromSquare, toSquare, move.promotion);
+        }
         if (typeof move === 'string' && move.length >= 4) {
             const fromId = move.slice(0, 2);
             const toId = move.slice(2, 4);
             const promotion = move.slice(4, 5) || null;
-            
             if (!squares[fromId] || !squares[toId]) {
                 throw new MoveError(ERROR_MESSAGES.invalid_move_format, fromId, toId);
             }
-            
             return new Move(squares[fromId], squares[toId], promotion);
         }
-        
         throw new MoveError(ERROR_MESSAGES.invalid_move_format, 'unknown', 'unknown');
     }
 
@@ -85,9 +88,9 @@ export class MoveService {
      */
     isLegalMove(move) {
         const legalMoves = this.getLegalMoves(move.from.id);
-        
-        return legalMoves.some(legalMove => 
-            legalMove.to === move.to.id && 
+
+        return legalMoves.some(legalMove =>
+            legalMove.to === move.to.id &&
             move.promotion === legalMove.promotion
         );
     }
@@ -103,16 +106,16 @@ export class MoveService {
         if (!this.positionService || !this.positionService.getGame()) {
             return [];
         }
-        
+
         const game = this.positionService.getGame();
-        
+
         if (!game) return [];
-        
+
         const options = { verbose };
         if (from) {
             options.square = from;
         }
-        
+
         return game.moves(options);
     }
 
@@ -126,115 +129,99 @@ export class MoveService {
         if (!this.positionService || !this.positionService.getGame()) {
             return [];
         }
-        
+
         const game = this.positionService.getGame();
         if (!game) return [];
-        
+
         const cacheKey = `${square.id}-${game.fen()}`;
         let moves = this._movesCache.get(cacheKey);
-        
+
         if (!moves) {
             moves = game.moves({ square: square.id, verbose: true });
             this._movesCache.set(cacheKey, moves);
-            
+
             // Clear cache after a short delay to prevent memory buildup
             if (this._cacheTimeout) {
                 clearTimeout(this._cacheTimeout);
             }
-            
+
             this._cacheTimeout = setTimeout(() => {
                 this._movesCache.clear();
             }, 1000);
         }
-        
+
         return moves;
     }
 
     /**
      * Executes a move on the game
-     * @param {Move} move - Move to execute
+     * @param {Move} move - Move to execute (deve essere oggetto Move)
      * @returns {Object|null} Move result from chess.js or null if invalid
      */
     executeMove(move) {
-        // Check if position service and game are available
+        if (!(move instanceof Move)) throw new Error('executeMove richiede un oggetto Move');
         if (!this.positionService || !this.positionService.getGame()) {
             return null;
         }
-        
         const game = this.positionService.getGame();
         if (!game) return null;
-        
         const moveOptions = {
             from: move.from.id,
             to: move.to.id
         };
-        
-        console.log('executeMove - move.promotion:', move.promotion);
-        console.log('executeMove - move.hasPromotion():', move.hasPromotion());
-        
         if (move.hasPromotion()) {
             moveOptions.promotion = move.promotion;
         }
-        
-        console.log('executeMove - moveOptions:', moveOptions);
-        
         const result = game.move(moveOptions);
-        console.log('executeMove - result:', result);
-        
-        // Check what's actually on the board after the move
-        if (result) {
-            const pieceOnDestination = game.get(move.to.id);
-            console.log('executeMove - piece on destination after move:', pieceOnDestination);
-        }
-        
         return result;
     }
 
     /**
-     * Checks if a move requires promotion
-     * @param {Move} move - Move to check
-     * @returns {boolean} True if promotion is required
+     * Determina se una mossa richiede promozione
+     * @param {Move} move - Deve essere oggetto Move
+     * @returns {boolean}
      */
     requiresPromotion(move) {
+        if (!(move instanceof Move)) throw new Error('requiresPromotion richiede un oggetto Move');
         console.log('Checking if move requires promotion:', move.from.id, '->', move.to.id);
-        
+
         if (!this.config.onlyLegalMoves) {
             console.log('Not in legal moves mode, no promotion required');
             return false;
         }
-        
+
         const game = this.positionService.getGame();
         if (!game) {
             console.log('No game instance available');
             return false;
         }
-        
+
         const piece = game.get(move.from.id);
         if (!piece || piece.type !== 'p') {
             console.log('Not a pawn move, no promotion required');
             return false;
         }
-        
+
         const targetRank = move.to.row;
         if (targetRank !== 1 && targetRank !== 8) {
             console.log('Not reaching promotion rank, no promotion required');
             return false;
         }
-        
+
         console.log('Pawn reaching promotion rank, validating move...');
-        
+
         // Additional validation: check if the pawn can actually reach this square
         if (!this._isPawnMoveValid(move.from, move.to, piece.color)) {
             console.log('Pawn move not valid, no promotion required');
             return false;
         }
-        
+
         // First check if the move is legal without promotion
         const simpleMoveObj = {
             from: move.from.id,
             to: move.to.id
         };
-        
+
         try {
             console.log('Testing move without promotion:', simpleMoveObj);
             // Test if the move is legal without promotion first
@@ -242,25 +229,25 @@ export class MoveService {
             if (testMove) {
                 // Move was successful, but check if it was a promotion
                 const wasPromotion = testMove.promotion;
-                
+
                 // Undo the test move
                 game.undo();
-                
+
                 console.log('Move successful without promotion, was promotion:', wasPromotion !== undefined);
-                
+
                 // If it was a promotion, return true
                 return wasPromotion !== undefined;
             }
         } catch (error) {
             console.log('Move failed without promotion, trying with promotion:', error.message);
-            
+
             // If simple move fails, try with promotion
             const promotionMoveObj = {
                 from: move.from.id,
                 to: move.to.id,
                 promotion: 'q' // test with queen
             };
-            
+
             try {
                 console.log('Testing move with promotion:', promotionMoveObj);
                 const testMove = game.move(promotionMoveObj);
@@ -276,7 +263,7 @@ export class MoveService {
                 return false;
             }
         }
-        
+
         console.log('Move validation complete, no promotion required');
         return false;
     }
@@ -294,27 +281,27 @@ export class MoveService {
         const toRank = to.row;
         const fromFile = from.col;
         const toFile = to.col;
-        
+
         console.log(`Validating pawn move: ${from.id} -> ${to.id} (${color})`);
         console.log(`Ranks: ${fromRank} -> ${toRank}, Files: ${fromFile} -> ${toFile}`);
-        
+
         // Direction of pawn movement
         const direction = color === 'w' ? 1 : -1;
         const rankDiff = toRank - fromRank;
         const fileDiff = Math.abs(toFile - fromFile);
-        
+
         // Pawn can only move forward
         if (rankDiff * direction <= 0) {
             console.log('Invalid: Pawn cannot move backward or stay in place');
             return false;
         }
-        
+
         // Pawn can only move 1 rank at a time (except for double move from starting position)
         if (Math.abs(rankDiff) > 2) {
             console.log('Invalid: Pawn cannot move more than 2 ranks');
             return false;
         }
-        
+
         // If moving 2 ranks, must be from starting position
         if (Math.abs(rankDiff) === 2) {
             const startingRank = color === 'w' ? 2 : 7;
@@ -323,13 +310,13 @@ export class MoveService {
                 return false;
             }
         }
-        
+
         // Pawn can only move to adjacent files (diagonal capture) or same file (forward move)
         if (fileDiff > 1) {
             console.log('Invalid: Pawn cannot move more than 1 file');
             return false;
         }
-        
+
         console.log('Pawn move validation passed');
         return true;
     }
@@ -344,45 +331,45 @@ export class MoveService {
      */
     setupPromotion(move, squares, onPromotionSelect, onPromotionCancel) {
         if (!this.requiresPromotion(move)) return false;
-        
+
         // Check if position service and game are available
         if (!this.positionService || !this.positionService.getGame()) {
             return false;
         }
-        
+
         const game = this.positionService.getGame();
         const piece = game.get(move.from.id);
         const targetSquare = move.to;
-        
+
         // Clear any existing promotion UI
         Object.values(squares).forEach(square => {
             square.removePromotion();
             square.removeCover();
         });
-        
+
         // Always show promotion choices in a column
         this._showPromotionInColumn(targetSquare, piece, squares, onPromotionSelect, onPromotionCancel);
-        
+
         return true;
     }
-    
+
     /**
      * Shows promotion choices in a column
      * @private
      */
     _showPromotionInColumn(targetSquare, piece, squares, onPromotionSelect, onPromotionCancel) {
         console.log('Setting up promotion for', targetSquare.id, 'piece color:', piece.color);
-        
+
         // Set up promotion choices starting from border row
         PROMOTION_PIECES.forEach((pieceType, index) => {
             const choiceSquare = this._findPromotionSquare(targetSquare, index, squares);
-            
+
             if (choiceSquare) {
                 const pieceId = pieceType + piece.color;
                 const piecePath = this._getPiecePathForPromotion(pieceId);
-                
+
                 console.log('Setting up promotion choice:', pieceType, 'on square:', choiceSquare.id);
-                
+
                 choiceSquare.putPromotion(piecePath, () => {
                     console.log('Promotion choice selected:', pieceType);
                     onPromotionSelect(pieceType);
@@ -391,7 +378,7 @@ export class MoveService {
                 console.log('Could not find square for promotion choice:', pieceType, 'index:', index);
             }
         });
-        
+
         // Set up cover squares (for cancellation)
         Object.values(squares).forEach(square => {
             if (!square.hasPromotion()) {
@@ -400,7 +387,7 @@ export class MoveService {
                 });
             }
         });
-        
+
         return true;
     }
 
@@ -415,9 +402,9 @@ export class MoveService {
     _findPromotionSquare(targetSquare, index, squares) {
         const col = targetSquare.col;
         const baseRow = targetSquare.row;
-        
+
         console.log('Looking for promotion square - target:', targetSquare.id, 'index:', index, 'col:', col, 'baseRow:', baseRow);
-        
+
         // Calculate row based on index and promotion direction
         // Start from the border row (1 or 8) and go inward
         let row;
@@ -431,15 +418,15 @@ export class MoveService {
             console.log('Invalid promotion row:', baseRow);
             return null;
         }
-        
+
         console.log('Calculated row:', row);
-        
+
         // Ensure row is within bounds
         if (row < 1 || row > 8) {
             console.log('Row out of bounds:', row);
             return null;
         }
-        
+
         // Find square by row/col
         for (const square of Object.values(squares)) {
             if (square.col === col && square.row === row) {
@@ -447,7 +434,7 @@ export class MoveService {
                 return square;
             }
         }
-        
+
         console.log('No square found for col:', col, 'row:', row);
         return null;
     }
@@ -462,11 +449,11 @@ export class MoveService {
         // This would typically use the PieceService
         // For now, we'll use a simple implementation
         const { piecesPath } = this.config;
-        
+
         if (typeof piecesPath === 'string') {
             return `${piecesPath}/${pieceId}.svg`;
         }
-        
+
         // Fallback for other path types
         return `assets/pieces/${pieceId}.svg`;
     }
@@ -480,20 +467,20 @@ export class MoveService {
         if (typeof moveString !== 'string' || moveString.length < 4 || moveString.length > 5) {
             return null;
         }
-        
+
         const from = moveString.slice(0, 2);
         const to = moveString.slice(2, 4);
         const promotion = moveString.slice(4, 5);
-        
+
         // Basic validation
         if (!/^[a-h][1-8]$/.test(from) || !/^[a-h][1-8]$/.test(to)) {
             return null;
         }
-        
+
         if (promotion && !['q', 'r', 'b', 'n'].includes(promotion.toLowerCase())) {
             return null;
         }
-        
+
         return {
             from: from,
             to: to,
@@ -519,10 +506,10 @@ export class MoveService {
         if (!this.isCastle(gameMove)) {
             return null;
         }
-        
+
         const isKingSide = gameMove.isKingsideCastle();
         const isWhite = gameMove.color === 'w';
-        
+
         if (isKingSide) {
             // King side castle
             if (isWhite) {
@@ -558,11 +545,11 @@ export class MoveService {
         if (!this.isEnPassant(gameMove)) {
             return null;
         }
-        
+
         const toSquare = gameMove.to;
         const rank = parseInt(toSquare[1]);
         const file = toSquare[0];
-        
+
         // The captured pawn is on the same file but different rank
         if (gameMove.color === 'w') {
             // White captures black pawn one rank below

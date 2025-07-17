@@ -79,13 +79,14 @@ export class PieceService {
 
     /**
      * Adds a piece to a square with optional fade-in animation
-     * @param {Square} square - Target square
-     * @param {Piece} piece - Piece to add
+     * @param {Square} square - Target square (oggetto)
+     * @param {Piece} piece - Piece to add (oggetto)
      * @param {boolean} [fade=true] - Whether to fade in the piece
      * @param {Function} dragFunction - Function to handle drag events
      * @param {Function} [callback] - Callback when animation completes
      */
     addPieceOnSquare(square, piece, fade = true, dragFunction, callback) {
+        if (!square || !piece) throw new Error('addPieceOnSquare richiede oggetti Square e Piece');
         console.debug(`[PieceService] addPieceOnSquare: ${piece.id} to ${square.id}`);
         square.putPiece(piece);
 
@@ -108,14 +109,14 @@ export class PieceService {
     }
 
     /**
-     * Removes a piece from a square with optional fade-out animation
-     * @param {Square} square - Source square
-     * @param {boolean} [fade=true] - Whether to fade out the piece
-     * @param {Function} [callback] - Callback when animation completes
-     * @returns {Piece} The removed piece
-     * @throws {PieceError} When square has no piece to remove
+     * Rimuove un pezzo da una casella
+     * @param {Square} square - Oggetto Square
+     * @param {boolean} [fade=true]
+     * @param {Function} [callback]
+     * @returns {Piece} Il pezzo rimosso
      */
     removePieceFromSquare(square, fade = true, callback) {
+        if (!square) throw new Error('removePieceFromSquare richiede oggetto Square');
         console.debug(`[PieceService] removePieceFromSquare: ${square.id}`);
         square.check();
 

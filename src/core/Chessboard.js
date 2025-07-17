@@ -656,68 +656,48 @@ class Chessboard {
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load (affects delay)
      */
     _doUpdateBoardPieces(animation = false, isPositionLoad = false) {
+        // Blocca update se un drag è in corso
+        if (this._isDragging) return;
         // Skip update if we're in the middle of a promotion
         if (this._isPromoting) {
-            console.log('Skipping board update during promotion');
             return;
         }
-
-        // Check if services are available
         if (!this.positionService || !this.positionService.getGame()) {
-            console.log('Cannot update board pieces - position service not available');
             return;
         }
-
         const squares = this.boardService.getAllSquares();
         const gameStateBefore = this.positionService.getGame().fen();
-
-        // PATCH ROBUSTA: se la board è completamente vuota, forza la rimozione di TUTTI i pezzi
         if (/^8\/8\/8\/8\/8\/8\/8\/8/.test(gameStateBefore)) {
-            console.log('Board vuota rilevata - rimozione forzata di tutti i pezzi dal DOM');
-
-            // 1. Rimuovi tutti gli elementi DOM dei pezzi dal contenitore della board
             const boardContainer = document.getElementById(this.config.id_div);
             if (boardContainer) {
                 const pieceElements = boardContainer.querySelectorAll('.piece');
                 pieceElements.forEach(element => {
-                    console.log('Rimozione forzata elemento DOM pezzo:', element);
                     element.remove();
                 });
             }
-
-            // 2. Azzera tutti i riferimenti JS ai pezzi
             Object.values(squares).forEach(sq => {
                 if (sq && sq.piece) {
-                    console.log('Azzero riferimento pezzo su casella:', sq.id);
                     sq.piece = null;
                 }
             });
-
-            // 3. Forza la pulizia di eventuali selezioni/hint
             this._clearVisualState();
-
-            // 4. Aggiungi i listener e notifica il cambio
             this._addListeners();
             if (this.config.onChange) this.config.onChange(gameStateBefore);
-
-            console.log('Rimozione forzata completata');
             return;
         }
-
-        console.log('_doUpdateBoardPieces - current FEN:', gameStateBefore);
-        console.log('_doUpdateBoardPieces - animation:', animation, 'style:', this.config.animationStyle, 'isPositionLoad:', isPositionLoad);
-
-        // Determine which animation style to use
         const useSimultaneous = this.config.animationStyle === 'simultaneous';
-        console.log('_doUpdateBoardPieces - useSimultaneous:', useSimultaneous);
-
         if (useSimultaneous) {
-            console.log('Using simultaneous animation');
             this._doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad);
         } else {
-            console.log('Using sequential animation');
             this._doSequentialUpdate(squares, gameStateBefore, animation);
         }
+        // Pulizia finale robusta: rimuovi tutti i pezzi orfani dal DOM e dal riferimento JS
+        Object.values(this.boardService.getAllSquares()).forEach(square => {
+            const expectedPieceId = this.positionService.getGamePieceId(square.id);
+            if (!expectedPieceId && typeof square.forceRemoveAllPieces === 'function') {
+                square.forceRemoveAllPieces();
+            }
+        });
     }
 
     /**
@@ -746,7 +726,12 @@ class Chessboard {
 
             // Se c'è un pezzo attuale ma non è quello atteso, rimuovilo
             if (currentPiece && currentPieceId !== expectedPieceId) {
-                this.pieceService.removePieceFromSquare(square, animation);
+                // Rimozione robusta: elimina tutti i pezzi orfani dal DOM e dal riferimento JS
+                if (typeof square.forceRemoveAllPieces === 'function') {
+                    square.forceRemoveAllPieces();
+                } else {
+                    this.pieceService.removePieceFromSquare(square, animation);
+                }
             }
 
             // Se c'è un pezzo atteso ma non è quello attuale, aggiungilo
@@ -875,7 +860,13 @@ class Chessboard {
             for (let i = 0; i < fromList.length; i++) {
                 if (!fromMatched[i]) {
                     setTimeout(() => {
-                        this.pieceService.removePieceFromSquare(fromList[i].square, true, onAnimationComplete);
+                        // Rimozione robusta: elimina tutti i pezzi orfani dal DOM e dal riferimento JS
+                        if (typeof fromList[i].square.forceRemoveAllPieces === 'function') {
+                            fromList[i].square.forceRemoveAllPieces();
+                        } else {
+                            this.pieceService.removePieceFromSquare(fromList[i].square, true, onAnimationComplete);
+                        }
+                        onAnimationComplete();
                     }, animationIndex * animationDelay);
                     animationIndex++;
                 }
@@ -1267,6 +1258,8 @@ class Chessboard {
         if (this._updateBoardPieces) {
             this._updateBoardPieces(animate, true);
         }
+        // Forza la sincronizzazione dopo setPosition
+        this._updateBoardPieces(true, false);
         return true;
     }
     /**
@@ -1280,7 +1273,10 @@ class Chessboard {
         // Use the default starting position from config or fallback
         const startPosition = this.config && this.config.position ? this.config.position : 'start';
         this._updateBoardPieces(animate);
-        return this.setPosition(startPosition, { animate });
+        const result = this.setPosition(startPosition, { animate });
+        // Forza la sincronizzazione dopo reset
+        this._updateBoardPieces(true, false);
+        return result;
     }
     /**
      * Clear the board
@@ -1304,6 +1300,8 @@ class Chessboard {
         if (this._updateBoardPieces) {
             this._updateBoardPieces(animate, true);
         }
+        // Forza la sincronizzazione dopo clear
+        this._updateBoardPieces(true, false);
         return true;
     }
 
@@ -1318,7 +1316,8 @@ class Chessboard {
         const undone = this.positionService.getGame().undo();
         if (undone) {
             this._undoneMoves.push(undone);
-            this._updateBoardPieces(opts.animate !== false);
+            // Forza refresh completo di tutti i pezzi dopo undo
+            this._updateBoardPieces(true, true);
             return undone;
         }
         return null;
@@ -1335,7 +1334,8 @@ class Chessboard {
             const moveObj = { from: move.from, to: move.to };
             if (move.promotion) moveObj.promotion = move.promotion;
             const result = this.positionService.getGame().move(moveObj);
-            this._updateBoardPieces(opts.animate !== false);
+            // Forza refresh completo di tutti i pezzi dopo redo
+            this._updateBoardPieces(true, true);
             return result;
         }
         return false;
@@ -1354,17 +1354,19 @@ class Chessboard {
      * @returns {string|null}
      */
     getPiece(square) {
-        // Restituisce sempre 'wq' (colore prima, tipo dopo, lowercase) o null
-        const sq = this.boardService.getSquare(square);
-        if (!sq) return null;
-        const piece = sq.piece;
+        // Sempre leggi lo stato aggiornato dal boardService
+        const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+        if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[getPiece] Parametro square non valido');
+        // Forza sync prima di leggere
+        this._updateBoardPieces(false, false);
+        const piece = squareObj.piece;
         if (!piece) return null;
         return (piece.color + piece.type).toLowerCase();
     }
     /**
      * Put a piece on a square
-     * @param {string} piece
-     * @param {string} square
+     * @param {string|Piece} piece
+     * @param {string|Square} square
      * @param {Object} [opts]
      * @param {boolean} [opts.animate=true]
      * @returns {boolean}
@@ -1375,7 +1377,6 @@ class Chessboard {
         if (typeof piece === 'object' && piece.type && piece.color) {
             pieceStr = (piece.color + piece.type).toLowerCase();
         } else if (typeof piece === 'string' && piece.length === 2) {
-            // Accetta sia 'wq' che 'qw', normalizza a 'wq'
             const a = piece[0].toLowerCase();
             const b = piece[1].toLowerCase();
             const types = 'kqrbnp';
@@ -1388,42 +1389,36 @@ class Chessboard {
                 throw new Error(`[putPiece] Invalid piece: ${piece}`);
             }
         }
-        const validSquare = this.validationService.isValidSquare(square);
-        const validPiece = this.validationService.isValidPiece(pieceStr);
-        if (!validSquare) throw new Error(`[putPiece] Invalid square: ${square}`);
-        if (!validPiece) throw new Error(`[putPiece] Invalid piece: ${pieceStr}`);
-        if (!this.positionService || !this.positionService.getGame()) {
-            throw new Error('[putPiece] No positionService or game');
-        }
+        const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+        if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[putPiece] Parametro square non valido');
         const pieceObj = this.pieceService.convertPiece(pieceStr);
-        const squareObj = this.boardService.getSquare(square);
-        if (!squareObj) throw new Error(`[putPiece] Square not found: ${square}`);
-        squareObj.piece = pieceObj;
+        if (!pieceObj || typeof pieceObj !== 'object' || !('type' in pieceObj)) throw new Error('[putPiece] Parametro piece non valido');
+        // Aggiorna solo il motore chess.js
         const chessJsPiece = { type: pieceObj.type, color: pieceObj.color };
         const game = this.positionService.getGame();
-        const result = game.put(chessJsPiece, square);
-        if (!result) throw new Error(`[putPiece] Game.put failed for ${pieceStr} on ${square}`);
+        const result = game.put(chessJsPiece, squareObj.id);
+        if (!result) throw new Error(`[putPiece] Game.put failed for ${pieceStr} on ${squareObj.id}`);
+        // Non aggiornare direttamente square.piece!
+        // Riallinea la board JS allo stato del motore
         this._updateBoardPieces(animate);
         return true;
     }
     /**
      * Remove a piece from a square
-     * @param {string} square
+     * @param {string|Square} square
      * @param {Object} [opts]
      * @param {boolean} [opts.animate=true]
      * @returns {string|null}
      */
     removePiece(square, opts = {}) {
         const animate = opts.animate !== undefined ? opts.animate : true;
-        if (!this.validationService.isValidSquare(square)) {
-            throw new Error(`[removePiece] Invalid square: ${square}`);
-        }
-        const squareObj = this.boardService.getSquare(square);
-        if (!squareObj) return true;
-        if (!squareObj.piece) return true;
-        squareObj.piece = null;
+        const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+        if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[removePiece] Parametro square non valido');
+        // Aggiorna solo il motore chess.js
         const game = this.positionService.getGame();
-        game.remove(square);
+        game.remove(squareObj.id);
+        // Non aggiornare direttamente square.piece!
+        // Riallinea la board JS allo stato del motore
         this._updateBoardPieces(animate);
         return true;
     }
@@ -1488,28 +1483,32 @@ class Chessboard {
     // --- HIGHLIGHTING & UI ---
     /**
      * Highlight a square
-     * @param {string} square
+     * @param {string|Square} square
      * @param {Object} [opts]
      */
     highlight(square, opts = {}) {
-        if (!this.validationService.isValidSquare(square)) return;
+        // API: accetta id, converte subito in oggetto
+        const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+        if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[highlight] Parametro square non valido');
         if (this.boardService && this.boardService.highlightSquare) {
-            this.boardService.highlightSquare(square, opts);
+            this.boardService.highlightSquare(squareObj, opts);
         } else if (this.eventService && this.eventService.highlightSquare) {
-            this.eventService.highlightSquare(square, opts);
+            this.eventService.highlightSquare(squareObj, opts);
         }
     }
     /**
      * Remove highlight from a square
-     * @param {string} square
+     * @param {string|Square} square
      * @param {Object} [opts]
      */
     dehighlight(square, opts = {}) {
-        if (!this.validationService.isValidSquare(square)) return;
+        // API: accetta id, converte subito in oggetto
+        const squareObj = typeof square === 'string' ? this.boardService.getSquare(square) : square;
+        if (!squareObj || typeof squareObj !== 'object' || !('id' in squareObj)) throw new Error('[dehighlight] Parametro square non valido');
         if (this.boardService && this.boardService.dehighlightSquare) {
-            this.boardService.dehighlightSquare(square, opts);
+            this.boardService.dehighlightSquare(squareObj, opts);
         } else if (this.eventService && this.eventService.dehighlightSquare) {
-            this.eventService.dehighlightSquare(square, opts);
+            this.eventService.dehighlightSquare(squareObj, opts);
         }
     }
 
@@ -1534,6 +1533,8 @@ class Chessboard {
      * @returns {boolean}
      */
     isGameOver() {
+        // Forza sync prima di interrogare il motore
+        this._updateBoardPieces(false, false);
         const game = this.positionService.getGame();
         if (!game) return false;
         if (game.isGameOver) return game.isGameOver();
@@ -1903,7 +1904,7 @@ class Chessboard {
     dehighlightSquare(square) {
         return this.boardService.dehighlight(square);
     }
-    forceSync() { this._updateBoardPieces(true, true); }
+    forceSync() { this._updateBoardPieces(true, true); this._updateBoardPieces(true, false); }
 
     // Metodi mancanti che causano fallimenti nei test
     /**
@@ -1916,37 +1917,37 @@ class Chessboard {
     movePiece(move, opts = {}) {
         const animate = opts.animate !== undefined ? opts.animate : true;
 
-        // Parse move string if needed
-        let fromSquare, toSquare, promotion;
+        // --- API: accetta id/stringhe, ma converte subito in oggetti ---
+        let fromSquareObj, toSquareObj, promotion;
         if (typeof move === 'string') {
             if (move.length === 4) {
-                fromSquare = move.substring(0, 2);
-                toSquare = move.substring(2, 4);
+                fromSquareObj = this.boardService.getSquare(move.substring(0, 2));
+                toSquareObj = this.boardService.getSquare(move.substring(2, 4));
             } else if (move.length === 5) {
-                fromSquare = move.substring(0, 2);
-                toSquare = move.substring(2, 4);
+                fromSquareObj = this.boardService.getSquare(move.substring(0, 2));
+                toSquareObj = this.boardService.getSquare(move.substring(2, 4));
                 promotion = move.substring(4, 5);
             } else {
                 throw new Error(`Invalid move format: ${move}`);
             }
         } else if (typeof move === 'object' && move.from && move.to) {
-            fromSquare = move.from;
-            toSquare = move.to;
+            // Se sono id, converto in oggetti; se sono già oggetti, li uso direttamente
+            fromSquareObj = typeof move.from === 'string' ? this.boardService.getSquare(move.from) : move.from;
+            toSquareObj = typeof move.to === 'string' ? this.boardService.getSquare(move.to) : move.to;
             promotion = move.promotion;
         } else {
             throw new Error(`Invalid move: ${move}`);
         }
 
-        // Get square objects
-        const fromSquareObj = this.boardService.getSquare(fromSquare);
-        const toSquareObj = this.boardService.getSquare(toSquare);
-
         if (!fromSquareObj || !toSquareObj) {
-            throw new Error(`Invalid squares: ${fromSquare} or ${toSquare}`);
+            throw new Error(`Invalid squares: ${move.from || move.substring(0, 2)} or ${move.to || move.substring(2, 4)}`);
         }
 
-        // Execute the move
-        return this._onMove(fromSquareObj, toSquareObj, promotion, animate);
+        // --- Internamente: lavora solo con oggetti ---
+        const result = this._onMove(fromSquareObj, toSquareObj, promotion, animate);
+        // Dopo ogni mossa, forza la sincronizzazione della board
+        this._updateBoardPieces(true, false);
+        return result;
     }
 
     // Aliases for backward compatibility

@@ -90,8 +90,14 @@ export class PieceService {
         console.debug(`[PieceService] addPieceOnSquare: ${piece.id} to ${square.id}`);
         square.putPiece(piece);
 
+        // Imposta sempre il drag (touch e mouse)
         if (dragFunction) {
             piece.setDrag(dragFunction(square, piece));
+        }
+        // Forza il drag touch se manca (debug/robustezza)
+        if (!piece.element.ontouchstart) {
+            piece.element.ontouchstart = dragFunction ? dragFunction(square, piece) : () => { };
+            console.debug(`[PieceService] Forzato ontouchstart su ${piece.id}`);
         }
 
         if (fade && this.config.fadeTime > 0) {
@@ -150,8 +156,8 @@ export class PieceService {
      */
     movePiece(piece, targetSquare, duration, callback) {
         console.debug(`[PieceService] movePiece: ${piece.id} to ${targetSquare.id}`);
-        if (!piece) {
-            console.warn('PieceService.movePiece: piece is null, skipping animation');
+        if (!piece || !piece.element) {
+            console.warn(`[PieceService] movePiece: piece or element is null, skipping animation`);
             if (callback) callback();
             return;
         }
@@ -207,7 +213,7 @@ export class PieceService {
         };
 
         // Check if piece is currently being dragged
-        const isDragging = move.piece.element.classList.contains('dragging');
+        const isDragging = move.piece.element && move.piece.element.classList.contains('dragging');
 
         if (isDragging) {
             // If piece is being dragged, don't animate - just move it immediately

@@ -43,7 +43,6 @@ export class ChessboardFactory {
             hints: true,
             clickable: true,
             moveHighlight: true,
-            animationStyle: 'simultaneous'
         });
 
         // Tournament template
@@ -54,7 +53,6 @@ export class ChessboardFactory {
             clickable: true,
             moveHighlight: true,
             onlyLegalMoves: true,
-            animationStyle: 'sequential'
         });
 
         // Analysis template
@@ -65,7 +63,6 @@ export class ChessboardFactory {
             clickable: true,
             moveHighlight: true,
             mode: 'analysis',
-            animationStyle: 'simultaneous'
         });
 
         // Puzzle template
@@ -76,7 +73,6 @@ export class ChessboardFactory {
             clickable: true,
             moveHighlight: true,
             onlyLegalMoves: true,
-            animationStyle: 'sequential'
         });
 
         // Demo template
@@ -86,7 +82,6 @@ export class ChessboardFactory {
             hints: false,
             clickable: false,
             moveHighlight: true,
-            animationStyle: 'simultaneous'
         });
     }
 

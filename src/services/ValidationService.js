@@ -32,7 +32,6 @@ const VALID_VALUES = Object.freeze({
     movableColors: ['w', 'b', 'white', 'black', 'both', 'none'],
     dropOffBoard: ['snapback', 'trash'],
     easingTypes: ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'],
-    animationStyles: ['sequential', 'simultaneous'],
     modes: ['normal', 'creative', 'analysis'],
     promotionPieces: ['q', 'r', 'b', 'n', 'Q', 'R', 'B', 'N']
 });
@@ -361,14 +360,6 @@ export class ValidationService {
         return this._validValues.easingTypes.includes(easing);
     }
 
-    /**
-     * Validates animation style
-     * @param {string} style - Animation style to validate
-     * @returns {boolean} True if valid
-     */
-    isValidAnimationStyle(style) {
-        return this._validValues.animationStyles.includes(style);
-    }
 
     /**
      * Validates CSS color format
@@ -565,11 +556,7 @@ export class ValidationService {
         if (config.dropOffBoard && !this.isValidDropOffBoard(config.dropOffBoard)) {
             errors.push(ERROR_MESSAGES.invalid_dropOffBoard + config.dropOffBoard);
         }
-        
-        if (config.animationStyle && !this.isValidAnimationStyle(config.animationStyle)) {
-            errors.push(ERROR_MESSAGES.invalid_animationStyle + config.animationStyle);
-        }
-        
+                
         // Validate callbacks
         const callbacks = ['onMove', 'onMoveEnd', 'onChange', 'onDragStart', 'onDragMove', 'onDrop', 'onSnapbackEnd'];
         for (const callback of callbacks) {

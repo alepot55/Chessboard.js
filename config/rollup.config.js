@@ -20,7 +20,8 @@ export default {
     {
       file: 'dist/chessboard.iife.js', // IIFE per browser
       format: 'iife',
-      name: 'Chessboard'
+      name: 'Chessboard',
+      footer: 'if (window.Chessboard && window.Chessboard.default) { window.Chessboard = window.Chessboard.default; }'
     }
   ],
   plugins: [

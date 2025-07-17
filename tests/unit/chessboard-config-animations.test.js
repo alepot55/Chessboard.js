@@ -87,15 +87,6 @@ describe('ChessboardConfig Animation & Drag Properties', () => {
         expect(() => new ChessboardConfig({ ...baseConfig, dropOffBoard: 'invalid' })).toThrow();
     });
 
-    // --- ANIMATION STYLE ---
-    test('should accept valid animationStyle values', () => {
-        expect(() => new ChessboardConfig({ ...baseConfig, animationStyle: 'simultaneous' })).not.toThrow();
-        expect(() => new ChessboardConfig({ ...baseConfig, animationStyle: 'sequential' })).not.toThrow();
-    });
-    test('should throw error for invalid animationStyle value', () => {
-        expect(() => new ChessboardConfig({ ...baseConfig, animationStyle: 'crazy' })).toThrow();
-    });
-
     // --- EDGE CASES ---
     test('should throw error if id/id_div is missing', () => {
         expect(() => new ChessboardConfig({})).toThrow();

@@ -128,7 +128,6 @@ const ERROR_MESSAGES = Object.freeze({
     invalid_fadeTime: 'Invalid fadeTime: ',
     invalid_fadeAnimation: 'Invalid fadeAnimation: ',
     invalid_ratio: 'Invalid ratio: ',
-    invalid_animationStyle: 'Invalid animationStyle: ',
     animation_failed: 'Animation failed: ',
     
     // Event handlers
@@ -380,7 +379,6 @@ const VALID_VALUES = Object.freeze({
     movableColors: ['w', 'b', 'white', 'black', 'both', 'none'],
     dropOffBoard: ['snapback', 'trash'],
     easingTypes: ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'],
-    animationStyles: ['sequential', 'simultaneous'],
     modes: ['normal', 'creative', 'analysis'],
     promotionPieces: ['q', 'r', 'b', 'n', 'Q', 'R', 'B', 'N']
 });
@@ -709,14 +707,6 @@ class ValidationService {
         return this._validValues.easingTypes.includes(easing);
     }
 
-    /**
-     * Validates animation style
-     * @param {string} style - Animation style to validate
-     * @returns {boolean} True if valid
-     */
-    isValidAnimationStyle(style) {
-        return this._validValues.animationStyles.includes(style);
-    }
 
     /**
      * Validates CSS color format
@@ -913,11 +903,7 @@ class ValidationService {
         if (config.dropOffBoard && !this.isValidDropOffBoard(config.dropOffBoard)) {
             errors.push(ERROR_MESSAGES.invalid_dropOffBoard + config.dropOffBoard);
         }
-        
-        if (config.animationStyle && !this.isValidAnimationStyle(config.animationStyle)) {
-            errors.push(ERROR_MESSAGES.invalid_animationStyle + config.animationStyle);
-        }
-        
+                
         // Validate callbacks
         const callbacks = ['onMove', 'onMoveEnd', 'onChange', 'onDragStart', 'onDragMove', 'onDrop', 'onSnapbackEnd'];
         for (const callback of callbacks) {
@@ -1095,7 +1081,6 @@ const DEFAULT_CONFIG$1 = Object.freeze({
     fadeAnimation: 'ease',
     ratio: 0.9,
     piecesPath: '../assets/themes/default',
-    animationStyle: 'simultaneous',
     simultaneousAnimationDelay: 100,
     onMove: () => true,
     onMoveEnd: () => true,
@@ -1221,7 +1206,6 @@ class ChessboardConfig {
         this.fadeTime = this._setTime(config.fadeTime);
 
         // Animation style properties
-        this.animationStyle = this._validateAnimationStyle(config.animationStyle);
         this.simultaneousAnimationDelay = this._validateDelay(config.simultaneousAnimationDelay);
     }
 
@@ -1282,19 +1266,6 @@ class ChessboardConfig {
         return callback;
     }
 
-    /**
-     * Validates animation style
-     * @private
-     * @param {string} style - Animation style
-     * @returns {string} Validated style
-     * @throws {ConfigurationError} If style is invalid
-     */
-    _validateAnimationStyle(style) {
-        if (!this._validationService.isValidAnimationStyle(style)) {
-            throw new ConfigurationError('Invalid animation style', 'animationStyle', style);
-        }
-        return style;
-    }
 
     /**
      * Validates animation delay
@@ -1432,7 +1403,6 @@ class ChessboardConfig {
             fadeTime: this.fadeTime,
             fadeAnimation: this.fadeAnimation,
             piecesPath: this.piecesPath,
-            animationStyle: this.animationStyle,
             simultaneousAnimationDelay: this.simultaneousAnimationDelay,
             onlyLegalMoves: this.onlyLegalMoves
         };
@@ -4655,8 +4625,14 @@ class PieceService {
         console.debug(`[PieceService] addPieceOnSquare: ${piece.id} to ${square.id}`);
         square.putPiece(piece);
 
+        // Imposta sempre il drag (touch e mouse)
         if (dragFunction) {
             piece.setDrag(dragFunction(square, piece));
+        }
+        // Forza il drag touch se manca (debug/robustezza)
+        if (!piece.element.ontouchstart) {
+            piece.element.ontouchstart = dragFunction ? dragFunction(square, piece) : () => { };
+            console.debug(`[PieceService] Forzato ontouchstart su ${piece.id}`);
         }
 
         if (fade && this.config.fadeTime > 0) {
@@ -4715,8 +4691,8 @@ class PieceService {
      */
     movePiece(piece, targetSquare, duration, callback) {
         console.debug(`[PieceService] movePiece: ${piece.id} to ${targetSquare.id}`);
-        if (!piece) {
-            console.warn('PieceService.movePiece: piece is null, skipping animation');
+        if (!piece || !piece.element) {
+            console.warn(`[PieceService] movePiece: piece or element is null, skipping animation`);
             if (callback) callback();
             return;
         }
@@ -4772,7 +4748,7 @@ class PieceService {
         };
 
         // Check if piece is currently being dragged
-        const isDragging = move.piece.element.classList.contains('dragging');
+        const isDragging = move.piece.element && move.piece.element.classList.contains('dragging');
 
         if (isDragging) {
             // If piece is being dragged, don't animate - just move it immediately
@@ -7497,7 +7473,7 @@ let Chessboard$1 = class Chessboard {
                 const capturedPiece = move.to.piece;
 
                 // For castle moves in simultaneous mode, we need to coordinate both animations
-                if (isCastleMove && this.config.animationStyle === 'simultaneous') {
+                if (isCastleMove) {
                     // Start king animation
                     this.pieceService.translatePiece(
                         move,
@@ -7722,147 +7698,123 @@ let Chessboard$1 = class Chessboard {
     }
 
     /**
-     * Performs the actual board update
+     * Aggiorna i pezzi sulla scacchiera con animazione e delay configurabile (greedy matching)
      * @private
-     * @param {boolean} [animation=false] - Whether to animate
-     * @param {boolean} [isPositionLoad=false] - Whether this is a position load (affects delay)
+     * @param {boolean} [animation=false] - Se animare
+     * @param {boolean} [isPositionLoad=false] - Se è un caricamento posizione (delay 0)
      */
     _doUpdateBoardPieces(animation = false, isPositionLoad = false) {
-        // Blocca update se un drag è in corso
         if (this._isDragging) return;
-        // Skip update if we're in the middle of a promotion
-        if (this._isPromoting) {
-            return;
-        }
-        if (!this.positionService || !this.positionService.getGame()) {
-            return;
-        }
+        if (this._isPromoting) return;
+        if (!this.positionService || !this.positionService.getGame()) return;
         const squares = this.boardService.getAllSquares();
         const gameStateBefore = this.positionService.getGame().fen();
         if (/^8\/8\/8\/8\/8\/8\/8\/8/.test(gameStateBefore)) {
             const boardContainer = document.getElementById(this.config.id_div);
             if (boardContainer) {
                 const pieceElements = boardContainer.querySelectorAll('.piece');
-                pieceElements.forEach(element => {
-                    element.remove();
-                });
+                pieceElements.forEach(element => element.remove());
             }
-            Object.values(squares).forEach(sq => {
-                if (sq && sq.piece) {
-                    sq.piece = null;
-                }
-            });
+            Object.values(squares).forEach(sq => { if (sq && sq.piece) sq.piece = null; });
             this._clearVisualState();
             this._addListeners();
             if (this.config.onChange) this.config.onChange(gameStateBefore);
             return;
         }
-        const useSimultaneous = this.config.animationStyle === 'simultaneous';
-        if (useSimultaneous) {
-            this._doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad);
-        } else {
-            this._doSequentialUpdate(squares, gameStateBefore, animation);
-        }
-        // Pulizia finale robusta: rimuovi tutti i pezzi orfani dal DOM e dal riferimento JS
-        Object.values(this.boardService.getAllSquares()).forEach(square => {
-            const expectedPieceId = this.positionService.getGamePieceId(square.id);
-            if (!expectedPieceId && typeof square.forceRemoveAllPieces === 'function') {
-                square.forceRemoveAllPieces();
-            }
-        });
-    }
 
-    /**
-     * Performs sequential piece updates (original behavior)
-     * @private
-     * @param {Object} squares - All squares
-     * @param {string} gameStateBefore - Game state before update
-     * @param {boolean} animation - Whether to animate
-     */
-    _doSequentialUpdate(squares, gameStateBefore, animation) {
-        // Mappa: squareId -> expectedPieceId
-        const expectedMap = {};
-        Object.values(squares).forEach(square => {
-            expectedMap[square.id] = this.positionService.getGamePieceId(square.id);
-        });
-
-        Object.values(squares).forEach(square => {
-            const expectedPieceId = expectedMap[square.id];
-            const currentPiece = square.piece;
-            const currentPieceId = currentPiece ? currentPiece.getId() : null;
-
-            // Se il pezzo attuale e quello atteso sono identici, non fare nulla
-            if (currentPieceId === expectedPieceId) {
-                return;
-            }
-
-            // Se c'è un pezzo attuale ma non è quello atteso, rimuovilo
-            if (currentPiece && currentPieceId !== expectedPieceId) {
-                // Rimozione robusta: elimina tutti i pezzi orfani dal DOM e dal riferimento JS
-                if (typeof square.forceRemoveAllPieces === 'function') {
-                    square.forceRemoveAllPieces();
-                } else {
-                    this.pieceService.removePieceFromSquare(square, animation);
-                }
-            }
-
-            // Se c'è un pezzo atteso ma non è quello attuale, aggiungilo
-            if (expectedPieceId && currentPieceId !== expectedPieceId) {
-                const newPiece = this.pieceService.convertPiece(expectedPieceId);
-                this.pieceService.addPieceOnSquare(
-                    square,
-                    newPiece,
-                    animation,
-                    this._createDragFunction.bind(this)
-                );
-            }
-        });
-
-        this._addListeners();
-        const gameStateAfter = this.positionService.getGame().fen();
-        if (gameStateBefore !== gameStateAfter) {
-            this.config.onChange(gameStateAfter);
-        }
-    }
-
-    /**
-     * Performs simultaneous piece updates
-     * @private
-     * @param {Object} squares - All squares
-     * @param {string} gameStateBefore - Game state before update
-     * @param {boolean} [isPositionLoad=false] - Whether this is a position load
-     */
-    _doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad = false) {
-        // Matching greedy per distanza minima, robusto
+        // --- Matching greedy tra attuale e atteso ---
         const currentMap = {};
         const expectedMap = {};
-
         Object.values(squares).forEach(square => {
             const currentPiece = square.piece;
             const expectedPieceId = this.positionService.getGamePieceId(square.id);
             if (currentPiece) {
-                // Normalizza la chiave come 'color+type' lowercase
                 const key = (currentPiece.color + currentPiece.type).toLowerCase();
                 if (!currentMap[key]) currentMap[key] = [];
-                currentMap[key].push({ square, id: square.id });
+                currentMap[key].push({ square, id: square.id, piece: currentPiece });
             }
             if (expectedPieceId) {
-                // Normalizza la chiave come 'color+type' lowercase
                 const key = expectedPieceId.toLowerCase();
                 if (!expectedMap[key]) expectedMap[key] = [];
                 expectedMap[key].push({ square, id: square.id });
             }
         });
-
-        let animationsCompleted = 0;
+        const animationDelay = isPositionLoad ? 0 : this.config.simultaneousAnimationDelay || 0;
         let totalAnimations = 0;
-        const animationDelay = isPositionLoad ? 0 : this.config.simultaneousAnimationDelay;
-        let animationIndex = 0;
+        let animationsCompleted = 0;
 
+        // 1. Matching greedy: trova i movimenti
+        const moves = [];
+        const fromMatched = {};
+        const toMatched = {};
+        const unchanged = [];
         Object.keys(expectedMap).forEach(key => {
-            totalAnimations += Math.max((currentMap[key] || []).length, expectedMap[key].length);
+            const fromList = (currentMap[key] || []).slice();
+            const toList = expectedMap[key].slice();
+            const localFromMatched = new Array(fromList.length).fill(false);
+            const localToMatched = new Array(toList.length).fill(false);
+            // Matrice delle distanze
+            const distances = [];
+            for (let i = 0; i < fromList.length; i++) {
+                distances[i] = [];
+                for (let j = 0; j < toList.length; j++) {
+                    distances[i][j] = Math.abs(fromList[i].square.row - toList[j].square.row) +
+                        Math.abs(fromList[i].square.col - toList[j].square.col);
+                }
+            }
+            while (true) {
+                let minDist = Infinity, minI = -1, minJ = -1;
+                for (let i = 0; i < fromList.length; i++) {
+                    if (localFromMatched[i]) continue;
+                    for (let j = 0; j < toList.length; j++) {
+                        if (localToMatched[j]) continue;
+                        if (distances[i][j] < minDist) {
+                            minDist = distances[i][j];
+                            minI = i;
+                            minJ = j;
+                        }
+                    }
+                }
+                if (minI === -1 || minJ === -1) break;
+                // Se la posizione è la stessa E il Piece è lo stesso oggetto, non fare nulla (pezzo unchanged)
+                if (fromList[minI].square === toList[minJ].square && squares[toList[minJ].square.id].piece === fromList[minI].piece) {
+                    unchanged.push({ square: fromList[minI].square, piece: fromList[minI].piece });
+                    localFromMatched[minI] = true;
+                    localToMatched[minJ] = true;
+                    fromMatched[fromList[minI].square.id] = true;
+                    toMatched[toList[minJ].square.id] = true;
+                    continue;
+                }
+                // Altrimenti, sposta il pezzo
+                moves.push({ from: fromList[minI].square, to: toList[minJ].square, piece: fromList[minI].piece });
+                localFromMatched[minI] = true;
+                localToMatched[minJ] = true;
+                fromMatched[fromList[minI].square.id] = true;
+                toMatched[toList[minJ].square.id] = true;
+            }
         });
 
+        // 2. Rimozione: pezzi presenti solo in attuale (non matched)
+        const removes = [];
+        Object.keys(currentMap).forEach(key => {
+            currentMap[key].forEach(({ square, piece }) => {
+                if (!fromMatched[square.id]) {
+                    removes.push({ square, piece });
+                }
+            });
+        });
+
+        // 3. Aggiunta: pezzi presenti solo in atteso (non matched)
+        const adds = [];
+        Object.keys(expectedMap).forEach(key => {
+            expectedMap[key].forEach(({ square, id }) => {
+                if (!toMatched[square.id]) {
+                    adds.push({ square, pieceId: key });
+                }
+            });
+        });
+
+        totalAnimations = moves.length + removes.length + adds.length;
         if (totalAnimations === 0) {
             this._addListeners();
             const gameStateAfter = this.positionService.getGame().fen();
@@ -7872,9 +7824,21 @@ let Chessboard$1 = class Chessboard {
             return;
         }
 
+        // Debug: logga i pezzi unchanged
+        if (unchanged.length > 0) {
+            console.debug('[Chessboard] Unchanged pieces:', unchanged.map(u => u.piece.id + '@' + u.square.id));
+        }
+
         const onAnimationComplete = () => {
             animationsCompleted++;
             if (animationsCompleted === totalAnimations) {
+                // Pulizia finale robusta: rimuovi tutti i pezzi orfani dal DOM e dal riferimento JS
+                Object.values(this.boardService.getAllSquares()).forEach(square => {
+                    const expectedPieceId = this.positionService.getGamePieceId(square.id);
+                    if (!expectedPieceId && typeof square.forceRemoveAllPieces === 'function') {
+                        square.forceRemoveAllPieces();
+                    }
+                });
                 this._addListeners();
                 const gameStateAfter = this.positionService.getGame().fen();
                 if (gameStateBefore !== gameStateAfter) {
@@ -7883,97 +7847,40 @@ let Chessboard$1 = class Chessboard {
             }
         };
 
-        Object.keys(expectedMap).forEach(key => {
-            const fromList = (currentMap[key] || []).slice();
-            const toList = expectedMap[key].slice();
-
-            // 1. Costruisci matrice delle distanze
-            const distances = [];
-            for (let i = 0; i < fromList.length; i++) {
-                distances[i] = [];
-                for (let j = 0; j < toList.length; j++) {
-                    distances[i][j] = Math.abs(fromList[i].square.row - toList[j].square.row) +
-                        Math.abs(fromList[i].square.col - toList[j].square.col);
+        // 4. Esegui tutte le animazioni con delay
+        let idx = 0;
+        moves.forEach(move => {
+            setTimeout(() => {
+                this.pieceService.translatePiece(
+                    move,
+                    false,
+                    animation,
+                    this._createDragFunction.bind(this),
+                    onAnimationComplete
+                );
+            }, idx++ * animationDelay);
+        });
+        removes.forEach(op => {
+            setTimeout(() => {
+                if (typeof op.square.forceRemoveAllPieces === 'function') {
+                    op.square.forceRemoveAllPieces();
+                    onAnimationComplete();
+                } else {
+                    this.pieceService.removePieceFromSquare(op.square, animation, onAnimationComplete);
                 }
-            }
-
-            // 2. Matching greedy: abbina i più vicini
-            const fromMatched = new Array(fromList.length).fill(false);
-            const toMatched = new Array(toList.length).fill(false);
-            const moves = [];
-
-            while (true) {
-                let minDist = Infinity, minI = -1, minJ = -1;
-                for (let i = 0; i < fromList.length; i++) {
-                    if (fromMatched[i]) continue;
-                    for (let j = 0; j < toList.length; j++) {
-                        if (toMatched[j]) continue;
-                        if (distances[i][j] < minDist) {
-                            minDist = distances[i][j];
-                            minI = i;
-                            minJ = j;
-                        }
-                    }
-                }
-                if (minI === -1 || minJ === -1) break;
-                // Se la posizione è la stessa, non fare nulla (pezzo unchanged)
-                if (fromList[minI].square === toList[minJ].square) {
-                    fromMatched[minI] = true;
-                    toMatched[minJ] = true;
-                    continue;
-                }
-                // Altrimenti, sposta il pezzo
-                moves.push({ from: fromList[minI].square, to: toList[minJ].square, piece: fromList[minI].square.piece });
-                fromMatched[minI] = true;
-                toMatched[minJ] = true;
-            }
-
-            // 3. Rimuovi i pezzi non abbinati (presenti solo in fromList)
-            for (let i = 0; i < fromList.length; i++) {
-                if (!fromMatched[i]) {
-                    setTimeout(() => {
-                        // Rimozione robusta: elimina tutti i pezzi orfani dal DOM e dal riferimento JS
-                        if (typeof fromList[i].square.forceRemoveAllPieces === 'function') {
-                            fromList[i].square.forceRemoveAllPieces();
-                        } else {
-                            this.pieceService.removePieceFromSquare(fromList[i].square, true, onAnimationComplete);
-                        }
-                        onAnimationComplete();
-                    }, animationIndex * animationDelay);
-                    animationIndex++;
-                }
-            }
-
-            // 4. Aggiungi i pezzi non abbinati (presenti solo in toList)
-            for (let j = 0; j < toList.length; j++) {
-                if (!toMatched[j]) {
-                    setTimeout(() => {
-                        const newPiece = this.pieceService.convertPiece(key);
-                        this.pieceService.addPieceOnSquare(
-                            toList[j].square,
-                            newPiece,
-                            true,
-                            this._createDragFunction.bind(this),
-                            onAnimationComplete
-                        );
-                    }, animationIndex * animationDelay);
-                    animationIndex++;
-                }
-            }
-
-            // 5. Anima i movimenti
-            moves.forEach(move => {
-                setTimeout(() => {
-                    this.pieceService.translatePiece(
-                        move,
-                        false,
-                        true,
-                        this._createDragFunction.bind(this),
-                        onAnimationComplete
-                    );
-                }, animationIndex * animationDelay);
-                animationIndex++;
-            });
+            }, idx++ * animationDelay);
+        });
+        adds.forEach(op => {
+            setTimeout(() => {
+                const newPiece = this.pieceService.convertPiece(op.pieceId);
+                this.pieceService.addPieceOnSquare(
+                    op.square,
+                    newPiece,
+                    animation,
+                    this._createDragFunction.bind(this),
+                    onAnimationComplete
+                );
+            }, idx++ * animationDelay);
         });
     }
 
@@ -8911,23 +8818,6 @@ let Chessboard$1 = class Chessboard {
     }
 
     /**
-     * Gets or sets the animation style
-     * @param {string} [style] - New animation style ('sequential' or 'simultaneous')
-     * @returns {string} Current animation style
-     */
-    animationStyle(style) {
-        if (style === undefined) {
-            return this.config.animationStyle;
-        }
-
-        if (this.validationService.isValidAnimationStyle(style)) {
-            this.config.animationStyle = style;
-        }
-
-        return this.config.animationStyle;
-    }
-
-    /**
      * Gets or sets the simultaneous animation delay
      * @param {number} [delay] - New delay in milliseconds
      * @returns {number} Current delay
@@ -9494,7 +9384,6 @@ class ChessboardFactory {
             hints: true,
             clickable: true,
             moveHighlight: true,
-            animationStyle: 'simultaneous'
         });
 
         // Tournament template
@@ -9505,7 +9394,6 @@ class ChessboardFactory {
             clickable: true,
             moveHighlight: true,
             onlyLegalMoves: true,
-            animationStyle: 'sequential'
         });
 
         // Analysis template
@@ -9516,7 +9404,6 @@ class ChessboardFactory {
             clickable: true,
             moveHighlight: true,
             mode: 'analysis',
-            animationStyle: 'simultaneous'
         });
 
         // Puzzle template
@@ -9527,7 +9414,6 @@ class ChessboardFactory {
             clickable: true,
             moveHighlight: true,
             onlyLegalMoves: true,
-            animationStyle: 'sequential'
         });
 
         // Demo template
@@ -9537,7 +9423,6 @@ class ChessboardFactory {
             hints: false,
             clickable: false,
             moveHighlight: true,
-            animationStyle: 'simultaneous'
         });
     }
 
@@ -10345,11 +10230,7 @@ function validateConfig(config) {
     if (config.moveAnimation && !isValidEasing(config.moveAnimation)) {
         errors.push('Invalid moveAnimation. Must be a valid easing function');
     }
-    
-    if (config.animationStyle && !['sequential', 'simultaneous'].includes(config.animationStyle)) {
-        errors.push('Invalid animationStyle. Must be "sequential" or "simultaneous"');
-    }
-    
+        
     return {
         success: errors.length === 0,
         errors

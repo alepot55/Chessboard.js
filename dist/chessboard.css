@@ -107,26 +107,22 @@
     box-shadow: inset 0 0 10px var(--highlightSquare);
 }/* Piece-specific styles */
 .piece {
-  position: relative;
+  position: absolute;
   cursor: pointer;
   /* Solo transizioni specifiche, non "all" */
   transition: opacity var(--fade-time, 150ms) var(--fade-animation, ease);
   z-index: 10;
   /* Hint al browser per ottimizzazioni */
   will-change: auto;
-  width: 100%;
-  height: 100%;
 }
 
 .piece.dragging {
-  position: absolute;
   z-index: 100;
   /* Disabilita completamente le transizioni durante il drag */
   transition: none !important;
   /* Hint per ottimizzazione durante drag */
   will-change: left, top;
-  /* Scala visiva senza interferire con il posizionamento */
-  transform: scale(1.1);
+  /* Rimuovo l'ingrandimento che causava problemi visivi */
 }
 
 .piece.fading {
@@ -137,6 +133,32 @@
 .piece.moving {
   /* Solo transizione per transform, non position */
   transition: transform var(--move-time, 200ms) var(--move-animation, ease);
+}
+
+/* Piece replacement during promotion - no transitions to avoid flickering */
+.piece.replacing {
+  transition: none !important;
+  opacity: 1;
+  transform: none;
+}
+
+/* Piece transformation during promotion - smooth scaling animation */
+.piece.transforming {
+  transition: none !important;
+  transform-origin: center center;
+  will-change: transform, opacity;
+  z-index: 50;
+}
+
+/* Subtle bounce effect after transformation */
+.piece.transform-complete {
+  animation: transformBounce 0.4s ease-out;
+}
+
+@keyframes transformBounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 /* Piece sizing */

@@ -8,12 +8,9 @@
   "type": "module",
   "scripts": {
     "dev": "rollup -c config/rollup.config.js --watch",
-    "build": "rollup -c config/rollup.config.js",
-    "build:all": "npm run build:esm && npm run build:cjs && npm run build:umd && npm run build:iife",
-    "build:esm": "rollup -c config/rollup.config.js --format esm",
-    "build:cjs": "rollup -c config/rollup.config.js --format cjs",
-    "build:umd": "rollup -c config/rollup.config.js --format umd",
-    "build:iife": "rollup -c config/rollup.config.js --format iife",
+    "build:css": "cat src/styles/board.css src/styles/pieces.css src/styles/animations.css > dist/chessboard.css",
+    "build:rollup": "rollup -c config/rollup.config.js",
+    "build": "npm run build:css && npm run build:rollup",
     "test": "jest --config config/jest.config.js",
     "test:watch": "jest --config config/jest.config.js --watch",
     "test:coverage": "jest --config config/jest.config.js --coverage",
@@ -46,6 +43,7 @@
     "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "rollup": "^4.34.7"
+    "rollup": "^4.34.7",
+    "terser": "^5.43.1"
   }
 }

@@ -75,7 +75,6 @@ const DEFAULT_CONFIG = Object.freeze({
     fadeAnimation: 'ease',
     ratio: 0.9,
     piecesPath: '../assets/themes/default',
-    animationStyle: 'simultaneous',
     simultaneousAnimationDelay: 100,
     onMove: () => true,
     onMoveEnd: () => true,
@@ -201,7 +200,6 @@ class ChessboardConfig {
         this.fadeTime = this._setTime(config.fadeTime);
 
         // Animation style properties
-        this.animationStyle = this._validateAnimationStyle(config.animationStyle);
         this.simultaneousAnimationDelay = this._validateDelay(config.simultaneousAnimationDelay);
     }
 
@@ -262,19 +260,6 @@ class ChessboardConfig {
         return callback;
     }
 
-    /**
-     * Validates animation style
-     * @private
-     * @param {string} style - Animation style
-     * @returns {string} Validated style
-     * @throws {ConfigurationError} If style is invalid
-     */
-    _validateAnimationStyle(style) {
-        if (!this._validationService.isValidAnimationStyle(style)) {
-            throw new ConfigurationError('Invalid animation style', 'animationStyle', style);
-        }
-        return style;
-    }
 
     /**
      * Validates animation delay
@@ -412,7 +397,6 @@ class ChessboardConfig {
             fadeTime: this.fadeTime,
             fadeAnimation: this.fadeAnimation,
             piecesPath: this.piecesPath,
-            animationStyle: this.animationStyle,
             simultaneousAnimationDelay: this.simultaneousAnimationDelay,
             onlyLegalMoves: this.onlyLegalMoves
         };

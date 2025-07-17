@@ -201,10 +201,22 @@ class Piece {
 
     setDrag(f) {
         if (!this.element) { console.debug(`[Piece] setDrag: ${this.id} - element is null`); return; }
+        // Remove previous handlers
+        this.element.onmousedown = null;
+        this.element.ontouchstart = null;
+        this.element.ondragstart = null;
+        if (window.PointerEvent) {
+            this.element.onpointerdown = null;
+        }
+        // Set new handlers
         this.element.ondragstart = (e) => { e.preventDefault() };
         this.element.onmousedown = f;
         this.element.ontouchstart = f; // Drag touch
-        console.debug(`[Piece] setDrag: ${this.id}`);
+        if (window.PointerEvent) {
+            this.element.onpointerdown = f;
+            console.debug(`[Piece] setDrag: pointerdown set for ${this.id}`);
+        }
+        console.debug(`[Piece] setDrag: mousedown/ontouchstart set for ${this.id}`);
     }
 
     destroy() {

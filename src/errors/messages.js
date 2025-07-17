@@ -61,6 +61,7 @@ export const ERROR_MESSAGES = Object.freeze({
     invalid_fadeTime: 'Invalid fadeTime: ',
     invalid_fadeAnimation: 'Invalid fadeAnimation: ',
     invalid_ratio: 'Invalid ratio: ',
+    invalid_animationStyle: 'Invalid animationStyle: ',
     animation_failed: 'Animation failed: ',
     
     // Event handlers

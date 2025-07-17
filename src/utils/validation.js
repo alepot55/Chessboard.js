@@ -326,7 +326,11 @@ export function validateConfig(config) {
     if (config.moveAnimation && !isValidEasing(config.moveAnimation)) {
         errors.push('Invalid moveAnimation. Must be a valid easing function');
     }
-        
+    
+    if (config.animationStyle && !['sequential', 'simultaneous'].includes(config.animationStyle)) {
+        errors.push('Invalid animationStyle. Must be "sequential" or "simultaneous"');
+    }
+    
     return {
         success: errors.length === 0,
         errors

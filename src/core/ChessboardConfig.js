@@ -75,7 +75,8 @@ const DEFAULT_CONFIG = Object.freeze({
     fadeAnimation: 'ease',
     ratio: 0.9,
     piecesPath: '../assets/themes/default',
-    simultaneousAnimationDelay: 100,
+    animationStyle: 'simultaneous',
+    simultaneousAnimationDelay: 0,
     onMove: () => true,
     onMoveEnd: () => true,
     onChange: () => true,
@@ -109,19 +110,19 @@ class ChessboardConfig {
     constructor(settings = {}) {
         // Initialize validation service
         this._validationService = new ValidationService();
-
+        
         // Validate input
         this._validateInput(settings);
-
+        
         // Merge with defaults
         const config = this._mergeWithDefaults(settings);
-
+        
         // Process and validate configuration
         this._processConfiguration(config);
-
+        
         // Set CSS properties
         this._setCSSProperties(config);
-
+        
         // Configure mode-specific settings
         this._configureModeSettings();
     }
@@ -136,7 +137,7 @@ class ChessboardConfig {
         if (settings !== null && typeof settings !== 'object') {
             throw new ConfigurationError('Settings must be an object', 'settings', settings);
         }
-
+        
         // Validate using validation service
         try {
             this._validationService.validateConfig(settings);
@@ -170,7 +171,7 @@ class ChessboardConfig {
         this.size = config.size;
         this.movableColors = config.movableColors;
         this.piecesPath = config.piecesPath;
-
+        
         // Event handlers
         this.onMove = this._validateCallback(config.onMove);
         this.onMoveEnd = this._validateCallback(config.onMoveEnd);
@@ -198,8 +199,9 @@ class ChessboardConfig {
         this.snapbackTime = this._setTime(config.snapbackTime);
         this.dropCenterTime = this._setTime(config.dropCenterTime);
         this.fadeTime = this._setTime(config.fadeTime);
-
+        
         // Animation style properties
+        this.animationStyle = this._validateAnimationStyle(config.animationStyle);
         this.simultaneousAnimationDelay = this._validateDelay(config.simultaneousAnimationDelay);
     }
 
@@ -260,6 +262,19 @@ class ChessboardConfig {
         return callback;
     }
 
+    /**
+     * Validates animation style
+     * @private
+     * @param {string} style - Animation style
+     * @returns {string} Validated style
+     * @throws {ConfigurationError} If style is invalid
+     */
+    _validateAnimationStyle(style) {
+        if (!this._validationService.isValidAnimationStyle(style)) {
+            throw new ConfigurationError('Invalid animation style', 'animationStyle', style);
+        }
+        return style;
+    }
 
     /**
      * Validates animation delay
@@ -317,11 +332,11 @@ class ChessboardConfig {
             }
             return value;
         }
-
+        
         if (typeof value === 'string' && value in ANIMATION_TIMES) {
             return ANIMATION_TIMES[value];
         }
-
+        
         throw new ConfigurationError('Invalid time value', 'time', value);
     }
 
@@ -336,11 +351,11 @@ class ChessboardConfig {
         if (typeof value === 'boolean') {
             return value;
         }
-
+        
         if (value in BOOLEAN_VALUES) {
             return BOOLEAN_VALUES[value];
         }
-
+        
         throw new ConfigurationError('Invalid boolean value', 'boolean', value);
     }
 
@@ -356,17 +371,17 @@ class ChessboardConfig {
         if (typeof value === 'boolean') {
             return value ? TRANSITION_FUNCTIONS.ease : null;
         }
-
+        
         // Handle string values
         if (typeof value === 'string' && value in TRANSITION_FUNCTIONS) {
             return TRANSITION_FUNCTIONS[value];
         }
-
+        
         // Handle null/undefined
         if (value === null || value === undefined) {
             return null;
         }
-
+        
         throw new ConfigurationError('Invalid transition function', 'transitionFunction', value);
     }
 
@@ -397,6 +412,7 @@ class ChessboardConfig {
             fadeTime: this.fadeTime,
             fadeAnimation: this.fadeAnimation,
             piecesPath: this.piecesPath,
+            animationStyle: this.animationStyle,
             simultaneousAnimationDelay: this.simultaneousAnimationDelay,
             onlyLegalMoves: this.onlyLegalMoves
         };
@@ -418,7 +434,7 @@ class ChessboardConfig {
 
         // Apply updates
         const newConfig = Object.assign({}, this.toObject(), updates);
-
+        
         // Re-process configuration
         this._processConfiguration(newConfig);
         this._setCSSProperties(newConfig);
@@ -438,5 +454,4 @@ class ChessboardConfig {
     }
 }
 
-export { ChessboardConfig };
 export default ChessboardConfig;

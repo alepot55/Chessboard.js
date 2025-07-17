@@ -5,7 +5,7 @@
  * @since 2.0.0
  */
 
-import ChessboardClass from './Chessboard.js';
+import ChessboardClass, { Chessboard } from './Chessboard.js';
 import ChessboardConfig from './ChessboardConfig.js';
 import {
     ChessboardFactory,
@@ -22,7 +22,7 @@ import { logger } from '../utils/logger.js';
  * @param {Object} [config={}] - Configuration options (when first param is string)
  * @returns {ChessboardClass} Chessboard instance
  */
-function Chessboard(containerElm, config = {}) {
+function createChessboardInstance(containerElm, config = {}) {
     const factoryLogger = logger.child('ChessboardFactory');
 
     try {
@@ -81,55 +81,35 @@ class ChessboardWrapper extends ChessboardClass {
     }
 }
 
-/**
- * Refactored Chessboard API - see Chessboard.js for full method docs
- * @typedef {import('./Chessboard.js').Chessboard} Chessboard
- */
-
-// --- STATIC/FACTORY METHODS ---
-/**
- * Create a new Chessboard instance
- * @param {string|Object} containerElm
- * @param {Object} [config]
- * @returns {Chessboard}
- */
-Chessboard.create = createChessboard;
-/**
- * Create a Chessboard from a template
- * @param {string|Object} containerElm
- * @param {string} templateName
- * @param {Object} [config]
- * @returns {Chessboard}
- */
-Chessboard.fromTemplate = createChessboardFromTemplate;
-Chessboard.factory = chessboardFactory;
-
-// --- INSTANCE MANAGEMENT ---
-Chessboard.getInstance = (containerId) => chessboardFactory.getInstance(containerId);
-Chessboard.destroyInstance = (containerId) => chessboardFactory.destroy(containerId);
-Chessboard.destroyAll = () => chessboardFactory.destroyAll();
-Chessboard.listInstances = () => chessboardFactory.listInstances();
-
-// --- TEMPLATE MANAGEMENT ---
-Chessboard.registerTemplate = (name, config) => chessboardFactory.registerTemplate(name, config);
-Chessboard.removeTemplate = (name) => chessboardFactory.removeTemplate(name);
-Chessboard.getTemplate = (name) => chessboardFactory.getTemplate(name);
-Chessboard.listTemplates = () => chessboardFactory.listTemplates();
-
-// --- STATS & DEBUG ---
-Chessboard.getStats = () => chessboardFactory.getStats();
-
-// --- DEPRECATED/LEGACY ALIASES ---
-/**
- * @deprecated Use Chessboard.create instead
- */
+// Attach classes and utilities to the factory function for direct access
 Chessboard.Class = ChessboardWrapper;
 Chessboard.Chessboard = ChessboardWrapper;
 Chessboard.Config = ChessboardConfig;
 Chessboard.Factory = ChessboardFactory;
 
-// --- EXPORTS ---
+// Attach factory methods
+Chessboard.create = createChessboard;
+Chessboard.createFromTemplate = createChessboardFromTemplate;
+Chessboard.factory = chessboardFactory;
+
+// Static methods for instance management
+Chessboard.getInstance = (containerId) => chessboardFactory.getInstance(containerId);
+Chessboard.destroyInstance = (containerId) => chessboardFactory.destroy(containerId);
+Chessboard.destroyAll = () => chessboardFactory.destroyAll();
+Chessboard.listInstances = () => chessboardFactory.listInstances();
+
+// Template management
+Chessboard.registerTemplate = (name, config) => chessboardFactory.registerTemplate(name, config);
+Chessboard.removeTemplate = (name) => chessboardFactory.removeTemplate(name);
+Chessboard.getTemplate = (name) => chessboardFactory.getTemplate(name);
+Chessboard.listTemplates = () => chessboardFactory.listTemplates();
+
+// Statistics and debugging
+Chessboard.getStats = () => chessboardFactory.getStats();
+
+// Export the main classes and utilities
 export {
+    createChessboardInstance,
     Chessboard,
     ChessboardConfig,
     ChessboardFactory,
@@ -138,4 +118,5 @@ export {
     createChessboardFromTemplate
 };
 
+// Default export for convenience
 export default Chessboard;

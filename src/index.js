@@ -8,13 +8,13 @@
  */
 
 // Core components
-export { 
-    Chessboard, 
-    ChessboardConfig, 
+export {
+    Chessboard,
+    ChessboardConfig,
     ChessboardFactory,
     chessboardFactory,
     createChessboard,
-    createChessboardFromTemplate 
+    createChessboardFromTemplate
 } from './core/index.js';
 
 // Component exports
@@ -23,7 +23,7 @@ export { default as Piece } from './components/Piece.js';
 export { default as Move } from './components/Move.js';
 
 // Service exports for advanced usage
-export { 
+export {
     AnimationService,
     BoardService,
     CoordinateService,
@@ -38,9 +38,9 @@ export {
 export * from './constants/index.js';
 
 // Error handling exports
-export { 
-    ChessboardError, 
-    ValidationError, 
+export {
+    ChessboardError,
+    ValidationError,
     ConfigurationError,
     MoveError,
     DOMError,
@@ -49,7 +49,7 @@ export {
 
 // Utility exports
 export { Chess, validateFen } from './utils/chess.js';
-export { 
+export {
     PerformanceMonitor,
     throttle,
     debounce,
@@ -61,7 +61,7 @@ export {
     getMemoryUsage
 } from './utils/performance.js';
 export * from './utils/coordinates.js';
-export { 
+export {
     isValidPiece,
     isValidPosition,
     validateFenFormat,
@@ -74,7 +74,7 @@ export {
 export * from './utils/animations.js';
 
 // Logging system exports
-export { 
+export {
     Logger,
     logger,
     createLogger,
@@ -82,8 +82,8 @@ export {
 } from './utils/logger.js';
 
 // Default export for IIFE compatibility
-import { Chessboard as ChessboardClass } from './core/index.js';
-export default ChessboardClass;
+import { Chessboard } from './core/index.js';
+export default Chessboard;
 
 // Version information
 export const version = '2.2.1';

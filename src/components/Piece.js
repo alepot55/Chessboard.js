@@ -199,15 +199,30 @@ class Piece {
 
     setDrag(f) {
         if (!this.element) { console.debug(`[Piece] setDrag: ${this.id} - element is null`); return; }
+        
+        // Remove any existing drag handlers first
+        if (this._dragHandler) {
+            this.element.removeEventListener('mousedown', this._dragHandler);
+        }
+        
         this.element.ondragstart = (e) => { e.preventDefault() };
-        this.element.onmousedown = f;
+        
+        // Use the drag function directly without timeout
+        this._dragHandler = f;
+        this.element.addEventListener('mousedown', this._dragHandler);
         console.debug(`[Piece] setDrag: ${this.id}`);
     }
 
     destroy() {
         console.debug(`[Piece] Destroy: ${this.id}`);
+        
         // Remove all event listeners
         if (this.element) {
+            if (this._dragHandler) {
+                this.element.removeEventListener('mousedown', this._dragHandler);
+                this._dragHandler = null;
+            }
+            
             this.element.onmousedown = null;
             this.element.ondragstart = null;
 

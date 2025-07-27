@@ -9,6 +9,7 @@ import { DragOptimizations } from '../utils/cross-browser.js';
 import { ValidationError } from '../errors/ChessboardError.js';
 import Move from '../components/Move.js';
 import Piece from '../components/Piece.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Service responsible for event handling and user interactions
@@ -30,12 +31,12 @@ export class EventService {
         this.coordinateService = coordinateService;
         this.chessboard = chessboard;
 
-        // State management
         this.clicked = null;
-        this.promoting = false;
+        this.isDragging = false;
         this.isAnimating = false;
+        this.promoting = false;
+        this._isProcessingDrop = false;
 
-        // Event listeners storage for cleanup
         this.eventListeners = new Map();
     }
 
@@ -84,6 +85,11 @@ export class EventService {
         const handleClick = (e) => {
             e.stopPropagation();
             if (this.config.clickable && !this.isAnimating) {
+                // Cancel any pending drag operations on pieces in this square
+                if (square.piece && square.piece._dragTimeout) {
+                    clearTimeout(square.piece._dragTimeout);
+                    square.piece._dragTimeout = null;
+                }
                 onSquareClick(square);
             }
         };
@@ -118,12 +124,17 @@ export class EventService {
      * @returns {Function} Drag event handler
      */
     createDragFunction(square, piece, onDragStart, onDragMove, onDrop, onSnapback, onMove, onRemove) {
+        console.log('Creating drag function for:', square.id, piece ? `${piece.color}${piece.type}` : 'null');
+        
         return (event) => {
             event.preventDefault();
 
-            if (!this.config.draggable || !piece || this.isAnimating) {
+            if (!this.config.draggable || !piece || this.isAnimating || this.isDragging) {
                 return;
             }
+
+            // Set dragging state immediately
+            this.isDragging = true;
 
             const originalFrom = square;
             let isDragging = false;
@@ -176,14 +187,9 @@ export class EventService {
                 if (!isDragging && (deltaX > 3 || deltaY > 3)) {
                     isDragging = true;
 
-                    // Set up drag state
-                    if (!this.config.clickable) {
-                        this.clicked = null;
-                        this.clicked = from;
-                    } else if (!this.clicked) {
-                        this.clicked = from;
-                    }
-
+                    // During drag, we don't need to manage clicked state
+                    // The drag operation is independent of click state
+                    
                     // Visual feedback
                     if (this.config.clickable) {
                         from.select();
@@ -191,9 +197,18 @@ export class EventService {
                     }
 
                     // Prepare piece for dragging
+                    // First, preserve the current computed dimensions
+                    const computedStyle = window.getComputedStyle(img);
+                    const currentWidth = computedStyle.width;
+                    const currentHeight = computedStyle.height;
+                    
                     img.style.position = 'absolute';
                     img.style.zIndex = '100';
                     img.classList.add('dragging');
+                    
+                    // Explicitly set the dimensions to maintain size during drag
+                    img.style.width = currentWidth;
+                    img.style.height = currentHeight;
 
                     DragOptimizations.enableForDrag(img);
 
@@ -233,18 +248,34 @@ export class EventService {
             const onMouseUp = () => {
                 // Clean up visual feedback
                 previousHighlight?.dehighlight();
+                
+                // CRITICAL FIX: Remove ALL event listeners immediately to prevent interference
                 document.removeEventListener('mousemove', onMouseMove);
                 window.removeEventListener('mouseup', onMouseUp);
+                img.removeEventListener('mouseup', onMouseUp);
 
                 // If this was just a click, don't interfere
                 if (!isDragging) {
                     return;
                 }
 
+                console.log('onMouseUp: Handling drag completion for piece at', originalFrom.id);
+
                 // Clean up drag state
                 img.style.zIndex = '20';
                 img.classList.remove('dragging');
                 img.style.willChange = 'auto';
+                
+                // Clean up drag optimizations that might interfere with click
+                DragOptimizations.cleanupAfterDrag(img);
+
+                // Reset drag state immediately to allow subsequent clicks
+                this.isDragging = false;
+
+                // Ensure clicked state is clean before handling drop
+                // This prevents drag operations from interfering with subsequent clicks
+                const previousClicked = this.clicked;
+                this.clicked = null;
 
                 // Handle drop
                 const dropResult = onDrop(originalFrom, to, piece);
@@ -258,8 +289,14 @@ export class EventService {
                     img.style.left = '';
                     img.style.top = '';
                     img.style.transform = '';
+                    img.style.width = '';
+                    img.style.height = '';
+                    
+                    // Clean up drag optimizations
+                    DragOptimizations.cleanupAfterDrag(img);
 
                     this._handleSnapback(originalFrom, piece, onSnapback);
+                    this._cleanupAfterFailedMove(originalFrom);
                 } else {
                     // Handle drop like a click - simple and reliable
                     this._handleDrop(originalFrom, to, piece, onMove, onSnapback);
@@ -280,13 +317,19 @@ export class EventService {
      * @param {Function} onRemove - Callback to remove piece
      */
     _handleTrashDrop(fromSquare, onRemove) {
+        // Clear visual states
         this.boardService.applyToAllSquares('unmoved');
         this.boardService.applyToAllSquares('removeHint');
         fromSquare.deselect();
+        
+        // Reset clicked state
+        this.clicked = null;
 
         if (onRemove) {
             onRemove(fromSquare.getId());
         }
+        
+        logger.debug('EventService: Trash drop executed, state cleaned up');
     }
 
     /**
@@ -302,6 +345,9 @@ export class EventService {
                 onSnapback(fromSquare, piece);
             }
         }
+        
+        // Always cleanup state after snapback
+        logger.debug('EventService: Snapback executed, cleaning up state');
     }
 
     /**
@@ -314,60 +360,129 @@ export class EventService {
      * @param {Function} onSnapback - Snapback callback
      */
     _handleDrop(fromSquare, toSquare, piece, onMove, onSnapback) {
-        this.clicked = fromSquare;
+        console.log('=== _handleDrop CALLED ===');
+        console.log('From:', fromSquare.id, 'To:', toSquare.id);
+        console.log('Piece:', piece ? `${piece.color}${piece.type}` : 'null');
+        console.log('Stack trace:', new Error().stack.split('\n')[1]);
+        console.log('Caller:', new Error().stack.split('\n')[2]);
+        
+        // CRITICAL FIX: Prevent multiple simultaneous drop operations
+        if (this.isAnimating || this._isProcessingDrop) {
+            console.log('Drop ignored - already processing or animating');
+            return;
+        }
+        
+        // Set processing flag to prevent interference
+        this._isProcessingDrop = true;
+        
+        const cleanup = () => {
+            this._isProcessingDrop = false;
+        };
+        
+        // The core issue is state management. A drop action should be atomic.
+        // It either succeeds or fails, and the state should be cleaned completely afterward.
+        // We should not be setting `this.clicked` here at all.
 
-        // Check if move requires promotion
-        if (this.moveService.requiresPromotion(new Move(fromSquare, toSquare))) {
-            console.log('Drag move requires promotion:', fromSquare.id, '->', toSquare.id);
+        try {
+            // Check for promotion first, as it's a special case.
+            if (this.moveService.requiresPromotion(new Move(fromSquare, toSquare))) {
+            logger.debug('Drag move requires promotion:', fromSquare.id, '->', toSquare.id);
 
-            // Set up promotion UI - use the same logic as click
             this.moveService.setupPromotion(
                 new Move(fromSquare, toSquare),
                 this.boardService.squares,
                 (selectedPromotion) => {
-                    console.log('Drag promotion selected:', selectedPromotion);
-
-                    // Clear promotion UI first
+                    logger.debug('Drag promotion selected:', selectedPromotion);
                     this.boardService.applyToAllSquares('removePromotion');
                     this.boardService.applyToAllSquares('removeCover');
 
-                    // Execute the move with promotion
+                    // Attempt the move with promotion.
                     const moveResult = onMove(fromSquare, toSquare, selectedPromotion, true);
-
                     if (moveResult) {
-                        // After a successful promotion move, we need to replace the piece
-                        // after the drop animation completes
                         this._schedulePromotionPieceReplacement(toSquare, selectedPromotion);
-
-                        this.clicked = null;
+                        this._cleanupAfterSuccessfulMove(fromSquare);
                     } else {
-                        // Move failed - snapback
                         this._handleSnapback(fromSquare, piece, onSnapback);
+                        this._cleanupAfterFailedMove(fromSquare);
                     }
+                    cleanup();
                 },
                 () => {
-                    console.log('Drag promotion cancelled');
-
-                    // Clear promotion UI on cancel
+                    logger.debug('Drag promotion cancelled');
                     this.boardService.applyToAllSquares('removePromotion');
                     this.boardService.applyToAllSquares('removeCover');
-
-                    // Snapback the piece
                     this._handleSnapback(fromSquare, piece, onSnapback);
+                    this._cleanupAfterFailedMove(fromSquare);
+                    cleanup();
                 }
             );
         } else {
-            // Regular move - no promotion needed
+            // Regular move.
             const moveSuccess = onMove(fromSquare, toSquare, null, true);
 
             if (moveSuccess) {
-                // Move successful - reset clicked state
-                this.clicked = null;
+                this._cleanupAfterSuccessfulMove(fromSquare);
             } else {
-                // Move failed - snapback
                 this._handleSnapback(fromSquare, piece, onSnapback);
+                this._cleanupAfterFailedMove(fromSquare);
             }
+            cleanup();
         }
+        } catch (error) {
+            console.error('Error in _handleDrop:', error);
+            cleanup();
+        }
+    }
+
+    /**
+     * Cleans up visual state after a SUCCESSFUL move
+     * @private
+     * @param {Square} fromSquare - Source square
+     */
+    _cleanupAfterSuccessfulMove(fromSquare) {
+        // Always reset interaction state after any successful move (drag or click)
+        this.clicked = null;
+        this.isDragging = false;
+        
+        // Clear specific visual states related to the move
+        if (fromSquare) {
+            fromSquare.deselect();
+        }
+        
+        // Clean up ALL visual elements after a successful move
+        // This includes removing old move highlights to keep the board clean
+        this.boardService.applyToAllSquares('removeHint');
+        this.boardService.applyToAllSquares('dehighlight');
+        this.boardService.applyToAllSquares('removePromotion');
+        this.boardService.applyToAllSquares('removeCover');
+        
+        logger.debug('EventService: All visual state cleaned up after SUCCESSFUL move');
+    }
+
+    /**
+     * Cleans up visual state after a FAILED move (snapback, invalid move)
+     * @private
+     * @param {Square} fromSquare - Source square
+     */
+    _cleanupAfterFailedMove(fromSquare) {
+        // Reset interaction state but be more conservative with visual cleanup
+        this.clicked = null;
+        this.isDragging = false;
+        
+        // Clean specific visual elements related to failed operation
+        this.boardService.applyToAllSquares('removePromotion');
+        this.boardService.applyToAllSquares('removeCover');
+        this.boardService.applyToAllSquares('removeHint');
+        
+        // Only deselect the specific square that failed
+        if (fromSquare) {
+            fromSquare.deselect();
+        }
+        
+        // Don't aggressively clear all highlights - preserve move history
+        // this.boardService.applyToAllSquares('dehighlight');
+        
+        logger.debug('EventService: Conservative cleanup after FAILED move');
     }
 
     /**
@@ -470,7 +585,19 @@ export class EventService {
      * @returns {boolean} True if move was successful
      */
     onClick(square, onMove, onSelect, onDeselect, animate = true, dragged = false) {
-        console.log('EventService.onClick: square =', square.id, 'clicked =', this.clicked?.id || 'none');
+        // Always ensure we're not in dragging state during click operations
+        this.isDragging = false;
+        
+        // If we're animating, ignore the click to prevent state corruption
+        if (this.isAnimating) {
+            logger.debug('EventService.onClick: Ignoring click during animation');
+            return false;
+        }
+        
+        logger.debug('=== EventService.onClick START ===');
+        logger.debug('EventService.onClick: square =', square.id, 'clicked =', this.clicked?.id || 'none', 'isAnimating =', this.isAnimating);
+        logger.debug('EventService.onClick: Square piece =', square.piece ? `${square.piece.color}${square.piece.type}` : 'empty');
+        logger.debug('EventService.onClick: Clicked square piece =', this.clicked?.piece ? `${this.clicked.piece.color}${this.clicked.piece.type}` : (this.clicked ? 'empty' : 'none'));
 
         let from = this.clicked;
         let promotion = null;
@@ -490,16 +617,24 @@ export class EventService {
 
         // No source square selected
         if (!from) {
+            logger.debug('EventService.onClick: No source square, checking if can move:', square.id);
             if (this.moveService.canMove(square)) {
-                if (this.config.clickable) {
-                    onSelect(square);
-                }
+                logger.debug('EventService.onClick: Can move! Setting clicked to:', square.id);
                 this.clicked = square;
+                if (this.config.clickable) {
+                    // Ensure visual selection happens after state is set
+                    onSelect(square);
+                    logger.debug('EventService.onClick: Square selected visually:', square.id);
+                }
+                logger.debug('EventService.onClick: After setting, clicked =', this.clicked?.id || 'none');
                 return false;
             } else {
+                logger.debug('EventService.onClick: Cannot move square:', square.id);
                 return false;
             }
         }
+
+        logger.debug('EventService.onClick: We have a source square:', from.id, 'target:', square.id);
 
         // Clicking same square - deselect
         if (this.clicked === square) {
@@ -510,14 +645,14 @@ export class EventService {
 
         // Check if move requires promotion
         if (!promotion && this.moveService.requiresPromotion(new Move(from, square))) {
-            console.log('Move requires promotion:', from.id, '->', square.id);
+            logger.debug('Move requires promotion:', from.id, '->', square.id);
 
             // Set up promotion UI
             this.moveService.setupPromotion(
                 new Move(from, square),
                 this.boardService.squares,
                 (selectedPromotion) => {
-                    console.log('Promotion selected:', selectedPromotion);
+                    logger.debug('Promotion selected:', selectedPromotion);
 
                     // Clear promotion UI first
                     this.boardService.applyToAllSquares('removePromotion');
@@ -536,7 +671,7 @@ export class EventService {
                     }
                 },
                 () => {
-                    console.log('Promotion cancelled');
+                    logger.debug('Promotion cancelled');
 
                     // Clear promotion UI on cancel
                     this.boardService.applyToAllSquares('removePromotion');
@@ -550,33 +685,45 @@ export class EventService {
         }
 
         // Attempt to make move
+        logger.debug('EventService.onClick: Attempting move from', from.id, 'to', square.id);
+        logger.debug('EventService.onClick: Current game state before move attempt');
         const moveResult = onMove(from, square, promotion, animate);
 
         if (moveResult) {
             // Move successful
+            logger.debug('EventService.onClick: Move successful');
             onDeselect(from);
             this.clicked = null;
+            logger.debug('=== EventService.onClick END (move successful) ===');
             return true;
         } else {
-            // Move failed - check if clicked square has a piece we can move
+            // Move failed - deselect current and try to select new piece
+            logger.debug('EventService.onClick: Move failed from', from.id, 'to', square.id, '- resetting state');
+            
+            // Always deselect the current piece first
+            onDeselect(from);
+            this.clicked = null;
+            this.isDragging = false;
+            
+            // Clear move-related visual states but preserve highlights
+            this.boardService.applyToAllSquares('removeHint');
+            
+            // Now check if the target square has a piece we can move and select it
             if (this.moveService.canMove(square)) {
-                // Deselect the previous piece
-                onDeselect(from);
-
-                // Select the new piece if clicking is enabled
+                logger.debug('EventService.onClick: Can select new piece at', square.id);
+                
+                this.clicked = square;
                 if (this.config.clickable) {
                     onSelect(square);
+                    logger.debug('EventService.onClick: New piece selected visually:', square.id);
                 }
-
-                // Set the new piece as clicked
-                this.clicked = square;
-                return false;
+                logger.debug('EventService.onClick: New piece selected at', square.id);
             } else {
-                // Move failed and no valid piece to select
-                onDeselect(from);
-                this.clicked = null;
-                return false;
+                logger.debug('EventService.onClick: Cannot select piece at', square.id, '- staying deselected');
             }
+            
+            logger.debug('=== EventService.onClick END (move failed) ===');
+            return false;
         }
     }
 
@@ -606,20 +753,20 @@ export class EventService {
         const targetSquare = this.boardService.getSquare(square.id);
 
         if (!targetSquare) {
-            console.warn('Target square not found:', square.id);
+            logger.warn('Target square not found:', square.id);
             this.chessboard._isPromoting = false;
             return;
         }
 
         // Check if piece is present and ready
         if (targetSquare.piece && targetSquare.piece.element) {
-            console.log('Piece found on', square.id, 'after', attempt, 'attempts');
+            logger.debug('Piece found on', square.id, 'after', attempt, 'attempts');
             this._replacePromotionPiece(square, promotionPiece);
 
             // Allow normal updates again after transformation
             setTimeout(() => {
                 this.chessboard._isPromoting = false;
-                console.log('Promotion protection ended');
+                logger.debug('Promotion protection ended');
                 // Force a board update to ensure everything is correctly synchronized
                 this.chessboard._updateBoardPieces(false);
             }, 400); // Wait for transformation animation to complete
@@ -633,7 +780,7 @@ export class EventService {
                 this._waitForPieceAndReplace(square, promotionPiece, attempt + 1);
             }, 50);
         } else {
-            console.warn('Failed to find piece for promotion after', maxAttempts, 'attempts');
+            logger.warn('Failed to find piece for promotion after', maxAttempts, 'attempts');
             this.chessboard._isPromoting = false;
 
             // Force a board update to recover from the failed promotion
@@ -648,12 +795,12 @@ export class EventService {
      * @param {string} promotionPiece - Piece to promote to
      */
     _replacePromotionPiece(square, promotionPiece) {
-        console.log('Replacing piece on', square.id, 'with', promotionPiece);
+        logger.debug('Replacing piece on', square.id, 'with', promotionPiece);
 
         // Get the target square from the board service
         const targetSquare = this.boardService.getSquare(square.id);
         if (!targetSquare) {
-            console.log('Target square not found:', square.id);
+            logger.debug('Target square not found:', square.id);
             return;
         }
 
@@ -662,7 +809,7 @@ export class EventService {
         const gamePiece = gameState.get(targetSquare.id);
 
         if (!gamePiece) {
-            console.log('No piece found in game state for', targetSquare.id);
+            logger.debug('No piece found in game state for', targetSquare.id);
             return;
         }
 
@@ -670,7 +817,7 @@ export class EventService {
         const currentPiece = targetSquare.piece;
 
         if (!currentPiece) {
-            console.warn('No piece found on target square for promotion');
+            logger.warn('No piece found on target square for promotion');
 
             // Try to recover by creating a new piece
             const pieceId = promotionPiece + gamePiece.color;
@@ -689,7 +836,7 @@ export class EventService {
             const dragFunction = this.chessboard._createDragFunction.bind(this.chessboard);
             newPiece.setDrag(dragFunction(targetSquare, newPiece));
 
-            console.log('Created new promotion piece:', pieceId, 'on', targetSquare.id);
+            logger.debug('Created new promotion piece:', pieceId, 'on', targetSquare.id);
             return;
         }
 
@@ -697,7 +844,7 @@ export class EventService {
         const pieceId = promotionPiece + gamePiece.color;
         const piecePath = this.chessboard.pieceService.getPiecePath(pieceId);
 
-        console.log('Transforming piece to:', pieceId, 'with path:', piecePath);
+        logger.debug('Transforming piece to:', pieceId, 'with path:', piecePath);
 
         // Use the new smooth transformation animation
         currentPiece.transformTo(
@@ -716,7 +863,7 @@ export class EventService {
                     }, 100);
                 }
 
-                console.log('Successfully transformed piece on', targetSquare.id, 'to', pieceId);
+                logger.debug('Successfully transformed piece on', targetSquare.id, 'to', pieceId);
             }
         );
     }
@@ -803,5 +950,6 @@ export class EventService {
         this.clicked = null;
         this.promoting = false;
         this.isAnimating = false;
+        this.isDragging = false;
     }
 }

@@ -8,6 +8,7 @@ import Piece from '../components/Piece.js';
 import { PieceError, ValidationError } from '../errors/ChessboardError.js';
 import { ERROR_MESSAGES } from '../errors/messages.js';
 import { PIECE_TYPES, PIECE_COLORS } from '../constants/positions.js';
+import { DragOptimizations } from '../utils/cross-browser.js';
 
 /**
  * Service responsible for piece management and operations
@@ -264,6 +265,14 @@ export class PieceService {
                 piece.element.style.top = '';
                 piece.element.style.transform = '';
                 piece.element.style.zIndex = '';
+                // Remove inline dimensions set during drag
+                piece.element.style.width = '';
+                piece.element.style.height = '';
+                // Remove dragging class
+                piece.element.classList.remove('dragging');
+                
+                // Clean up drag optimizations that might interfere with click
+                DragOptimizations.cleanupAfterDrag(piece.element);
             }
         );
     }

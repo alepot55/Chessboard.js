@@ -24,6 +24,15 @@ export class MoveService {
         this.positionService = positionService;
         this._movesCache = new Map();
         this._cacheTimeout = null;
+        
+        // Add debouncing for promotion checks to prevent duplicates
+        this._lastPromotionCheck = null;
+        this._lastPromotionResult = null;
+        this._promotionCheckTimeout = null;
+        
+        // Track recently processed moves to prevent duplicates
+        this._recentMoves = new Set();
+        this._recentMovesTimeout = null;
     }
 
     /**
@@ -196,8 +205,67 @@ export class MoveService {
      * @returns {boolean} True if promotion is required
      */
     requiresPromotion(move) {
-        console.log('Checking if move requires promotion:', move.from.id, '->', move.to.id);
+        const moveKey = `${move.from.id}->${move.to.id}`;
+        console.log('Checking if move requires promotion:', moveKey);
         
+        // Get detailed stack trace
+        const stack = new Error().stack.split('\n');
+        console.log('Call stack:', stack[1]);
+        console.log('Caller:', stack[2]);
+        console.log('Caller 2:', stack[3]);
+        console.log('Caller 3:', stack[4]);
+        
+        // Track recently processed moves to prevent processing the same move multiple times
+        const now = Date.now();
+        if (this._recentMoves.has(moveKey)) {
+            console.log('Move recently processed, skipping duplicate check');
+            return false; // Conservative: assume no promotion needed for duplicates
+        }
+        
+        // Debounce identical promotion checks within 100ms
+        if (this._lastPromotionCheck === moveKey && 
+            this._lastPromotionResult !== null &&
+            now - this._lastPromotionTime < 100) {
+            console.log('Using cached promotion result:', this._lastPromotionResult);
+            return this._lastPromotionResult;
+        }
+        
+        // Add to recent moves set
+        this._recentMoves.add(moveKey);
+        
+        const result = this._doRequiresPromotion(move);
+        
+        // Cache the result
+        this._lastPromotionCheck = moveKey;
+        this._lastPromotionResult = result;
+        this._lastPromotionTime = now;
+        
+        // Clear caches after delays
+        if (this._promotionCheckTimeout) {
+            clearTimeout(this._promotionCheckTimeout);
+        }
+        this._promotionCheckTimeout = setTimeout(() => {
+            this._lastPromotionCheck = null;
+            this._lastPromotionResult = null;
+        }, 500);
+        
+        if (this._recentMovesTimeout) {
+            clearTimeout(this._recentMovesTimeout);
+        }
+        this._recentMovesTimeout = setTimeout(() => {
+            this._recentMoves.clear();
+        }, 1000); // Clear recent moves after 1 second
+        
+        return result;
+    }
+
+    /**
+     * Internal promotion check logic
+     * @private
+     * @param {Move} move - Move to check
+     * @returns {boolean} True if promotion is required
+     */
+    _doRequiresPromotion(move) {
         if (!this.config.onlyLegalMoves) {
             console.log('Not in legal moves mode, no promotion required');
             return false;
@@ -221,7 +289,7 @@ export class MoveService {
             return false;
         }
         
-        console.log('Pawn reaching promotion rank, validating move...');
+        console.log('Pawn reaching promotion rank - promotion required');
         
         // Additional validation: check if the pawn can actually reach this square
         if (!this._isPawnMoveValid(move.from, move.to, piece.color)) {
@@ -229,56 +297,23 @@ export class MoveService {
             return false;
         }
         
-        // First check if the move is legal without promotion
-        const simpleMoveObj = {
-            from: move.from.id,
-            to: move.to.id
-        };
+        // If we get here, it's a pawn move to the promotion rank
+        // Check if it's a legal move by using the game's moves() method
+        const legalMoves = game.moves({ square: move.from.id, verbose: true });
+        const matchingMove = legalMoves.find(m => m.to === move.to.id);
         
-        try {
-            console.log('Testing move without promotion:', simpleMoveObj);
-            // Test if the move is legal without promotion first
-            const testMove = game.move(simpleMoveObj);
-            if (testMove) {
-                // Move was successful, but check if it was a promotion
-                const wasPromotion = testMove.promotion;
-                
-                // Undo the test move
-                game.undo();
-                
-                console.log('Move successful without promotion, was promotion:', wasPromotion !== undefined);
-                
-                // If it was a promotion, return true
-                return wasPromotion !== undefined;
-            }
-        } catch (error) {
-            console.log('Move failed without promotion, trying with promotion:', error.message);
-            
-            // If simple move fails, try with promotion
-            const promotionMoveObj = {
-                from: move.from.id,
-                to: move.to.id,
-                promotion: 'q' // test with queen
-            };
-            
-            try {
-                console.log('Testing move with promotion:', promotionMoveObj);
-                const testMove = game.move(promotionMoveObj);
-                if (testMove) {
-                    // Undo the test move
-                    game.undo();
-                    console.log('Move successful with promotion, promotion required');
-                    return true;
-                }
-            } catch (promotionError) {
-                console.log('Move failed even with promotion:', promotionError.message);
-                // Move is not legal even with promotion
-                return false;
-            }
+        if (!matchingMove) {
+            console.log('Move not in legal moves list, no promotion required');
+            return false;
         }
         
-        console.log('Move validation complete, no promotion required');
-        return false;
+        // If the legal move has a promotion flag or is to a promotion rank, promotion is required
+        const requiresPromotion = matchingMove.flags.includes('p') || 
+                                (piece.color === 'w' && targetRank === 8) || 
+                                (piece.color === 'b' && targetRank === 1);
+        
+        console.log('Promotion required:', requiresPromotion);
+        return requiresPromotion;
     }
 
     /**

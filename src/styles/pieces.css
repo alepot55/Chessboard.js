@@ -14,8 +14,12 @@
   /* Disabilita completamente le transizioni durante il drag */
   transition: none !important;
   /* Hint per ottimizzazione durante drag */
-  will-change: left, top;
-  /* Rimuovo l'ingrandimento che causava problemi visivi */
+  will-change: left, top, transform;
+  /* Mantiene le dimensioni originali del pezzo durante il drag */
+  width: calc(var(--square-size) * var(--pieceRatio)) !important;
+  height: calc(var(--square-size) * var(--pieceRatio)) !important;
+  /* Assicura che il pezzo mantenga le proporzioni corrette */
+  box-sizing: border-box;
 }
 
 .piece.fading {

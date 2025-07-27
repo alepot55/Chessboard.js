@@ -1677,15 +1677,30 @@
 
         setDrag(f) {
             if (!this.element) { console.debug(`[Piece] setDrag: ${this.id} - element is null`); return; }
+            
+            // Remove any existing drag handlers first
+            if (this._dragHandler) {
+                this.element.removeEventListener('mousedown', this._dragHandler);
+            }
+            
             this.element.ondragstart = (e) => { e.preventDefault(); };
-            this.element.onmousedown = f;
+            
+            // Use the drag function directly without timeout
+            this._dragHandler = f;
+            this.element.addEventListener('mousedown', this._dragHandler);
             console.debug(`[Piece] setDrag: ${this.id}`);
         }
 
         destroy() {
             console.debug(`[Piece] Destroy: ${this.id}`);
+            
             // Remove all event listeners
             if (this.element) {
+                if (this._dragHandler) {
+                    this.element.removeEventListener('mousedown', this._dragHandler);
+                    this._dragHandler = null;
+                }
+                
                 this.element.onmousedown = null;
                 this.element.ondragstart = null;
 
@@ -3084,6 +3099,423 @@
     };
 
     /**
+     * Structured logging system for Chessboard.js
+     * @module utils/logger
+     * @since 2.0.0
+     */
+
+    /**
+     * Log levels in order of severity
+     * @constant
+     * @type {Object}
+     */
+    const LOG_LEVELS = Object.freeze({
+        DEBUG: 0,
+        INFO: 1,
+        WARN: 2,
+        ERROR: 3,
+        NONE: 4
+    });
+
+    /**
+     * Default logger configuration
+     * @constant
+     * @type {Object}
+     */
+    const DEFAULT_CONFIG = Object.freeze({
+        level: LOG_LEVELS.INFO,
+        enableColors: true,
+        enableTimestamp: true,
+        enableStackTrace: true,
+        maxLogSize: 1000,
+        enableConsole: true,
+        enableStorage: false,
+        storageKey: 'chessboard-logs'
+    });
+
+    /**
+     * ANSI color codes for console output
+     * @constant
+     * @type {Object}
+     */
+    const COLORS = Object.freeze({
+        DEBUG: '\x1b[36m',    // Cyan
+        INFO: '\x1b[32m',     // Green
+        WARN: '\x1b[33m',     // Yellow
+        ERROR: '\x1b[31m',    // Red
+        RESET: '\x1b[0m'      // Reset
+    });
+
+    /**
+     * Structured logger class with configurable output and filtering
+     * @class
+     */
+    class Logger {
+        /**
+         * Creates a new Logger instance
+         * @param {Object} [config] - Logger configuration
+         * @param {string} [name] - Logger name/namespace
+         */
+        constructor(config = {}, name = 'Chessboard') {
+            this.config = { ...DEFAULT_CONFIG, ...config };
+            this.name = name;
+            this.logs = [];
+            this.startTime = Date.now();
+            
+            // Create bound methods for better performance
+            this.debug = this._createLogMethod('DEBUG');
+            this.info = this._createLogMethod('INFO');
+            this.warn = this._createLogMethod('WARN');
+            this.error = this._createLogMethod('ERROR');
+            
+            // Performance tracking
+            this.performances = new Map();
+            
+            // Initialize storage if enabled
+            if (this.config.enableStorage) {
+                this._initStorage();
+            }
+        }
+
+        /**
+         * Creates a log method for a specific level
+         * @private
+         * @param {string} level - Log level
+         * @returns {Function} Log method
+         */
+        _createLogMethod(level) {
+            return (message, data = {}, error = null) => {
+                this._log(level, message, data, error);
+            };
+        }
+
+        /**
+         * Core logging method
+         * @private
+         * @param {string} level - Log level
+         * @param {string} message - Log message
+         * @param {Object} data - Additional data
+         * @param {Error} error - Error object
+         */
+        _log(level, message, data, error) {
+            const levelNumber = LOG_LEVELS[level];
+            
+            // Filter by level
+            if (levelNumber < this.config.level) {
+                return;
+            }
+            
+            // Create log entry
+            const entry = this._createLogEntry(level, message, data, error);
+            
+            // Store log entry
+            this._storeLogEntry(entry);
+            
+            // Output to console
+            if (this.config.enableConsole) {
+                this._outputToConsole(entry);
+            }
+            
+            // Store in localStorage if enabled
+            if (this.config.enableStorage) {
+                this._storeInStorage(entry);
+            }
+        }
+
+        /**
+         * Creates a structured log entry
+         * @private
+         * @param {string} level - Log level
+         * @param {string} message - Log message
+         * @param {Object} data - Additional data
+         * @param {Error} error - Error object
+         * @returns {Object} Log entry
+         */
+        _createLogEntry(level, message, data, error) {
+            const entry = {
+                timestamp: new Date().toISOString(),
+                level,
+                logger: this.name,
+                message,
+                data: { ...data },
+                runtime: Date.now() - this.startTime
+            };
+            
+            // Add error details if provided
+            if (error) {
+                entry.error = {
+                    name: error.name,
+                    message: error.message,
+                    stack: this.config.enableStackTrace ? error.stack : null
+                };
+            }
+            
+            // Add performance context if available
+            if (typeof performance !== 'undefined' && performance.memory) {
+                entry.memory = {
+                    used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
+                    total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024)
+                };
+            }
+            
+            return entry;
+        }
+
+        /**
+         * Stores log entry in memory
+         * @private
+         * @param {Object} entry - Log entry
+         */
+        _storeLogEntry(entry) {
+            this.logs.push(entry);
+            
+            // Limit log size
+            if (this.logs.length > this.config.maxLogSize) {
+                this.logs.shift();
+            }
+        }
+
+        /**
+         * Outputs log entry to console
+         * @private
+         * @param {Object} entry - Log entry
+         */
+        _outputToConsole(entry) {
+            const color = this.config.enableColors ? COLORS[entry.level] : '';
+            const reset = this.config.enableColors ? COLORS.RESET : '';
+            const timestamp = this.config.enableTimestamp ? 
+                `[${new Date(entry.timestamp).toLocaleTimeString()}] ` : '';
+            
+            const prefix = `${color}${timestamp}[${entry.logger}:${entry.level}]${reset}`;
+            const message = `${prefix} ${entry.message}`;
+            
+            // Choose console method based on level
+            const consoleMethod = this._getConsoleMethod(entry.level);
+            
+            if (Object.keys(entry.data).length > 0 || entry.error) {
+                consoleMethod(message, {
+                    data: entry.data,
+                    error: entry.error,
+                    runtime: `${entry.runtime}ms`
+                });
+            } else {
+                consoleMethod(message);
+            }
+        }
+
+        /**
+         * Gets appropriate console method for log level
+         * @private
+         * @param {string} level - Log level
+         * @returns {Function} Console method
+         */
+        _getConsoleMethod(level) {
+            switch (level) {
+                case 'DEBUG':
+                    return console.debug || console.log;
+                case 'INFO':
+                    return console.info || console.log;
+                case 'WARN':
+                    return console.warn || console.log;
+                case 'ERROR':
+                    return console.error || console.log;
+                default:
+                    return console.log;
+            }
+        }
+
+        /**
+         * Initializes localStorage for log storage
+         * @private
+         */
+        _initStorage() {
+            if (typeof localStorage === 'undefined') {
+                this.config.enableStorage = false;
+                return;
+            }
+            
+            try {
+                // Test localStorage availability
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+            } catch (error) {
+                this.config.enableStorage = false;
+                console.warn('localStorage not available, disabling log storage');
+            }
+        }
+
+        /**
+         * Stores log entry in localStorage
+         * @private
+         * @param {Object} entry - Log entry
+         */
+        _storeInStorage(entry) {
+            if (!this.config.enableStorage) {
+                return;
+            }
+            
+            try {
+                const stored = JSON.parse(localStorage.getItem(this.config.storageKey) || '[]');
+                stored.push(entry);
+                
+                // Limit stored logs
+                if (stored.length > this.config.maxLogSize) {
+                    stored.shift();
+                }
+                
+                localStorage.setItem(this.config.storageKey, JSON.stringify(stored));
+            } catch (error) {
+                console.warn('Failed to store log entry:', error);
+            }
+        }
+
+        /**
+         * Starts performance measurement
+         * @param {string} name - Performance measurement name
+         */
+        startPerformance(name) {
+            this.performances.set(name, {
+                start: performance.now(),
+                measurements: []
+            });
+            
+            this.debug(`Started performance measurement: ${name}`);
+        }
+
+        /**
+         * Ends performance measurement
+         * @param {string} name - Performance measurement name
+         * @returns {number} Duration in milliseconds
+         */
+        endPerformance(name) {
+            const perf = this.performances.get(name);
+            if (!perf) {
+                this.warn(`Performance measurement not found: ${name}`);
+                return 0;
+            }
+            
+            const duration = performance.now() - perf.start;
+            perf.measurements.push(duration);
+            
+            this.debug(`Performance measurement completed: ${name}`, {
+                duration: `${duration.toFixed(2)}ms`,
+                measurements: perf.measurements.length
+            });
+            
+            return duration;
+        }
+
+        /**
+         * Gets performance statistics
+         * @param {string} name - Performance measurement name
+         * @returns {Object} Performance statistics
+         */
+        getPerformanceStats(name) {
+            const perf = this.performances.get(name);
+            if (!perf || perf.measurements.length === 0) {
+                return null;
+            }
+            
+            const measurements = perf.measurements;
+            const total = measurements.reduce((sum, m) => sum + m, 0);
+            const avg = total / measurements.length;
+            const min = Math.min(...measurements);
+            const max = Math.max(...measurements);
+            
+            return {
+                name,
+                count: measurements.length,
+                total: total.toFixed(2),
+                average: avg.toFixed(2),
+                min: min.toFixed(2),
+                max: max.toFixed(2)
+            };
+        }
+
+        /**
+         * Creates a child logger with a specific namespace
+         * @param {string} namespace - Child logger namespace
+         * @returns {Logger} Child logger instance
+         */
+        child(namespace) {
+            return new Logger(this.config, `${this.name}:${namespace}`);
+        }
+
+        /**
+         * Sets log level
+         * @param {string} level - Log level
+         */
+        setLevel(level) {
+            if (LOG_LEVELS[level] !== undefined) {
+                this.config.level = LOG_LEVELS[level];
+            }
+        }
+
+        /**
+         * Gets current log level
+         * @returns {string} Current log level
+         */
+        getLevel() {
+            return Object.keys(LOG_LEVELS).find(key => LOG_LEVELS[key] === this.config.level);
+        }
+
+        /**
+         * Gets all stored logs
+         * @returns {Array} Array of log entries
+         */
+        getLogs() {
+            return [...this.logs];
+        }
+
+        /**
+         * Clears all stored logs
+         */
+        clearLogs() {
+            this.logs = [];
+            
+            if (this.config.enableStorage) {
+                try {
+                    localStorage.removeItem(this.config.storageKey);
+                } catch (error) {
+                    console.warn('Failed to clear stored logs:', error);
+                }
+            }
+        }
+
+        /**
+         * Exports logs as JSON
+         * @returns {string} JSON string of logs
+         */
+        exportLogs() {
+            return JSON.stringify(this.logs, null, 2);
+        }
+
+        /**
+         * Cleans up resources
+         */
+        destroy() {
+            this.clearLogs();
+            this.performances.clear();
+        }
+    }
+
+    /**
+     * Default logger instance
+     * @type {Logger}
+     */
+    const logger = new Logger();
+
+    /**
+     * Creates a logger with specific configuration
+     * @param {Object} config - Logger configuration
+     * @param {string} name - Logger name
+     * @returns {Logger} Logger instance
+     */
+    function createLogger(config, name) {
+        return new Logger(config, name);
+    }
+
+    /**
      * Service for managing events and user interactions
      * @module services/EventService
      * @since 2.0.0
@@ -3110,12 +3542,12 @@
             this.coordinateService = coordinateService;
             this.chessboard = chessboard;
 
-            // State management
             this.clicked = null;
-            this.promoting = false;
+            this.isDragging = false;
             this.isAnimating = false;
+            this.promoting = false;
+            this._isProcessingDrop = false;
 
-            // Event listeners storage for cleanup
             this.eventListeners = new Map();
         }
 
@@ -3164,6 +3596,11 @@
             const handleClick = (e) => {
                 e.stopPropagation();
                 if (this.config.clickable && !this.isAnimating) {
+                    // Cancel any pending drag operations on pieces in this square
+                    if (square.piece && square.piece._dragTimeout) {
+                        clearTimeout(square.piece._dragTimeout);
+                        square.piece._dragTimeout = null;
+                    }
                     onSquareClick(square);
                 }
             };
@@ -3198,12 +3635,17 @@
          * @returns {Function} Drag event handler
          */
         createDragFunction(square, piece, onDragStart, onDragMove, onDrop, onSnapback, onMove, onRemove) {
+            console.log('Creating drag function for:', square.id, piece ? `${piece.color}${piece.type}` : 'null');
+            
             return (event) => {
                 event.preventDefault();
 
-                if (!this.config.draggable || !piece || this.isAnimating) {
+                if (!this.config.draggable || !piece || this.isAnimating || this.isDragging) {
                     return;
                 }
+
+                // Set dragging state immediately
+                this.isDragging = true;
 
                 const originalFrom = square;
                 let isDragging = false;
@@ -3256,14 +3698,9 @@
                     if (!isDragging && (deltaX > 3 || deltaY > 3)) {
                         isDragging = true;
 
-                        // Set up drag state
-                        if (!this.config.clickable) {
-                            this.clicked = null;
-                            this.clicked = from;
-                        } else if (!this.clicked) {
-                            this.clicked = from;
-                        }
-
+                        // During drag, we don't need to manage clicked state
+                        // The drag operation is independent of click state
+                        
                         // Visual feedback
                         if (this.config.clickable) {
                             from.select();
@@ -3271,9 +3708,18 @@
                         }
 
                         // Prepare piece for dragging
+                        // First, preserve the current computed dimensions
+                        const computedStyle = window.getComputedStyle(img);
+                        const currentWidth = computedStyle.width;
+                        const currentHeight = computedStyle.height;
+                        
                         img.style.position = 'absolute';
                         img.style.zIndex = '100';
                         img.classList.add('dragging');
+                        
+                        // Explicitly set the dimensions to maintain size during drag
+                        img.style.width = currentWidth;
+                        img.style.height = currentHeight;
 
                         DragOptimizations.enableForDrag(img);
 
@@ -3313,18 +3759,34 @@
                 const onMouseUp = () => {
                     // Clean up visual feedback
                     previousHighlight?.dehighlight();
+                    
+                    // CRITICAL FIX: Remove ALL event listeners immediately to prevent interference
                     document.removeEventListener('mousemove', onMouseMove);
                     window.removeEventListener('mouseup', onMouseUp);
+                    img.removeEventListener('mouseup', onMouseUp);
 
                     // If this was just a click, don't interfere
                     if (!isDragging) {
                         return;
                     }
 
+                    console.log('onMouseUp: Handling drag completion for piece at', originalFrom.id);
+
                     // Clean up drag state
                     img.style.zIndex = '20';
                     img.classList.remove('dragging');
                     img.style.willChange = 'auto';
+                    
+                    // Clean up drag optimizations that might interfere with click
+                    DragOptimizations.cleanupAfterDrag(img);
+
+                    // Reset drag state immediately to allow subsequent clicks
+                    this.isDragging = false;
+
+                    // Ensure clicked state is clean before handling drop
+                    // This prevents drag operations from interfering with subsequent clicks
+                    this.clicked;
+                    this.clicked = null;
 
                     // Handle drop
                     const dropResult = onDrop(originalFrom, to, piece);
@@ -3338,8 +3800,14 @@
                         img.style.left = '';
                         img.style.top = '';
                         img.style.transform = '';
+                        img.style.width = '';
+                        img.style.height = '';
+                        
+                        // Clean up drag optimizations
+                        DragOptimizations.cleanupAfterDrag(img);
 
                         this._handleSnapback(originalFrom, piece, onSnapback);
+                        this._cleanupAfterFailedMove(originalFrom);
                     } else {
                         // Handle drop like a click - simple and reliable
                         this._handleDrop(originalFrom, to, piece, onMove, onSnapback);
@@ -3360,13 +3828,19 @@
          * @param {Function} onRemove - Callback to remove piece
          */
         _handleTrashDrop(fromSquare, onRemove) {
+            // Clear visual states
             this.boardService.applyToAllSquares('unmoved');
             this.boardService.applyToAllSquares('removeHint');
             fromSquare.deselect();
+            
+            // Reset clicked state
+            this.clicked = null;
 
             if (onRemove) {
                 onRemove(fromSquare.getId());
             }
+            
+            logger.debug('EventService: Trash drop executed, state cleaned up');
         }
 
         /**
@@ -3382,6 +3856,9 @@
                     onSnapback(fromSquare, piece);
                 }
             }
+            
+            // Always cleanup state after snapback
+            logger.debug('EventService: Snapback executed, cleaning up state');
         }
 
         /**
@@ -3394,60 +3871,129 @@
          * @param {Function} onSnapback - Snapback callback
          */
         _handleDrop(fromSquare, toSquare, piece, onMove, onSnapback) {
-            this.clicked = fromSquare;
+            console.log('=== _handleDrop CALLED ===');
+            console.log('From:', fromSquare.id, 'To:', toSquare.id);
+            console.log('Piece:', piece ? `${piece.color}${piece.type}` : 'null');
+            console.log('Stack trace:', new Error().stack.split('\n')[1]);
+            console.log('Caller:', new Error().stack.split('\n')[2]);
+            
+            // CRITICAL FIX: Prevent multiple simultaneous drop operations
+            if (this.isAnimating || this._isProcessingDrop) {
+                console.log('Drop ignored - already processing or animating');
+                return;
+            }
+            
+            // Set processing flag to prevent interference
+            this._isProcessingDrop = true;
+            
+            const cleanup = () => {
+                this._isProcessingDrop = false;
+            };
+            
+            // The core issue is state management. A drop action should be atomic.
+            // It either succeeds or fails, and the state should be cleaned completely afterward.
+            // We should not be setting `this.clicked` here at all.
 
-            // Check if move requires promotion
-            if (this.moveService.requiresPromotion(new Move$1(fromSquare, toSquare))) {
-                console.log('Drag move requires promotion:', fromSquare.id, '->', toSquare.id);
+            try {
+                // Check for promotion first, as it's a special case.
+                if (this.moveService.requiresPromotion(new Move$1(fromSquare, toSquare))) {
+                logger.debug('Drag move requires promotion:', fromSquare.id, '->', toSquare.id);
 
-                // Set up promotion UI - use the same logic as click
                 this.moveService.setupPromotion(
                     new Move$1(fromSquare, toSquare),
                     this.boardService.squares,
                     (selectedPromotion) => {
-                        console.log('Drag promotion selected:', selectedPromotion);
-
-                        // Clear promotion UI first
+                        logger.debug('Drag promotion selected:', selectedPromotion);
                         this.boardService.applyToAllSquares('removePromotion');
                         this.boardService.applyToAllSquares('removeCover');
 
-                        // Execute the move with promotion
+                        // Attempt the move with promotion.
                         const moveResult = onMove(fromSquare, toSquare, selectedPromotion, true);
-
                         if (moveResult) {
-                            // After a successful promotion move, we need to replace the piece
-                            // after the drop animation completes
                             this._schedulePromotionPieceReplacement(toSquare, selectedPromotion);
-
-                            this.clicked = null;
+                            this._cleanupAfterSuccessfulMove(fromSquare);
                         } else {
-                            // Move failed - snapback
                             this._handleSnapback(fromSquare, piece, onSnapback);
+                            this._cleanupAfterFailedMove(fromSquare);
                         }
+                        cleanup();
                     },
                     () => {
-                        console.log('Drag promotion cancelled');
-
-                        // Clear promotion UI on cancel
+                        logger.debug('Drag promotion cancelled');
                         this.boardService.applyToAllSquares('removePromotion');
                         this.boardService.applyToAllSquares('removeCover');
-
-                        // Snapback the piece
                         this._handleSnapback(fromSquare, piece, onSnapback);
+                        this._cleanupAfterFailedMove(fromSquare);
+                        cleanup();
                     }
                 );
             } else {
-                // Regular move - no promotion needed
+                // Regular move.
                 const moveSuccess = onMove(fromSquare, toSquare, null, true);
 
                 if (moveSuccess) {
-                    // Move successful - reset clicked state
-                    this.clicked = null;
+                    this._cleanupAfterSuccessfulMove(fromSquare);
                 } else {
-                    // Move failed - snapback
                     this._handleSnapback(fromSquare, piece, onSnapback);
+                    this._cleanupAfterFailedMove(fromSquare);
                 }
+                cleanup();
             }
+            } catch (error) {
+                console.error('Error in _handleDrop:', error);
+                cleanup();
+            }
+        }
+
+        /**
+         * Cleans up visual state after a SUCCESSFUL move
+         * @private
+         * @param {Square} fromSquare - Source square
+         */
+        _cleanupAfterSuccessfulMove(fromSquare) {
+            // Always reset interaction state after any successful move (drag or click)
+            this.clicked = null;
+            this.isDragging = false;
+            
+            // Clear specific visual states related to the move
+            if (fromSquare) {
+                fromSquare.deselect();
+            }
+            
+            // Clean up ALL visual elements after a successful move
+            // This includes removing old move highlights to keep the board clean
+            this.boardService.applyToAllSquares('removeHint');
+            this.boardService.applyToAllSquares('dehighlight');
+            this.boardService.applyToAllSquares('removePromotion');
+            this.boardService.applyToAllSquares('removeCover');
+            
+            logger.debug('EventService: All visual state cleaned up after SUCCESSFUL move');
+        }
+
+        /**
+         * Cleans up visual state after a FAILED move (snapback, invalid move)
+         * @private
+         * @param {Square} fromSquare - Source square
+         */
+        _cleanupAfterFailedMove(fromSquare) {
+            // Reset interaction state but be more conservative with visual cleanup
+            this.clicked = null;
+            this.isDragging = false;
+            
+            // Clean specific visual elements related to failed operation
+            this.boardService.applyToAllSquares('removePromotion');
+            this.boardService.applyToAllSquares('removeCover');
+            this.boardService.applyToAllSquares('removeHint');
+            
+            // Only deselect the specific square that failed
+            if (fromSquare) {
+                fromSquare.deselect();
+            }
+            
+            // Don't aggressively clear all highlights - preserve move history
+            // this.boardService.applyToAllSquares('dehighlight');
+            
+            logger.debug('EventService: Conservative cleanup after FAILED move');
         }
 
         /**
@@ -3550,7 +4096,19 @@
          * @returns {boolean} True if move was successful
          */
         onClick(square, onMove, onSelect, onDeselect, animate = true, dragged = false) {
-            console.log('EventService.onClick: square =', square.id, 'clicked =', this.clicked?.id || 'none');
+            // Always ensure we're not in dragging state during click operations
+            this.isDragging = false;
+            
+            // If we're animating, ignore the click to prevent state corruption
+            if (this.isAnimating) {
+                logger.debug('EventService.onClick: Ignoring click during animation');
+                return false;
+            }
+            
+            logger.debug('=== EventService.onClick START ===');
+            logger.debug('EventService.onClick: square =', square.id, 'clicked =', this.clicked?.id || 'none', 'isAnimating =', this.isAnimating);
+            logger.debug('EventService.onClick: Square piece =', square.piece ? `${square.piece.color}${square.piece.type}` : 'empty');
+            logger.debug('EventService.onClick: Clicked square piece =', this.clicked?.piece ? `${this.clicked.piece.color}${this.clicked.piece.type}` : (this.clicked ? 'empty' : 'none'));
 
             let from = this.clicked;
             let promotion = null;
@@ -3570,16 +4128,24 @@
 
             // No source square selected
             if (!from) {
+                logger.debug('EventService.onClick: No source square, checking if can move:', square.id);
                 if (this.moveService.canMove(square)) {
-                    if (this.config.clickable) {
-                        onSelect(square);
-                    }
+                    logger.debug('EventService.onClick: Can move! Setting clicked to:', square.id);
                     this.clicked = square;
+                    if (this.config.clickable) {
+                        // Ensure visual selection happens after state is set
+                        onSelect(square);
+                        logger.debug('EventService.onClick: Square selected visually:', square.id);
+                    }
+                    logger.debug('EventService.onClick: After setting, clicked =', this.clicked?.id || 'none');
                     return false;
                 } else {
+                    logger.debug('EventService.onClick: Cannot move square:', square.id);
                     return false;
                 }
             }
+
+            logger.debug('EventService.onClick: We have a source square:', from.id, 'target:', square.id);
 
             // Clicking same square - deselect
             if (this.clicked === square) {
@@ -3590,14 +4156,14 @@
 
             // Check if move requires promotion
             if (!promotion && this.moveService.requiresPromotion(new Move$1(from, square))) {
-                console.log('Move requires promotion:', from.id, '->', square.id);
+                logger.debug('Move requires promotion:', from.id, '->', square.id);
 
                 // Set up promotion UI
                 this.moveService.setupPromotion(
                     new Move$1(from, square),
                     this.boardService.squares,
                     (selectedPromotion) => {
-                        console.log('Promotion selected:', selectedPromotion);
+                        logger.debug('Promotion selected:', selectedPromotion);
 
                         // Clear promotion UI first
                         this.boardService.applyToAllSquares('removePromotion');
@@ -3616,7 +4182,7 @@
                         }
                     },
                     () => {
-                        console.log('Promotion cancelled');
+                        logger.debug('Promotion cancelled');
 
                         // Clear promotion UI on cancel
                         this.boardService.applyToAllSquares('removePromotion');
@@ -3630,33 +4196,45 @@
             }
 
             // Attempt to make move
+            logger.debug('EventService.onClick: Attempting move from', from.id, 'to', square.id);
+            logger.debug('EventService.onClick: Current game state before move attempt');
             const moveResult = onMove(from, square, promotion, animate);
 
             if (moveResult) {
                 // Move successful
+                logger.debug('EventService.onClick: Move successful');
                 onDeselect(from);
                 this.clicked = null;
+                logger.debug('=== EventService.onClick END (move successful) ===');
                 return true;
             } else {
-                // Move failed - check if clicked square has a piece we can move
+                // Move failed - deselect current and try to select new piece
+                logger.debug('EventService.onClick: Move failed from', from.id, 'to', square.id, '- resetting state');
+                
+                // Always deselect the current piece first
+                onDeselect(from);
+                this.clicked = null;
+                this.isDragging = false;
+                
+                // Clear move-related visual states but preserve highlights
+                this.boardService.applyToAllSquares('removeHint');
+                
+                // Now check if the target square has a piece we can move and select it
                 if (this.moveService.canMove(square)) {
-                    // Deselect the previous piece
-                    onDeselect(from);
-
-                    // Select the new piece if clicking is enabled
+                    logger.debug('EventService.onClick: Can select new piece at', square.id);
+                    
+                    this.clicked = square;
                     if (this.config.clickable) {
                         onSelect(square);
+                        logger.debug('EventService.onClick: New piece selected visually:', square.id);
                     }
-
-                    // Set the new piece as clicked
-                    this.clicked = square;
-                    return false;
+                    logger.debug('EventService.onClick: New piece selected at', square.id);
                 } else {
-                    // Move failed and no valid piece to select
-                    onDeselect(from);
-                    this.clicked = null;
-                    return false;
+                    logger.debug('EventService.onClick: Cannot select piece at', square.id, '- staying deselected');
                 }
+                
+                logger.debug('=== EventService.onClick END (move failed) ===');
+                return false;
             }
         }
 
@@ -3686,20 +4264,20 @@
             const targetSquare = this.boardService.getSquare(square.id);
 
             if (!targetSquare) {
-                console.warn('Target square not found:', square.id);
+                logger.warn('Target square not found:', square.id);
                 this.chessboard._isPromoting = false;
                 return;
             }
 
             // Check if piece is present and ready
             if (targetSquare.piece && targetSquare.piece.element) {
-                console.log('Piece found on', square.id, 'after', attempt, 'attempts');
+                logger.debug('Piece found on', square.id, 'after', attempt, 'attempts');
                 this._replacePromotionPiece(square, promotionPiece);
 
                 // Allow normal updates again after transformation
                 setTimeout(() => {
                     this.chessboard._isPromoting = false;
-                    console.log('Promotion protection ended');
+                    logger.debug('Promotion protection ended');
                     // Force a board update to ensure everything is correctly synchronized
                     this.chessboard._updateBoardPieces(false);
                 }, 400); // Wait for transformation animation to complete
@@ -3713,7 +4291,7 @@
                     this._waitForPieceAndReplace(square, promotionPiece, attempt + 1);
                 }, 50);
             } else {
-                console.warn('Failed to find piece for promotion after', maxAttempts, 'attempts');
+                logger.warn('Failed to find piece for promotion after', maxAttempts, 'attempts');
                 this.chessboard._isPromoting = false;
 
                 // Force a board update to recover from the failed promotion
@@ -3728,12 +4306,12 @@
          * @param {string} promotionPiece - Piece to promote to
          */
         _replacePromotionPiece(square, promotionPiece) {
-            console.log('Replacing piece on', square.id, 'with', promotionPiece);
+            logger.debug('Replacing piece on', square.id, 'with', promotionPiece);
 
             // Get the target square from the board service
             const targetSquare = this.boardService.getSquare(square.id);
             if (!targetSquare) {
-                console.log('Target square not found:', square.id);
+                logger.debug('Target square not found:', square.id);
                 return;
             }
 
@@ -3742,7 +4320,7 @@
             const gamePiece = gameState.get(targetSquare.id);
 
             if (!gamePiece) {
-                console.log('No piece found in game state for', targetSquare.id);
+                logger.debug('No piece found in game state for', targetSquare.id);
                 return;
             }
 
@@ -3750,7 +4328,7 @@
             const currentPiece = targetSquare.piece;
 
             if (!currentPiece) {
-                console.warn('No piece found on target square for promotion');
+                logger.warn('No piece found on target square for promotion');
 
                 // Try to recover by creating a new piece
                 const pieceId = promotionPiece + gamePiece.color;
@@ -3769,7 +4347,7 @@
                 const dragFunction = this.chessboard._createDragFunction.bind(this.chessboard);
                 newPiece.setDrag(dragFunction(targetSquare, newPiece));
 
-                console.log('Created new promotion piece:', pieceId, 'on', targetSquare.id);
+                logger.debug('Created new promotion piece:', pieceId, 'on', targetSquare.id);
                 return;
             }
 
@@ -3777,7 +4355,7 @@
             const pieceId = promotionPiece + gamePiece.color;
             const piecePath = this.chessboard.pieceService.getPiecePath(pieceId);
 
-            console.log('Transforming piece to:', pieceId, 'with path:', piecePath);
+            logger.debug('Transforming piece to:', pieceId, 'with path:', piecePath);
 
             // Use the new smooth transformation animation
             currentPiece.transformTo(
@@ -3796,7 +4374,7 @@
                         }, 100);
                     }
 
-                    console.log('Successfully transformed piece on', targetSquare.id, 'to', pieceId);
+                    logger.debug('Successfully transformed piece on', targetSquare.id, 'to', pieceId);
                 }
             );
         }
@@ -3883,6 +4461,7 @@
             this.clicked = null;
             this.promoting = false;
             this.isAnimating = false;
+            this.isDragging = false;
         }
     }
 
@@ -3908,6 +4487,15 @@
             this.positionService = positionService;
             this._movesCache = new Map();
             this._cacheTimeout = null;
+            
+            // Add debouncing for promotion checks to prevent duplicates
+            this._lastPromotionCheck = null;
+            this._lastPromotionResult = null;
+            this._promotionCheckTimeout = null;
+            
+            // Track recently processed moves to prevent duplicates
+            this._recentMoves = new Set();
+            this._recentMovesTimeout = null;
         }
 
         /**
@@ -4080,8 +4668,67 @@
          * @returns {boolean} True if promotion is required
          */
         requiresPromotion(move) {
-            console.log('Checking if move requires promotion:', move.from.id, '->', move.to.id);
+            const moveKey = `${move.from.id}->${move.to.id}`;
+            console.log('Checking if move requires promotion:', moveKey);
             
+            // Get detailed stack trace
+            const stack = new Error().stack.split('\n');
+            console.log('Call stack:', stack[1]);
+            console.log('Caller:', stack[2]);
+            console.log('Caller 2:', stack[3]);
+            console.log('Caller 3:', stack[4]);
+            
+            // Track recently processed moves to prevent processing the same move multiple times
+            const now = Date.now();
+            if (this._recentMoves.has(moveKey)) {
+                console.log('Move recently processed, skipping duplicate check');
+                return false; // Conservative: assume no promotion needed for duplicates
+            }
+            
+            // Debounce identical promotion checks within 100ms
+            if (this._lastPromotionCheck === moveKey && 
+                this._lastPromotionResult !== null &&
+                now - this._lastPromotionTime < 100) {
+                console.log('Using cached promotion result:', this._lastPromotionResult);
+                return this._lastPromotionResult;
+            }
+            
+            // Add to recent moves set
+            this._recentMoves.add(moveKey);
+            
+            const result = this._doRequiresPromotion(move);
+            
+            // Cache the result
+            this._lastPromotionCheck = moveKey;
+            this._lastPromotionResult = result;
+            this._lastPromotionTime = now;
+            
+            // Clear caches after delays
+            if (this._promotionCheckTimeout) {
+                clearTimeout(this._promotionCheckTimeout);
+            }
+            this._promotionCheckTimeout = setTimeout(() => {
+                this._lastPromotionCheck = null;
+                this._lastPromotionResult = null;
+            }, 500);
+            
+            if (this._recentMovesTimeout) {
+                clearTimeout(this._recentMovesTimeout);
+            }
+            this._recentMovesTimeout = setTimeout(() => {
+                this._recentMoves.clear();
+            }, 1000); // Clear recent moves after 1 second
+            
+            return result;
+        }
+
+        /**
+         * Internal promotion check logic
+         * @private
+         * @param {Move} move - Move to check
+         * @returns {boolean} True if promotion is required
+         */
+        _doRequiresPromotion(move) {
             if (!this.config.onlyLegalMoves) {
                 console.log('Not in legal moves mode, no promotion required');
                 return false;
@@ -4105,7 +4752,7 @@
                 return false;
             }
             
-            console.log('Pawn reaching promotion rank, validating move...');
+            console.log('Pawn reaching promotion rank - promotion required');
             
             // Additional validation: check if the pawn can actually reach this square
             if (!this._isPawnMoveValid(move.from, move.to, piece.color)) {
@@ -4113,56 +4760,23 @@
                 return false;
             }
             
-            // First check if the move is legal without promotion
-            const simpleMoveObj = {
-                from: move.from.id,
-                to: move.to.id
-            };
+            // If we get here, it's a pawn move to the promotion rank
+            // Check if it's a legal move by using the game's moves() method
+            const legalMoves = game.moves({ square: move.from.id, verbose: true });
+            const matchingMove = legalMoves.find(m => m.to === move.to.id);
             
-            try {
-                console.log('Testing move without promotion:', simpleMoveObj);
-                // Test if the move is legal without promotion first
-                const testMove = game.move(simpleMoveObj);
-                if (testMove) {
-                    // Move was successful, but check if it was a promotion
-                    const wasPromotion = testMove.promotion;
-                    
-                    // Undo the test move
-                    game.undo();
-                    
-                    console.log('Move successful without promotion, was promotion:', wasPromotion !== undefined);
-                    
-                    // If it was a promotion, return true
-                    return wasPromotion !== undefined;
-                }
-            } catch (error) {
-                console.log('Move failed without promotion, trying with promotion:', error.message);
-                
-                // If simple move fails, try with promotion
-                const promotionMoveObj = {
-                    from: move.from.id,
-                    to: move.to.id,
-                    promotion: 'q' // test with queen
-                };
-                
-                try {
-                    console.log('Testing move with promotion:', promotionMoveObj);
-                    const testMove = game.move(promotionMoveObj);
-                    if (testMove) {
-                        // Undo the test move
-                        game.undo();
-                        console.log('Move successful with promotion, promotion required');
-                        return true;
-                    }
-                } catch (promotionError) {
-                    console.log('Move failed even with promotion:', promotionError.message);
-                    // Move is not legal even with promotion
-                    return false;
-                }
+            if (!matchingMove) {
+                console.log('Move not in legal moves list, no promotion required');
+                return false;
             }
             
-            console.log('Move validation complete, no promotion required');
-            return false;
+            // If the legal move has a promotion flag or is to a promotion rank, promotion is required
+            const requiresPromotion = matchingMove.flags.includes('p') || 
+                                    (piece.color === 'w' && targetRank === 8) || 
+                                    (piece.color === 'b' && targetRank === 1);
+            
+            console.log('Promotion required:', requiresPromotion);
+            return requiresPromotion;
         }
 
         /**
@@ -4739,6 +5353,14 @@
                     piece.element.style.top = '';
                     piece.element.style.transform = '';
                     piece.element.style.zIndex = '';
+                    // Remove inline dimensions set during drag
+                    piece.element.style.width = '';
+                    piece.element.style.height = '';
+                    // Remove dragging class
+                    piece.element.classList.remove('dragging');
+                    
+                    // Clean up drag optimizations that might interfere with click
+                    DragOptimizations.cleanupAfterDrag(piece.element);
                 }
             );
         }
@@ -7274,31 +7896,27 @@
         _onMove(fromSquare, toSquare, promotion = null, animate = true) {
             const move = new Move$1(fromSquare, toSquare, promotion);
 
-            if (!move.check()) {
-                // Clear state on failed move
-                this._clearVisualState();
+            // 1. Validate the move
+            if (!move.check() || (this.config.onlyLegalMoves && !move.isLegal(this.positionService.getGame()))) {
+                this._clearVisualState(); // Always clear state on invalid move
                 return false;
             }
 
-            if (this.config.onlyLegalMoves && !move.isLegal(this.positionService.getGame())) {
-                // Clear state on illegal move
-                this._clearVisualState();
-                return false;
-            }
-
+            // 2. Check for promotion (if not already provided)
             if (!move.hasPromotion() && this._requiresPromotion(move)) {
-                // Don't clear state for promotion - it's handled elsewhere
+                // Promotion is required but not provided, let the promotion handler take over.
+                // Do not execute the move here.
                 return false;
             }
 
+            // 3. Execute the move
+            // The onMove callback is for the user to approve the move, not to execute it.
             if (this.config.onMove(move)) {
-                // Clear state before executing move
-                this._clearVisualState();
                 this._executeMove(move, animate);
                 return true;
             }
 
-            // Clear state on rejected move
+            // 4. If user rejects the move, clear state
             this._clearVisualState();
             return false;
         }
@@ -7384,87 +8002,69 @@
          * @param {boolean} [animate=true] - Whether to animate
          */
         _executeMove(move, animate = true) {
-            this.positionService.getGame().fen();
+            // Always clear visual state before executing a move to prevent artifacts
+            this._clearVisualState();
 
-            if (this.config.onlyLegalMoves) {
-                this.boardService.applyToAllSquares('unmoved');
+            const game = this.positionService.getGame();
+            if (!game) {
+                throw new ChessboardError('Game not initialized', 'GAME_ERROR');
+            }
 
-                const gameMove = this.moveService.executeMove(move);
-                if (!gameMove) {
-                    throw new Error('Move execution failed');
-                }
+            // Execute the move on the game engine
+            const gameMove = this.moveService.executeMove(move);
+            if (!gameMove) {
+                // This should not happen if validation passed, but as a safeguard:
+                console.error('Move execution failed unexpectedly for move:', move);
+                this._updateBoardPieces(false); // Sync board with game state
+                return;
+            }
 
-                move.from.moved();
-                move.to.moved();
+            // Clear previous move highlights
+            this.boardService.applyToAllSquares('unmoved');
+            
+            // Mark squares as moved for styling
+            move.from.moved();
+            move.to.moved();
 
-                // Check for special moves that need additional handling
-                const isCastleMove = this.moveService.isCastle(gameMove);
-                const isEnPassantMove = this.moveService.isEnPassant(gameMove);
+            // Handle animations and special moves (castle, en-passant)
+            const isCastle = this.moveService.isCastle(gameMove);
+            const isEnPassant = this.moveService.isEnPassant(gameMove);
 
-                // Animate the move if requested
-                if (animate && move.from.piece) {
-                    const capturedPiece = move.to.piece;
-
-                    // For castle moves in simultaneous mode, we need to coordinate both animations
-                    if (isCastleMove && this.config.animationStyle === 'simultaneous') {
-                        // Start king animation
-                        this.pieceService.translatePiece(
-                            move,
-                            !!capturedPiece,
-                            animate,
-                            this._createDragFunction.bind(this),
-                            () => {
-                                // King animation completed, trigger change event
-                                this.config.onMoveEnd(gameMove);
-                            }
-                        );
-
-                        // Start rook animation simultaneously (with small delay)
-                        setTimeout(() => {
-                            this._handleCastleMove(gameMove, true);
-                        }, this.config.simultaneousAnimationDelay);
-                    } else {
-                        // Regular move or sequential castle
-                        this.pieceService.translatePiece(
-                            move,
-                            !!capturedPiece,
-                            animate,
-                            this._createDragFunction.bind(this),
-                            () => {
-                                // After animation, handle special moves and trigger change event
-                                if (isCastleMove) {
-                                    this._handleSpecialMoveAnimation(gameMove);
-                                } else if (isEnPassantMove) {
-                                    this._handleSpecialMoveAnimation(gameMove);
-                                }
-                                this.config.onMoveEnd(gameMove);
-                            }
-                        );
+            if (animate && move.from.piece) {
+                this.pieceService.translatePiece(
+                    move,
+                    !!move.to.piece, // was there a capture?
+                    animate,
+                    this._createDragFunction.bind(this),
+                    () => {
+                        // After the main piece animation completes...
+                        if (isCastle) {
+                            this._handleSpecialMoveAnimation(gameMove);
+                        } else if (isEnPassant) {
+                            this._handleSpecialMoveAnimation(gameMove);
+                        }
+                        // Notify user that the move is fully complete
+                        this.config.onMoveEnd(gameMove);
+                        // A final sync to ensure board is perfect
+                        this._updateBoardPieces(false);
                     }
-                } else {
-                    // For non-animated moves, handle special moves immediately
-                    if (isCastleMove) {
-                        this._handleSpecialMove(gameMove);
-                    } else if (isEnPassantMove) {
-                        this._handleSpecialMove(gameMove);
-                    }
-                    this._updateBoardPieces(false);
-                    this.config.onMoveEnd(gameMove);
+                );
+
+                // For simultaneous castle, animate the rook alongside the king
+                if (isCastle && this.config.animationStyle === 'simultaneous') {
+                    setTimeout(() => {
+                        this._handleCastleMove(gameMove, true);
+                    }, this.config.simultaneousAnimationDelay);
                 }
             } else {
-                // Handle non-legal mode
-                const piece = this.positionService.getGamePieceId(move.from.id);
-                const game = this.positionService.getGame();
-
-                game.remove(move.from.id);
-                game.remove(move.to.id);
-                game.put({
-                    type: move.hasPromotion() ? move.promotion : piece[0],
-                    color: piece[1]
-                }, move.to.id);
-
-                // Update board for non-legal mode
-                this._updateBoardPieces(animate);
+                // If not animating, handle special moves immediately and update the board
+                if (isCastle) {
+                    this._handleSpecialMove(gameMove);
+                } else if (isEnPassant) {
+                    this._handleSpecialMove(gameMove);
+                }
+                this._updateBoardPieces(false);
+                this.config.onMoveEnd(gameMove);
             }
         }
 
@@ -8937,423 +9537,6 @@
         }
         forceSync() { this._updateBoardPieces(true, true); }
     };
-
-    /**
-     * Structured logging system for Chessboard.js
-     * @module utils/logger
-     * @since 2.0.0
-     */
-
-    /**
-     * Log levels in order of severity
-     * @constant
-     * @type {Object}
-     */
-    const LOG_LEVELS = Object.freeze({
-        DEBUG: 0,
-        INFO: 1,
-        WARN: 2,
-        ERROR: 3,
-        NONE: 4
-    });
-
-    /**
-     * Default logger configuration
-     * @constant
-     * @type {Object}
-     */
-    const DEFAULT_CONFIG = Object.freeze({
-        level: LOG_LEVELS.INFO,
-        enableColors: true,
-        enableTimestamp: true,
-        enableStackTrace: true,
-        maxLogSize: 1000,
-        enableConsole: true,
-        enableStorage: false,
-        storageKey: 'chessboard-logs'
-    });
-
-    /**
-     * ANSI color codes for console output
-     * @constant
-     * @type {Object}
-     */
-    const COLORS = Object.freeze({
-        DEBUG: '\x1b[36m',    // Cyan
-        INFO: '\x1b[32m',     // Green
-        WARN: '\x1b[33m',     // Yellow
-        ERROR: '\x1b[31m',    // Red
-        RESET: '\x1b[0m'      // Reset
-    });
-
-    /**
-     * Structured logger class with configurable output and filtering
-     * @class
-     */
-    class Logger {
-        /**
-         * Creates a new Logger instance
-         * @param {Object} [config] - Logger configuration
-         * @param {string} [name] - Logger name/namespace
-         */
-        constructor(config = {}, name = 'Chessboard') {
-            this.config = { ...DEFAULT_CONFIG, ...config };
-            this.name = name;
-            this.logs = [];
-            this.startTime = Date.now();
-            
-            // Create bound methods for better performance
-            this.debug = this._createLogMethod('DEBUG');
-            this.info = this._createLogMethod('INFO');
-            this.warn = this._createLogMethod('WARN');
-            this.error = this._createLogMethod('ERROR');
-            
-            // Performance tracking
-            this.performances = new Map();
-            
-            // Initialize storage if enabled
-            if (this.config.enableStorage) {
-                this._initStorage();
-            }
-        }
-
-        /**
-         * Creates a log method for a specific level
-         * @private
-         * @param {string} level - Log level
-         * @returns {Function} Log method
-         */
-        _createLogMethod(level) {
-            return (message, data = {}, error = null) => {
-                this._log(level, message, data, error);
-            };
-        }
-
-        /**
-         * Core logging method
-         * @private
-         * @param {string} level - Log level
-         * @param {string} message - Log message
-         * @param {Object} data - Additional data
-         * @param {Error} error - Error object
-         */
-        _log(level, message, data, error) {
-            const levelNumber = LOG_LEVELS[level];
-            
-            // Filter by level
-            if (levelNumber < this.config.level) {
-                return;
-            }
-            
-            // Create log entry
-            const entry = this._createLogEntry(level, message, data, error);
-            
-            // Store log entry
-            this._storeLogEntry(entry);
-            
-            // Output to console
-            if (this.config.enableConsole) {
-                this._outputToConsole(entry);
-            }
-            
-            // Store in localStorage if enabled
-            if (this.config.enableStorage) {
-                this._storeInStorage(entry);
-            }
-        }
-
-        /**
-         * Creates a structured log entry
-         * @private
-         * @param {string} level - Log level
-         * @param {string} message - Log message
-         * @param {Object} data - Additional data
-         * @param {Error} error - Error object
-         * @returns {Object} Log entry
-         */
-        _createLogEntry(level, message, data, error) {
-            const entry = {
-                timestamp: new Date().toISOString(),
-                level,
-                logger: this.name,
-                message,
-                data: { ...data },
-                runtime: Date.now() - this.startTime
-            };
-            
-            // Add error details if provided
-            if (error) {
-                entry.error = {
-                    name: error.name,
-                    message: error.message,
-                    stack: this.config.enableStackTrace ? error.stack : null
-                };
-            }
-            
-            // Add performance context if available
-            if (typeof performance !== 'undefined' && performance.memory) {
-                entry.memory = {
-                    used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
-                    total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024)
-                };
-            }
-            
-            return entry;
-        }
-
-        /**
-         * Stores log entry in memory
-         * @private
-         * @param {Object} entry - Log entry
-         */
-        _storeLogEntry(entry) {
-            this.logs.push(entry);
-            
-            // Limit log size
-            if (this.logs.length > this.config.maxLogSize) {
-                this.logs.shift();
-            }
-        }
-
-        /**
-         * Outputs log entry to console
-         * @private
-         * @param {Object} entry - Log entry
-         */
-        _outputToConsole(entry) {
-            const color = this.config.enableColors ? COLORS[entry.level] : '';
-            const reset = this.config.enableColors ? COLORS.RESET : '';
-            const timestamp = this.config.enableTimestamp ? 
-                `[${new Date(entry.timestamp).toLocaleTimeString()}] ` : '';
-            
-            const prefix = `${color}${timestamp}[${entry.logger}:${entry.level}]${reset}`;
-            const message = `${prefix} ${entry.message}`;
-            
-            // Choose console method based on level
-            const consoleMethod = this._getConsoleMethod(entry.level);
-            
-            if (Object.keys(entry.data).length > 0 || entry.error) {
-                consoleMethod(message, {
-                    data: entry.data,
-                    error: entry.error,
-                    runtime: `${entry.runtime}ms`
-                });
-            } else {
-                consoleMethod(message);
-            }
-        }
-
-        /**
-         * Gets appropriate console method for log level
-         * @private
-         * @param {string} level - Log level
-         * @returns {Function} Console method
-         */
-        _getConsoleMethod(level) {
-            switch (level) {
-                case 'DEBUG':
-                    return console.debug || console.log;
-                case 'INFO':
-                    return console.info || console.log;
-                case 'WARN':
-                    return console.warn || console.log;
-                case 'ERROR':
-                    return console.error || console.log;
-                default:
-                    return console.log;
-            }
-        }
-
-        /**
-         * Initializes localStorage for log storage
-         * @private
-         */
-        _initStorage() {
-            if (typeof localStorage === 'undefined') {
-                this.config.enableStorage = false;
-                return;
-            }
-            
-            try {
-                // Test localStorage availability
-                localStorage.setItem('test', 'test');
-                localStorage.removeItem('test');
-            } catch (error) {
-                this.config.enableStorage = false;
-                console.warn('localStorage not available, disabling log storage');
-            }
-        }
-
-        /**
-         * Stores log entry in localStorage
-         * @private
-         * @param {Object} entry - Log entry
-         */
-        _storeInStorage(entry) {
-            if (!this.config.enableStorage) {
-                return;
-            }
-            
-            try {
-                const stored = JSON.parse(localStorage.getItem(this.config.storageKey) || '[]');
-                stored.push(entry);
-                
-                // Limit stored logs
-                if (stored.length > this.config.maxLogSize) {
-                    stored.shift();
-                }
-                
-                localStorage.setItem(this.config.storageKey, JSON.stringify(stored));
-            } catch (error) {
-                console.warn('Failed to store log entry:', error);
-            }
-        }
-
-        /**
-         * Starts performance measurement
-         * @param {string} name - Performance measurement name
-         */
-        startPerformance(name) {
-            this.performances.set(name, {
-                start: performance.now(),
-                measurements: []
-            });
-            
-            this.debug(`Started performance measurement: ${name}`);
-        }
-
-        /**
-         * Ends performance measurement
-         * @param {string} name - Performance measurement name
-         * @returns {number} Duration in milliseconds
-         */
-        endPerformance(name) {
-            const perf = this.performances.get(name);
-            if (!perf) {
-                this.warn(`Performance measurement not found: ${name}`);
-                return 0;
-            }
-            
-            const duration = performance.now() - perf.start;
-            perf.measurements.push(duration);
-            
-            this.debug(`Performance measurement completed: ${name}`, {
-                duration: `${duration.toFixed(2)}ms`,
-                measurements: perf.measurements.length
-            });
-            
-            return duration;
-        }
-
-        /**
-         * Gets performance statistics
-         * @param {string} name - Performance measurement name
-         * @returns {Object} Performance statistics
-         */
-        getPerformanceStats(name) {
-            const perf = this.performances.get(name);
-            if (!perf || perf.measurements.length === 0) {
-                return null;
-            }
-            
-            const measurements = perf.measurements;
-            const total = measurements.reduce((sum, m) => sum + m, 0);
-            const avg = total / measurements.length;
-            const min = Math.min(...measurements);
-            const max = Math.max(...measurements);
-            
-            return {
-                name,
-                count: measurements.length,
-                total: total.toFixed(2),
-                average: avg.toFixed(2),
-                min: min.toFixed(2),
-                max: max.toFixed(2)
-            };
-        }
-
-        /**
-         * Creates a child logger with a specific namespace
-         * @param {string} namespace - Child logger namespace
-         * @returns {Logger} Child logger instance
-         */
-        child(namespace) {
-            return new Logger(this.config, `${this.name}:${namespace}`);
-        }
-
-        /**
-         * Sets log level
-         * @param {string} level - Log level
-         */
-        setLevel(level) {
-            if (LOG_LEVELS[level] !== undefined) {
-                this.config.level = LOG_LEVELS[level];
-            }
-        }
-
-        /**
-         * Gets current log level
-         * @returns {string} Current log level
-         */
-        getLevel() {
-            return Object.keys(LOG_LEVELS).find(key => LOG_LEVELS[key] === this.config.level);
-        }
-
-        /**
-         * Gets all stored logs
-         * @returns {Array} Array of log entries
-         */
-        getLogs() {
-            return [...this.logs];
-        }
-
-        /**
-         * Clears all stored logs
-         */
-        clearLogs() {
-            this.logs = [];
-            
-            if (this.config.enableStorage) {
-                try {
-                    localStorage.removeItem(this.config.storageKey);
-                } catch (error) {
-                    console.warn('Failed to clear stored logs:', error);
-                }
-            }
-        }
-
-        /**
-         * Exports logs as JSON
-         * @returns {string} JSON string of logs
-         */
-        exportLogs() {
-            return JSON.stringify(this.logs, null, 2);
-        }
-
-        /**
-         * Cleans up resources
-         */
-        destroy() {
-            this.clearLogs();
-            this.performances.clear();
-        }
-    }
-
-    /**
-     * Default logger instance
-     * @type {Logger}
-     */
-    const logger = new Logger();
-
-    /**
-     * Creates a logger with specific configuration
-     * @param {Object} config - Logger configuration
-     * @param {string} name - Logger name
-     * @returns {Logger} Logger instance
-     */
-    function createLogger(config, name) {
-        return new Logger(config, name);
-    }
 
     /**
      * Chessboard factory for creating and managing chessboard instances

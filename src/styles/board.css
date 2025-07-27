@@ -1,6 +1,7 @@
 :root {
     --dimBoard: 600px;
     --pieceRatio: 0.9;
+    --square-size: calc(var(--dimBoard) / 8);
 
     --blackSquare: #b58863;
     --whiteSquare: #f0d9b5;
@@ -25,8 +26,8 @@
 }
 
 .square {
-    width: calc(var(--dimBoard) / 8);
-    height: calc(var(--dimBoard) / 8);
+    width: var(--square-size);
+    height: var(--square-size);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -35,8 +36,8 @@
 .piece {
     position: absolute;
     z-index: 10;
-    width: calc(calc(var(--dimBoard) / 8) * var(--pieceRatio));
-    height: calc(calc(var(--dimBoard) / 8) * var(--pieceRatio));
+    width: calc(var(--square-size) * var(--pieceRatio));
+    height: calc(var(--square-size) * var(--pieceRatio));
 
     /* No selection */
     -webkit-user-select: none;

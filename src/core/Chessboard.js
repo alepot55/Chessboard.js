@@ -293,31 +293,27 @@ class Chessboard {
     _onMove(fromSquare, toSquare, promotion = null, animate = true) {
         const move = new Move(fromSquare, toSquare, promotion);
 
-        if (!move.check()) {
-            // Clear state on failed move
-            this._clearVisualState();
+        // 1. Validate the move
+        if (!move.check() || (this.config.onlyLegalMoves && !move.isLegal(this.positionService.getGame()))) {
+            this._clearVisualState(); // Always clear state on invalid move
             return false;
         }
 
-        if (this.config.onlyLegalMoves && !move.isLegal(this.positionService.getGame())) {
-            // Clear state on illegal move
-            this._clearVisualState();
-            return false;
-        }
-
+        // 2. Check for promotion (if not already provided)
         if (!move.hasPromotion() && this._requiresPromotion(move)) {
-            // Don't clear state for promotion - it's handled elsewhere
+            // Promotion is required but not provided, let the promotion handler take over.
+            // Do not execute the move here.
             return false;
         }
 
+        // 3. Execute the move
+        // The onMove callback is for the user to approve the move, not to execute it.
         if (this.config.onMove(move)) {
-            // Clear state before executing move
-            this._clearVisualState();
             this._executeMove(move, animate);
             return true;
         }
 
-        // Clear state on rejected move
+        // 4. If user rejects the move, clear state
         this._clearVisualState();
         return false;
     }
@@ -403,87 +399,69 @@ class Chessboard {
      * @param {boolean} [animate=true] - Whether to animate
      */
     _executeMove(move, animate = true) {
-        const gameStateBefore = this.positionService.getGame().fen();
+        // Always clear visual state before executing a move to prevent artifacts
+        this._clearVisualState();
 
-        if (this.config.onlyLegalMoves) {
-            this.boardService.applyToAllSquares('unmoved');
+        const game = this.positionService.getGame();
+        if (!game) {
+            throw new ChessboardError('Game not initialized', 'GAME_ERROR');
+        }
 
-            const gameMove = this.moveService.executeMove(move);
-            if (!gameMove) {
-                throw new Error('Move execution failed');
-            }
+        // Execute the move on the game engine
+        const gameMove = this.moveService.executeMove(move);
+        if (!gameMove) {
+            // This should not happen if validation passed, but as a safeguard:
+            console.error('Move execution failed unexpectedly for move:', move);
+            this._updateBoardPieces(false); // Sync board with game state
+            return;
+        }
 
-            move.from.moved();
-            move.to.moved();
+        // Clear previous move highlights
+        this.boardService.applyToAllSquares('unmoved');
+        
+        // Mark squares as moved for styling
+        move.from.moved();
+        move.to.moved();
 
-            // Check for special moves that need additional handling
-            const isCastleMove = this.moveService.isCastle(gameMove);
-            const isEnPassantMove = this.moveService.isEnPassant(gameMove);
+        // Handle animations and special moves (castle, en-passant)
+        const isCastle = this.moveService.isCastle(gameMove);
+        const isEnPassant = this.moveService.isEnPassant(gameMove);
 
-            // Animate the move if requested
-            if (animate && move.from.piece) {
-                const capturedPiece = move.to.piece;
-
-                // For castle moves in simultaneous mode, we need to coordinate both animations
-                if (isCastleMove && this.config.animationStyle === 'simultaneous') {
-                    // Start king animation
-                    this.pieceService.translatePiece(
-                        move,
-                        !!capturedPiece,
-                        animate,
-                        this._createDragFunction.bind(this),
-                        () => {
-                            // King animation completed, trigger change event
-                            this.config.onMoveEnd(gameMove);
-                        }
-                    );
-
-                    // Start rook animation simultaneously (with small delay)
-                    setTimeout(() => {
-                        this._handleCastleMove(gameMove, true);
-                    }, this.config.simultaneousAnimationDelay);
-                } else {
-                    // Regular move or sequential castle
-                    this.pieceService.translatePiece(
-                        move,
-                        !!capturedPiece,
-                        animate,
-                        this._createDragFunction.bind(this),
-                        () => {
-                            // After animation, handle special moves and trigger change event
-                            if (isCastleMove) {
-                                this._handleSpecialMoveAnimation(gameMove);
-                            } else if (isEnPassantMove) {
-                                this._handleSpecialMoveAnimation(gameMove);
-                            }
-                            this.config.onMoveEnd(gameMove);
-                        }
-                    );
+        if (animate && move.from.piece) {
+            this.pieceService.translatePiece(
+                move,
+                !!move.to.piece, // was there a capture?
+                animate,
+                this._createDragFunction.bind(this),
+                () => {
+                    // After the main piece animation completes...
+                    if (isCastle) {
+                        this._handleSpecialMoveAnimation(gameMove);
+                    } else if (isEnPassant) {
+                        this._handleSpecialMoveAnimation(gameMove);
+                    }
+                    // Notify user that the move is fully complete
+                    this.config.onMoveEnd(gameMove);
+                    // A final sync to ensure board is perfect
+                    this._updateBoardPieces(false);
                 }
-            } else {
-                // For non-animated moves, handle special moves immediately
-                if (isCastleMove) {
-                    this._handleSpecialMove(gameMove);
-                } else if (isEnPassantMove) {
-                    this._handleSpecialMove(gameMove);
-                }
-                this._updateBoardPieces(false);
-                this.config.onMoveEnd(gameMove);
+            );
+
+            // For simultaneous castle, animate the rook alongside the king
+            if (isCastle && this.config.animationStyle === 'simultaneous') {
+                setTimeout(() => {
+                    this._handleCastleMove(gameMove, true);
+                }, this.config.simultaneousAnimationDelay);
             }
         } else {
-            // Handle non-legal mode
-            const piece = this.positionService.getGamePieceId(move.from.id);
-            const game = this.positionService.getGame();
-
-            game.remove(move.from.id);
-            game.remove(move.to.id);
-            game.put({
-                type: move.hasPromotion() ? move.promotion : piece[0],
-                color: piece[1]
-            }, move.to.id);
-
-            // Update board for non-legal mode
-            this._updateBoardPieces(animate);
+            // If not animating, handle special moves immediately and update the board
+            if (isCastle) {
+                this._handleSpecialMove(gameMove);
+            } else if (isEnPassant) {
+                this._handleSpecialMove(gameMove);
+            }
+            this._updateBoardPieces(false);
+            this.config.onMoveEnd(gameMove);
         }
     }
 

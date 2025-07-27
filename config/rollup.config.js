@@ -20,7 +20,8 @@ export default {
     {
       file: 'dist/chessboard.iife.js', // IIFE per browser
       format: 'iife',
-      name: 'Chessboard'
+      name: 'ChessboardLib',
+      footer: 'var Chessboard = ChessboardLib.default; if (typeof window !== "undefined") { window.Chessboard = Chessboard; Object.keys(ChessboardLib).forEach(key => { if (key !== "default") Chessboard[key] = ChessboardLib[key]; }); }'
     }
   ],
   plugins: [

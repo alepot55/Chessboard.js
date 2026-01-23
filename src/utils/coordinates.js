@@ -9,8 +9,8 @@
  */
 export function algebraicToCoords(square) {
   const file = square.charCodeAt(0) - 97; // 'a' = 0, 'b' = 1, etc.
-  const rank = parseInt(square[1]) - 1;    // '1' = 0, '2' = 1, etc.
-  
+  const rank = parseInt(square[1], 10) - 1; // '1' = 0, '2' = 1, etc.
+
   return { row: 7 - rank, col: file };
 }
 
@@ -22,8 +22,8 @@ export function algebraicToCoords(square) {
  */
 export function coordsToAlgebraic(row, col) {
   const file = String.fromCharCode(97 + col); // 0 = 'a', 1 = 'b', etc.
-  const rank = (8 - row).toString();          // 0 = '8', 1 = '7', etc.
-  
+  const rank = (8 - row).toString(); // 0 = '8', 1 = '7', etc.
+
   return file + rank;
 }
 
@@ -54,9 +54,9 @@ export function isValidCoords(row, col) {
  */
 export function isValidSquare(square) {
   if (typeof square !== 'string' || square.length !== 2) return false;
-  
+
   const file = square[0];
   const rank = square[1];
-  
+
   return file >= 'a' && file <= 'h' && rank >= '1' && rank <= '8';
 }

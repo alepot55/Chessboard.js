@@ -6,10 +6,10 @@
 
 export { ERROR_MESSAGES, ERROR_CODES } from './messages.js';
 export {
-    ChessboardError,
-    ValidationError,
-    ConfigurationError,
-    MoveError,
-    DOMError,
-    PieceError
+  ChessboardError,
+  ValidationError,
+  ConfigurationError,
+  MoveError,
+  DOMError,
+  PieceError,
 } from './ChessboardError.js';

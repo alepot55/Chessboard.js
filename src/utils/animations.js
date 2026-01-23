@@ -9,7 +9,7 @@
  */
 export function parseTime(time) {
   if (typeof time === 'number') return time;
-  
+
   switch (time) {
     case 'fast': return 150;
     case 'slow': return 500;
@@ -33,5 +33,5 @@ export function parseAnimation(animation) {
  * @returns {Promise} Promise that resolves after the duration
  */
 export function animationPromise(duration) {
-  return new Promise(resolve => setTimeout(resolve, duration));
+  return new Promise((resolve) => setTimeout(resolve, duration));
 }

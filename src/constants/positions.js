@@ -10,9 +10,9 @@
  * @readonly
  */
 export const STANDARD_POSITIONS = {
-    'start': 'start',
-    'default': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-    'empty': '8/8/8/8/8/8/8/8 w - - 0 1'
+  start: 'start',
+  default: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+  empty: '8/8/8/8/8/8/8/8 w - - 0 1',
 };
 
 /**
@@ -56,7 +56,7 @@ export const BOARD_LETTERS = 'abcdefgh';
  * @readonly
  */
 export const BOARD_SIZE = {
-    ROWS: 8,
-    COLS: 8,
-    TOTAL_SQUARES: 64
+  ROWS: 8,
+  COLS: 8,
+  TOTAL_SQUARES: 64,
 };

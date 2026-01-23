@@ -8,10 +8,10 @@
 import ChessboardClass from './Chessboard.js';
 import ChessboardConfig from './ChessboardConfig.js';
 import {
-    ChessboardFactory,
-    chessboardFactory,
-    createChessboard,
-    createChessboardFromTemplate
+  ChessboardFactory,
+  chessboardFactory,
+  createChessboard,
+  createChessboardFromTemplate,
 } from './ChessboardFactory.js';
 import { logger } from '../utils/logger.js';
 
@@ -23,27 +23,27 @@ import { logger } from '../utils/logger.js';
  * @returns {ChessboardClass} Chessboard instance
  */
 function Chessboard(containerElm, config = {}) {
-    const factoryLogger = logger.child('ChessboardFactory');
+  const factoryLogger = logger.child('ChessboardFactory');
 
-    try {
-        // If first parameter is an object, treat it as config
-        if (typeof containerElm === 'object' && containerElm !== null) {
-            factoryLogger.debug('Creating chessboard with config object');
-            return new ChessboardClass(containerElm);
-        }
-
-        // Otherwise, treat first parameter as element ID
-        if (typeof containerElm === 'string') {
-            factoryLogger.debug('Creating chessboard with element ID', { elementId: containerElm });
-            const fullConfig = { ...config, id: containerElm };
-            return new ChessboardClass(fullConfig);
-        }
-
-        throw new Error('Invalid parameters: first parameter must be string or object');
-    } catch (error) {
-        factoryLogger.error('Failed to create chessboard instance', { error });
-        throw error;
+  try {
+    // If first parameter is an object, treat it as config
+    if (typeof containerElm === 'object' && containerElm !== null) {
+      factoryLogger.debug('Creating chessboard with config object');
+      return new ChessboardClass(containerElm);
     }
+
+    // Otherwise, treat first parameter as element ID
+    if (typeof containerElm === 'string') {
+      factoryLogger.debug('Creating chessboard with element ID', { elementId: containerElm });
+      const fullConfig = { ...config, id: containerElm };
+      return new ChessboardClass(fullConfig);
+    }
+
+    throw new Error('Invalid parameters: first parameter must be string or object');
+  } catch (error) {
+    factoryLogger.error('Failed to create chessboard instance', { error });
+    throw error;
+  }
 }
 
 /**
@@ -53,32 +53,32 @@ function Chessboard(containerElm, config = {}) {
  * @extends ChessboardClass
  */
 class ChessboardWrapper extends ChessboardClass {
-    /**
+  /**
      * Creates a new ChessboardWrapper instance
      * @param {string|Object} containerElm - Container element ID or configuration object
      * @param {Object} [config={}] - Configuration options
      */
-    constructor(containerElm, config = {}) {
-        const instanceLogger = logger.child('ChessboardWrapper');
+  constructor(containerElm, config = {}) {
+    const instanceLogger = logger.child('ChessboardWrapper');
 
-        try {
-            // If first parameter is an object, treat it as config
-            if (typeof containerElm === 'object' && containerElm !== null) {
-                instanceLogger.debug('Initializing with config object');
-                super(containerElm);
-            } else if (typeof containerElm === 'string') {
-                // Otherwise, treat first parameter as element ID
-                instanceLogger.debug('Initializing with element ID', { elementId: containerElm });
-                const fullConfig = { ...config, id: containerElm };
-                super(fullConfig);
-            } else {
-                throw new Error('Invalid constructor parameters');
-            }
-        } catch (error) {
-            instanceLogger.error('Failed to initialize ChessboardWrapper', { error });
-            throw error;
-        }
+    try {
+      // If first parameter is an object, treat it as config
+      if (typeof containerElm === 'object' && containerElm !== null) {
+        instanceLogger.debug('Initializing with config object');
+        super(containerElm);
+      } else if (typeof containerElm === 'string') {
+        // Otherwise, treat first parameter as element ID
+        instanceLogger.debug('Initializing with element ID', { elementId: containerElm });
+        const fullConfig = { ...config, id: containerElm };
+        super(fullConfig);
+      } else {
+        throw new Error('Invalid constructor parameters');
+      }
+    } catch (error) {
+      instanceLogger.error('Failed to initialize ChessboardWrapper', { error });
+      throw error;
     }
+  }
 }
 
 /**
@@ -130,12 +130,12 @@ Chessboard.Factory = ChessboardFactory;
 
 // --- EXPORTS ---
 export {
-    Chessboard,
-    ChessboardConfig,
-    ChessboardFactory,
-    chessboardFactory,
-    createChessboard,
-    createChessboardFromTemplate
+  Chessboard,
+  ChessboardConfig,
+  ChessboardFactory,
+  chessboardFactory,
+  createChessboard,
+  createChessboardFromTemplate,
 };
 
 export default Chessboard;

@@ -16,4 +16,7 @@ fogboard.js
 .vscode
 .npmignore
 altri_pezzi
-.github
+
+# Allow GitHub workflows but ignore other .github files
+!.github/workflows/
+.github/instructions/

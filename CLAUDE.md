@@ -4,13 +4,32 @@ This document provides comprehensive guidance for AI assistants working with the
 
 ## Project Overview
 
-**Chessboard.js** is an interactive, customizable chessboard library for web applications. It provides a visual chess interface for game displays, chess lessons, analysis tools, and interactive chess experiences.
+**Chessboard.js** is a modern, high-performance interactive chessboard library for web applications. It provides a visual chess interface for game displays, chess lessons, analysis tools, and interactive chess experiences.
 
 - **Package**: `@alepot55/chessboardjs` (NPM)
-- **Version**: 2.2.1
-- **License**: ISC
+- **Version**: 3.0.0
+- **License**: MIT
 - **Module Type**: ES Modules (`"type": "module"`)
 - **Runtime Dependency**: `chess.js` (^1.0.0) for move validation
+- **Node Version**: >=18.0.0
+
+## Technology Stack
+
+### Build & Development
+- **Vite 5** - Modern build tool for fast development and optimized production builds
+- **TypeScript 5** - Type definitions and strict type checking
+- **Vitest** - Modern testing framework with Jest-compatible API
+
+### Code Quality
+- **ESLint 9** - Flat config with TypeScript support
+- **Prettier 3** - Code formatting
+- **Husky 9** - Git hooks
+- **lint-staged** - Pre-commit linting
+
+### CI/CD
+- **GitHub Actions** - Automated testing, building, and publishing
+- **Changesets** - Version management and changelog generation
+- **Codecov** - Coverage reporting
 
 ## Repository Structure
 
@@ -46,24 +65,29 @@ Chessboard.js/
 │   │   ├── ChessboardError.js # Error class hierarchy
 │   │   └── messages.js     # Error messages & codes
 │   ├── constants/          # Constants
-│   │   └── positions.js    # Chess constants (pieces, colors, positions)
+│   │   └── positions.js    # Chess constants
 │   ├── styles/             # CSS styling
 │   │   ├── board.css       # Board layout (CSS Grid 8x8)
 │   │   ├── pieces.css      # Piece styling
 │   │   └── animations.css  # Animation keyframes
+│   ├── types/              # TypeScript type definitions
+│   │   └── index.d.ts      # Comprehensive type definitions
 │   └── index.js            # Main entry point
-├── config/                 # Build configuration
-│   ├── rollup.config.js    # Rollup bundler config
-│   ├── jest.config.js      # Jest testing config
-│   └── .babelrc            # Babel transpiler config
 ├── tests/                  # Test suites
-│   └── unit/               # Unit tests (Jest)
+│   ├── unit/               # Unit tests (Vitest)
+│   └── setup.ts            # Test setup and utilities
 ├── assets/                 # Static assets
 │   └── themes/             # Piece themes (SVG)
-│       ├── default/        # Default theme
-│       └── alepot/         # Alternative theme
 ├── dist/                   # Build output (multiple formats)
-├── .eslintrc.json          # ESLint configuration
+├── .github/
+│   └── workflows/
+│       └── ci.yml          # CI/CD pipeline
+├── vite.config.ts          # Vite configuration
+├── tsconfig.json           # TypeScript configuration
+├── eslint.config.js        # ESLint flat config
+├── .prettierrc             # Prettier configuration
+├── .husky/                 # Git hooks
+│   └── pre-commit          # Pre-commit hook
 ├── package.json            # NPM package config
 └── README.md               # User documentation
 ```
@@ -72,22 +96,30 @@ Chessboard.js/
 
 ```bash
 # Development
-npm run dev              # Watch mode with Rollup
+npm run dev              # Watch mode with Vite
 
 # Building
-npm run build            # Build all formats
-npm run build:esm        # ES Modules only
-npm run build:cjs        # CommonJS only
-npm run build:umd        # UMD only
-npm run build:iife       # IIFE only
+npm run build            # Build all formats with Vite
+npm run build:types      # Generate TypeScript declarations
 
 # Testing
-npm test                 # Run all tests
+npm test                 # Run all tests with Vitest
 npm run test:watch       # Watch mode
 npm run test:coverage    # With coverage report
+npm run test:ui          # Visual test interface
 
-# Pre-publish
-npm run prepublishOnly   # Runs test && build
+# Code Quality
+npm run lint             # Run ESLint
+npm run lint:fix         # Fix ESLint issues
+npm run format           # Format with Prettier
+npm run format:check     # Check formatting
+npm run typecheck        # TypeScript type checking
+npm run validate         # Run all checks (lint + typecheck + test)
+
+# Utilities
+npm run clean            # Remove build artifacts
+npm run size             # Check bundle size
+npm run prepare          # Set up Husky (runs automatically)
 ```
 
 ## Architecture Patterns
@@ -108,6 +140,7 @@ npm run prepublishOnly   # Runs test && build
 - **Services Layer**: Business logic services - domain operations
 - **Utils Layer**: Pure utility functions - cross-cutting concerns
 - **Errors Layer**: Custom error types with context information
+- **Types Layer**: TypeScript type definitions
 
 ## Code Conventions
 
@@ -135,50 +168,128 @@ class Chessboard {
 
 ### ESLint Rules (Key Points)
 
-- **Indentation**: 4 spaces
-- **Max line length**: 120 characters
-- **Semicolons**: Required
-- **Quotes**: Single quotes preferred
-- **No console.log**: Use `console.warn`, `console.error`, or `console.info`
-- **No var**: Use `const` or `let`
-- **Prefer const**: Immutable when possible
-- **Arrow functions**: Preferred for callbacks
-- **Strict equality**: `===` required (except null checks)
+- **Modern ES2022+** target
+- **TypeScript support** with strict type checking
+- **Import ordering** enforced with groups
+- **No console.log** in production (use logger utility)
+- **Prefer const/let** over var
+- **Arrow functions** preferred for callbacks
+- **Strict equality** (`===`) required
 
-### Error Handling
+### TypeScript Types
 
-The codebase uses a custom error hierarchy:
+The project includes comprehensive TypeScript definitions in `src/types/index.d.ts`:
 
-```javascript
-// Base error
-ChessboardError(message, code, context)
-
-// Specific errors
-ValidationError   // Invalid inputs
-ConfigurationError // Bad configuration
-MoveError         // Invalid moves
-DOMError          // DOM-related issues
-PieceError        // Piece operation failures
+```typescript
+// Key types available
+import type {
+  PieceType,       // 'k' | 'q' | 'r' | 'b' | 'n' | 'p'
+  PieceColor,      // 'w' | 'b'
+  Square,          // 'a1' - 'h8'
+  Move,            // { from, to, promotion?, ... }
+  ChessboardConfig,
+  ChessboardAPI,
+} from '@alepot55/chessboardjs';
 ```
 
-Always provide context in errors for debugging.
+## Testing
+
+### Test Framework: Vitest
+
+- Fast, native ESM support
+- Jest-compatible API
+- Built-in coverage with v8
+- Visual test UI available
+
+### Test Structure
+
+```typescript
+// tests/unit/chessboard.test.ts
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createBoardContainer, removeBoardContainer } from '../setup';
+
+describe('Chessboard', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+        container = createBoardContainer('test-board');
+    });
+
+    afterEach(() => {
+        removeBoardContainer('test-board');
+    });
+
+    it('should initialize correctly', () => {
+        // Test implementation
+    });
+});
+```
+
+### Custom Matchers
+
+```typescript
+expect('e4').toBeValidSquare();
+expect(fen).toBeValidFen();
+expect('wk').toBeValidPieceId();
+```
+
+### Test Utilities (from setup.ts)
+
+```typescript
+import {
+    createBoardContainer,
+    removeBoardContainer,
+    waitForAnimationFrame,
+    waitForTimeout,
+    STARTING_FEN,
+    TEST_POSITIONS,
+} from '../setup';
+```
+
+## Build System
+
+### Vite Configuration
+
+Builds to multiple formats:
+- `dist/chessboard.esm.js` - ES Modules
+- `dist/chessboard.cjs.js` - CommonJS
+- `dist/chessboard.umd.js` - UMD (browser global: `Chessboard`)
+- `dist/chessboard.iife.js` - IIFE
+- `dist/chessboard.css` - Combined CSS
+- `dist/types/` - TypeScript declarations
+
+### Bundle Size Limits
+
+- ESM bundle: < 50KB
+- CSS: < 10KB
+
+## CI/CD Pipeline
+
+### GitHub Actions Workflow
+
+1. **Lint & Format** - Code quality checks
+2. **Test** - Run tests on Node 18, 20, 22
+3. **Build** - Build library and check size
+4. **Security** - NPM audit
+5. **Publish** - Publish to NPM on release tags
+
+### Branch Strategy
+
+- `main` - Production releases
+- `develop` - Release candidates (published as `@next`)
+- Feature branches for development
 
 ## Key APIs
 
 ### Main Chessboard Class
 
 ```javascript
-// Initialization
 const board = new Chessboard({
-    id: 'board',              // Container element ID
-    position: 'start',        // FEN string or 'start'/'empty'
-    orientation: 'w',         // 'w' or 'b'
-    size: 400,                // Pixels
-    draggable: true,          // Enable drag & drop
-    clickable: true,          // Enable click-to-move
-    onlyLegalMoves: true,     // Validate against chess rules
-    onMove: (move) => true,   // Move callback
-    onMoveEnd: (move) => {}   // Post-move callback
+    id: 'board',
+    position: 'start',
+    orientation: 'w',
+    draggable: true,
+    onMove: (move) => true,
 });
 
 // Position methods
@@ -195,13 +306,12 @@ board.getLegalMoves('e2')     // Get legal moves for square
 
 // Piece methods
 board.getPiece('e4')          // Get piece at square
-board.putPiece('qw', 'd4')    // Place piece on square
+board.putPiece('wq', 'd4')    // Place piece on square
 board.removePiece('d4')       // Remove piece from square
 
 // Board control
 board.flipBoard()             // Flip orientation
 board.setOrientation('b')     // Set orientation
-board.getOrientation()        // Get orientation
 board.resizeBoard(500)        // Resize board
 
 // Game state
@@ -209,132 +319,101 @@ board.fen()                   // Get FEN
 board.turn()                  // Get turn ('w' or 'b')
 board.isGameOver()            // Check game over
 board.isCheckmate()           // Check checkmate
-board.isDraw()                // Check draw
-board.getHistory()            // Get move history
 
 // Lifecycle
 board.destroy()               // Cleanup and remove
 board.rebuild()               // Re-initialize
 ```
 
-### Static/Factory Methods
+## Logging
+
+Use the structured logger instead of console.log:
 
 ```javascript
-Chessboard.create('board', config)           // Create instance
-Chessboard.fromTemplate('board', 'default')  // Create from template
-Chessboard.listInstances()                   // Get all instances
-Chessboard.destroyAll()                      // Destroy all instances
+import { Logger, createLogger } from './utils/logger.js';
+
+const logger = createLogger({}, 'ComponentName');
+logger.debug('Debug message', { data });
+logger.info('Info message');
+logger.warn('Warning message');
+logger.error('Error message', {}, error);
 ```
 
-## Testing
+## Error Handling
 
-### Test Framework
-
-- **Jest** with `jest-environment-jsdom`
-- Tests in `/tests/unit/`
-- Babel transformation for ES6+
-
-### Test File Structure
+Use the custom error hierarchy:
 
 ```javascript
-// tests/unit/chessboard.test.js
-describe('Chessboard', () => {
-    let board;
-    let container;
+import {
+    ChessboardError,
+    ValidationError,
+    ConfigurationError
+} from './errors/ChessboardError.js';
 
-    beforeEach(() => {
-        container = document.createElement('div');
-        container.id = 'test-board';
-        document.body.appendChild(container);
-        board = new Chessboard({ id: 'test-board' });
-    });
-
-    afterEach(() => {
-        board?.destroy();
-        document.body.removeChild(container);
-    });
-
-    it('should create board with valid config', () => {
-        expect(board).toBeDefined();
-    });
-});
+throw new ValidationError('Invalid square', 'square', value);
+throw new ConfigurationError('Missing id', 'id', config.id);
 ```
 
-### Running Tests
+## Git Workflow
 
-```bash
-npm test                    # Run all tests
-npm run test:watch          # Watch mode
-npm run test:coverage       # Generate coverage
+### Pre-commit Hooks
+
+Husky runs lint-staged before each commit:
+- ESLint with auto-fix
+- Prettier formatting
+
+### Commit Messages
+
+Follow conventional commits:
 ```
-
-## Build System
-
-### Rollup Configuration
-
-Builds to multiple formats:
-- `dist/chessboard.esm.js` - ES Modules
-- `dist/chessboard.cjs.js` - CommonJS
-- `dist/chessboard.umd.js` - UMD (browser global: `Chessboard`)
-- `dist/chessboard.iife.js` - IIFE (browser global: `ChessboardLib`)
-- `dist/chessboard.css` - Combined CSS
-
-### Plugins Used
-
-- `@rollup/plugin-node-resolve` - Resolves node modules
-- `@rollup/plugin-replace` - Environment variable replacement
+feat: add new animation style
+fix: correct piece positioning on resize
+docs: update API documentation
+refactor: optimize position comparison
+test: add tests for undo/redo
+chore: update dependencies
+```
 
 ## Performance Considerations
 
-### Optimizations Already In Place
+### Optimizations In Place
 
-- **Validation caching**: LRU cache (max 1000 entries) for validation results
+- **Validation caching**: LRU cache for validation results
 - **RAF throttling**: RequestAnimationFrame for animations
-- **Debouncing/throttling**: For frequent operations
-- **Hardware acceleration CSS**: `transform: translateZ(0)`, `will-change`
 - **Batch DOM operations**: Minimizes reflows
+- **Lazy evaluation**: Legal moves calculated on demand
+- **Production builds**: Console logs removed, code minified
 
 ### When Adding Features
 
-- Use `PerformanceMonitor` class for timing metrics
-- Leverage existing caching utilities in `utils/validation.js`
-- Prefer CSS transforms over layout-triggering properties
-- Batch DOM reads before writes
+- Profile with the PerformanceMonitor class
+- Avoid creating functions in loops
+- Prefer CSS transforms over layout properties
+- Use the existing debounce/throttle utilities
 
 ## Common Tasks
 
 ### Adding a New Service
 
 1. Create file in `src/services/`
-2. Follow existing service pattern (class with constructor accepting dependencies)
+2. Follow existing service pattern
 3. Export from `src/services/index.js`
-4. Inject into `Chessboard` class via constructor
+4. Inject into `Chessboard` class
 5. Add unit tests in `tests/unit/`
 
-### Adding a New Component
+### Adding TypeScript Types
 
-1. Create file in `src/components/`
-2. Follow `Piece.js` or `Square.js` pattern
-3. Export from `src/components/index.js`
-4. Add unit tests
+1. Add interfaces/types to `src/types/index.d.ts`
+2. Use proper JSDoc comments in source files
+3. Run `npm run typecheck` to verify
 
-### Modifying Configuration Options
+### Running the Full Validation Pipeline
 
-1. Update defaults in `src/core/ChessboardConfig.js`
-2. Add validation in `ValidationService.js`
-3. Update type definitions if present
-4. Document in README.md
+```bash
+npm run validate  # lint + typecheck + test
+```
 
-### Adding CSS Styles
-
-1. Add to appropriate file in `src/styles/`
-   - `board.css` - Board layout
-   - `pieces.css` - Piece styling
-   - `animations.css` - Animation keyframes
-2. Use CSS custom properties for theming
-3. Prefer CSS Grid for layout
-
-## Important Files to Know
+## Important Files
 
 | File | Purpose |
 |------|---------|
@@ -342,61 +421,25 @@ Builds to multiple formats:
 | `src/core/ChessboardConfig.js` | Configuration validation & defaults |
 | `src/services/MoveService.js` | Move validation logic |
 | `src/services/EventService.js` | Drag/drop handling |
-| `src/utils/chess.js` | Chess.js integration wrapper |
-| `src/errors/ChessboardError.js` | Error class hierarchy |
-| `config/rollup.config.js` | Build configuration |
-| `config/jest.config.js` | Test configuration |
-
-## Deprecated APIs
-
-These legacy methods are still available but deprecated:
-
-- `move(move, animation)` → use `movePiece(move, { animate: animation })`
-- `clear(animation)` → use `clear({ animate: animation })`
-- `start(animation)` → use `reset({ animate: animation })`
-- `insert(square, piece)` → use `putPiece(piece, square)`
-- `get(square)` / `piece(square)` → use `getPiece(square)`
-
-## External Dependencies
-
-### Runtime
-
-- **chess.js** (^1.0.0): Chess move validation, FEN parsing, game state
-
-### Development
-
-- **Rollup** (^4.34.7): Module bundler
-- **Jest** (^29.7.0): Testing framework
-- **Babel** (^7.26.8): ES6+ transpilation
-- **jest-environment-jsdom** (^29.7.0): Browser DOM simulation
-
-## Git Workflow
-
-- Commit messages should be descriptive
-- Run tests before committing: `npm test`
-- Build before publishing: `npm run build`
-- Pre-publish hook runs: `npm run prepublishOnly`
+| `src/types/index.d.ts` | TypeScript type definitions |
+| `vite.config.ts` | Build configuration |
+| `eslint.config.js` | Linting rules |
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Board not rendering**: Check container element exists with correct ID
-2. **Moves not working**: Verify `onlyLegalMoves` setting and `onMove` callback return value
-3. **Animation issues**: Check `AnimationService` configuration
-4. **Build failures**: Clear `dist/` and rebuild
+1. **Build failures**: Run `npm run clean && npm install && npm run build`
+2. **Test failures**: Ensure DOM container is created in beforeEach
+3. **Type errors**: Run `npm run typecheck` for detailed output
+4. **Lint errors**: Run `npm run lint:fix` to auto-fix
 
 ### Debug Mode
 
-Use the logger utility for debugging:
-
+Set log level in development:
 ```javascript
-import { Logger } from './utils/logger.js';
-const logger = new Logger('ComponentName');
-logger.debug('Debug message');
-logger.info('Info message');
-logger.warn('Warning message');
-logger.error('Error message');
+import { logger } from './utils/logger.js';
+logger.setLevel('DEBUG');
 ```
 
 ## Additional Resources

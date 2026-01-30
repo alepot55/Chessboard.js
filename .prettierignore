@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+.vitest/
+
+# IDE
+.vscode/
+.idea/
+
+# Bundle
+chessboard.bundle.js
+
+# Lock files
+package-lock.json
+
+# Git
+.git/
+
+# Assets that shouldn't be formatted
+assets/
+*.svg
+*.png
+*.webp
+
+# Configuration files that might break
+*.config.js
+*.config.ts
+tsconfig.json

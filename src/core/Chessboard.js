@@ -191,9 +191,9 @@ class Chessboard {
      * Best practice: always remove squares (destroy JS/DOM) before clearing the board container.
      */
     _buildBoard() {
-        console.log('CHIAMATO: _buildBoard');
+        // Debug: _buildBoard called
         if (this._isUndoRedo) {
-            console.log('SKIP _buildBoard per undo/redo');
+            // Skip _buildBoard for undo/redo
             return;
         }
         // Forza la pulizia completa del contenitore board (DOM)
@@ -213,9 +213,9 @@ class Chessboard {
      * @private
      */
     _buildSquares() {
-        console.log('CHIAMATO: _buildSquares');
+        // Debug: _buildSquares called
         if (this._isUndoRedo) {
-            console.log('SKIP _buildSquares per undo/redo');
+            // Skip _buildSquares for undo/redo
             return;
         }
         if (this.boardService && this.boardService.removeSquares) {
@@ -509,8 +509,6 @@ class Chessboard {
             return;
         }
 
-        console.log(`Castle: moving rook from ${rookMove.from} to ${rookMove.to}`);
-
         if (animate) {
             // Always use translatePiece for smooth sliding animation
             const rookPiece = rookFromSquare.piece;
@@ -546,8 +544,6 @@ class Chessboard {
             return;
         }
 
-        console.log(`En passant: removing captured pawn from ${capturedSquare}`);
-
         if (animate) {
             // Animate the captured pawn removal
             this.pieceService.removePieceFromSquare(capturedSquareObj, true);
@@ -568,10 +564,8 @@ class Chessboard {
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load
      */
     _updateBoardPieces(animation = false, isPositionLoad = false) {
-        console.log('CHIAMATO: _updateBoardPieces', { animation, isPositionLoad, isUndoRedo: this._isUndoRedo });
         // Check if services are available
         if (!this.positionService || !this.moveService || !this.eventService) {
-            console.log('Cannot update board pieces - services not available');
             return;
         }
 
@@ -636,31 +630,23 @@ class Chessboard {
     _doUpdateBoardPieces(animation = false, isPositionLoad = false) {
         // Skip update if we're in the middle of a promotion
         if (this._isPromoting) {
-            console.log('Skipping board update during promotion');
             return;
         }
 
         // Check if services are available
         if (!this.positionService || !this.positionService.getGame()) {
-            console.log('Cannot update board pieces - position service not available');
             return;
         }
 
         const squares = this.boardService.getAllSquares();
         const gameStateBefore = this.positionService.getGame().fen();
 
-        console.log('_doUpdateBoardPieces - current FEN:', gameStateBefore);
-        console.log('_doUpdateBoardPieces - animation:', animation, 'style:', this.config.animationStyle, 'isPositionLoad:', isPositionLoad);
-
         // Determine which animation style to use
         const useSimultaneous = this.config.animationStyle === 'simultaneous';
-        console.log('_doUpdateBoardPieces - useSimultaneous:', useSimultaneous);
 
         if (useSimultaneous) {
-            console.log('Using simultaneous animation');
             this._doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad);
         } else {
-            console.log('Using sequential animation');
             this._doSequentialUpdate(squares, gameStateBefore, animation);
         }
     }
@@ -883,10 +869,6 @@ class Chessboard {
             }
         });
 
-        console.log('Position Analysis:');
-        console.log('Current pieces:', Array.from(currentPieces.entries()));
-        console.log('Expected pieces:', Array.from(expectedPieces.entries()));
-
         // Identify different types of changes
         const moves = []; // Pieces that can slide to new positions
         const removes = []; // Pieces that need to be removed
@@ -901,7 +883,6 @@ class Chessboard {
 
             if (currentPieceId === expectedPieceId) {
                 // Same piece type on same square - no movement needed
-                console.log(`UNCHANGED: ${currentPieceId} stays on ${square}`);
                 unchanged.push({
                     piece: currentPieceId,
                     square: square
@@ -923,7 +904,6 @@ class Chessboard {
 
             if (availableDestination) {
                 const [toSquare, expectedId] = availableDestination;
-                console.log(`MOVE: ${currentPieceId} from ${fromSquare} to ${toSquare}`);
                 moves.push({
                     piece: currentPieceId,
                     from: fromSquare,
@@ -934,7 +914,6 @@ class Chessboard {
                 processedSquares.add(toSquare);
             } else {
                 // This piece needs to be removed
-                console.log(`REMOVE: ${currentPieceId} from ${fromSquare}`);
                 removes.push({
                     piece: currentPieceId,
                     square: fromSquare,
@@ -946,7 +925,6 @@ class Chessboard {
         // Third pass: handle pieces that need to be added
         expectedPieces.forEach((expectedPieceId, toSquare) => {
             if (!processedSquares.has(toSquare)) {
-                console.log(`ADD: ${expectedPieceId} to ${toSquare}`);
                 adds.push({
                     piece: expectedPieceId,
                     square: toSquare,
@@ -972,26 +950,13 @@ class Chessboard {
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load
      */
     _executeSimultaneousChanges(changeAnalysis, gameStateBefore, isPositionLoad = false) {
-        const { moves, removes, adds, unchanged } = changeAnalysis;
-
-        console.log(`Position changes analysis:`, {
-            moves: moves.length,
-            removes: removes.length,
-            adds: adds.length,
-            unchanged: unchanged.length
-        });
-
-        // Log unchanged pieces for debugging
-        if (unchanged.length > 0) {
-            console.log('Pieces staying in place:', unchanged.map(u => `${u.piece} on ${u.square}`));
-        }
+        const { moves, removes, adds } = changeAnalysis;
 
         let animationsCompleted = 0;
         const totalAnimations = moves.length + removes.length + adds.length;
 
         // If no animations are needed, complete immediately
         if (totalAnimations === 0) {
-            console.log('No animations needed, completing immediately');
             this._addListeners();
 
             // Trigger change event if position changed
@@ -1004,9 +969,7 @@ class Chessboard {
 
         const onAnimationComplete = () => {
             animationsCompleted++;
-            console.log(`Animation completed: ${animationsCompleted}/${totalAnimations}`);
             if (animationsCompleted === totalAnimations) {
-                console.log('All simultaneous animations completed');
                 this._addListeners();
 
                 // Trigger change event if position changed
@@ -1019,14 +982,12 @@ class Chessboard {
 
         // Determine delay: 0 for position loads, configured delay for normal moves
         const animationDelay = isPositionLoad ? 0 : this.config.simultaneousAnimationDelay;
-        console.log(`Using animation delay: ${animationDelay}ms (position load: ${isPositionLoad})`);
 
         let animationIndex = 0;
 
         // Process moves (pieces sliding to new positions)
         moves.forEach(move => {
             const delay = animationIndex * animationDelay;
-            console.log(`Scheduling move ${move.piece} from ${move.from} to ${move.to} with delay ${delay}ms`);
 
             setTimeout(() => {
                 this._animatePieceMove(move, onAnimationComplete);
@@ -1038,7 +999,6 @@ class Chessboard {
         // Process removes (pieces disappearing)
         removes.forEach(remove => {
             const delay = animationIndex * animationDelay;
-            console.log(`Scheduling removal of ${remove.piece} from ${remove.square} with delay ${delay}ms`);
 
             setTimeout(() => {
                 this._animatePieceRemoval(remove, onAnimationComplete);
@@ -1050,7 +1010,6 @@ class Chessboard {
         // Process adds (pieces appearing)
         adds.forEach(add => {
             const delay = animationIndex * animationDelay;
-            console.log(`Scheduling addition of ${add.piece} to ${add.square} with delay ${delay}ms`);
 
             setTimeout(() => {
                 this._animatePieceAddition(add, onAnimationComplete);
@@ -1076,18 +1035,13 @@ class Chessboard {
             return;
         }
 
-        console.log(`Animating piece move: ${move.piece} from ${move.from} to ${move.to}`);
-
         // Use translatePiece for smooth sliding animation
         this.pieceService.translatePiece(
             { from: fromSquare, to: toSquare, piece: piece },
             false, // Assume no capture for now
             true, // Always animate
             this._createDragFunction.bind(this),
-            () => {
-                console.log(`Piece move animation completed: ${move.piece} to ${move.to}`);
-                onComplete();
-            }
+            onComplete
         );
     }
 
@@ -1098,12 +1052,7 @@ class Chessboard {
      * @param {Function} onComplete - Callback when animation completes
      */
     _animatePieceRemoval(remove, onComplete) {
-        console.log(`Animating piece removal: ${remove.piece} from ${remove.square}`);
-
-        this.pieceService.removePieceFromSquare(remove.squareObj, true, () => {
-            console.log(`Piece removal animation completed: ${remove.piece} from ${remove.square}`);
-            onComplete();
-        });
+        this.pieceService.removePieceFromSquare(remove.squareObj, true, onComplete);
     }
 
     /**
@@ -1113,18 +1062,13 @@ class Chessboard {
      * @param {Function} onComplete - Callback when animation completes
      */
     _animatePieceAddition(add, onComplete) {
-        console.log(`Animating piece addition: ${add.piece} to ${add.square}`);
-
         const newPiece = this.pieceService.convertPiece(add.piece);
         this.pieceService.addPieceOnSquare(
             add.squareObj,
             newPiece,
             true,
             this._createDragFunction.bind(this),
-            () => {
-                console.log(`Piece addition animation completed: ${add.piece} to ${add.square}`);
-                onComplete();
-            }
+            onComplete
         );
     }
 
@@ -1381,7 +1325,6 @@ class Chessboard {
         if (this._buildSquares) this._buildSquares();
         if (this._addListeners) this._addListeners();
         if (this._updateBoardPieces) this._updateBoardPieces(opts.animate !== false);
-        console.log('FEN dopo flip:', this.fen(), 'Orientamento:', this.coordinateService.getOrientation());
     }
     /**
      * Set the board orientation
@@ -1511,9 +1454,61 @@ class Chessboard {
 
     // --- LIFECYCLE ---
     /**
-     * Destroy the board and cleanup
+     * Destroy the board and cleanup all resources
      */
-    destroy() { /* TODO: robust destroy logic */ }
+    destroyBoard() {
+        // Remove all event listeners
+        if (this.eventService && typeof this.eventService.removeListeners === 'function') {
+            this.eventService.removeListeners();
+        }
+
+        // Clear all timeouts
+        if (this._updateTimeout) {
+            clearTimeout(this._updateTimeout);
+            this._updateTimeout = null;
+        }
+
+        // Clear the DOM
+        const boardContainer = document.getElementById(this.config.id_div);
+        if (boardContainer) {
+            boardContainer.innerHTML = '';
+        }
+
+        // Remove all pieces from squares
+        if (this.boardService && this.boardService.squares) {
+            Object.values(this.boardService.squares).forEach(sq => {
+                if (sq && sq.forceRemoveAllPieces) {
+                    sq.forceRemoveAllPieces();
+                }
+            });
+        }
+
+        // Clean up board service
+        if (this.boardService) {
+            if (this.boardService.removeSquares) this.boardService.removeSquares();
+            if (this.boardService.removeBoard) this.boardService.removeBoard();
+        }
+
+        // Null all services for garbage collection
+        this.validationService = null;
+        this.coordinateService = null;
+        this.positionService = null;
+        this.boardService = null;
+        this.pieceService = null;
+        this.animationService = null;
+        this.moveService = null;
+        this.eventService = null;
+
+        // Clear performance monitor
+        this._performanceMonitor = null;
+
+        // Clear state
+        this._undoneMoves = null;
+        this._boundUpdateBoardPieces = null;
+        this._boundOnSquareClick = null;
+        this._boundOnPieceHover = null;
+        this._boundOnPieceLeave = null;
+    }
     /**
      * Rebuild the board
      */
@@ -1529,7 +1524,17 @@ class Chessboard {
      * Set new config
      * @param {Object} newConfig
      */
-    setConfig(newConfig) { this.setConfig(newConfig); }
+    updateConfig(newConfig) {
+        if (this.config && typeof this.config.update === 'function') {
+            this.config.update(newConfig);
+        }
+        if (newConfig.size !== undefined) {
+            this.resizeBoard(newConfig.size);
+        }
+        if (newConfig.orientation !== undefined) {
+            this.setOrientation(newConfig.orientation);
+        }
+    }
 
     // --- ALIASES/DEPRECATED ---
     /**
@@ -1564,23 +1569,16 @@ class Chessboard {
     }
 
     /**
-     * Gets the current position as an object
-     * @returns {Object} Position object
-     */
-    position() {
-        return this.positionService.getPosition();
-    }
-
-    /**
-     * Sets a new position
-     * @param {string|Object} position - New position
+     * Gets or sets the current position
+     * @param {string|Object} [newPosition] - New position (optional)
      * @param {boolean} [animate=true] - Whether to animate
+     * @returns {Object|void} Position object if getter, void if setter
      */
-    position(position, animate = true) {
-        if (position === undefined) {
+    getOrSetPosition(newPosition, animate = true) {
+        if (newPosition === undefined) {
             return this.positionService.getPosition();
         }
-        this.load(position, {}, animate); // load() already handles isPositionLoad=true
+        this.load(newPosition, {}, animate);
     }
 
     /**
@@ -1773,28 +1771,21 @@ class Chessboard {
     }
 
     /**
-     * Gets configuration options
+     * Gets configuration options (alias for getConfig)
      * @returns {Object} Configuration object
      */
-    getConfig() {
-        return this.config.getConfig();
+    getConfigOptions() {
+        return this.config && typeof this.config.getConfig === 'function'
+            ? this.config.getConfig()
+            : this.config;
     }
 
     /**
-     * Updates configuration options
+     * Updates configuration options (alias for updateConfig)
      * @param {Object} newConfig - New configuration options
      */
-    setConfig(newConfig) {
-        this.config.update(newConfig);
-
-        // Rebuild board if necessary
-        if (newConfig.size !== undefined) {
-            this.resize(newConfig.size);
-        }
-
-        if (newConfig.orientation !== undefined) {
-            this.orientation(newConfig.orientation);
-        }
+    setConfigOptions(newConfig) {
+        this.updateConfig(newConfig);
     }
 
     /**
@@ -1837,14 +1828,23 @@ class Chessboard {
     // Ensure all public API methods from README are present and routed
     insert(square, piece) { return this.putPiece(piece, square); }
     get(square) { return this.getPiece(square); }
-    position(position, color) {
-        if (color) this.setOrientation(color);
-        return this.setPosition(position);
+    /**
+     * Legacy position method - use getPosition/setPosition instead
+     * @deprecated
+     */
+    position(positionArg, colorOrAnimate) {
+        if (positionArg === undefined) {
+            return this.positionService.getPosition();
+        }
+        if (typeof colorOrAnimate === 'string' && (colorOrAnimate === 'w' || colorOrAnimate === 'b')) {
+            this.setOrientation(colorOrAnimate);
+        }
+        return this.setPosition(positionArg, { animate: colorOrAnimate !== false });
     }
     flip(animation = true) { return this.flipBoard({ animate: animation }); }
     build() { return this._initialize(); }
     resize(value) { return this.resizeBoard(value); }
-    destroy() { return this._cleanup(); }
+    destroy() { return this.destroyBoard(); }
     piece(square) { return this.getPiece(square); }
     highlight(square) { return true; }
     dehighlight(square) { return true; }

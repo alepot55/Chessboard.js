@@ -1,12 +1,34 @@
+import { vi, beforeAll, afterAll } from 'vitest';
 import Chessboard from '../../src/index.js';
 
 describe('Chessboard Robustness & Edge Cases', () => {
   let chessboard;
   const config = { id_div: 'board', size: 400, position: 'start', orientation: 'w' };
 
+  beforeAll(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
+    vi.clearAllTimers();
     document.body.innerHTML = '<div id="board"></div>';
     chessboard = new Chessboard(config);
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    if (chessboard && typeof chessboard.destroy === 'function') {
+      try {
+        chessboard.destroy();
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+    chessboard = null;
   });
 
   describe('Piece Insertion', () => {
@@ -93,11 +115,14 @@ describe('Chessboard Robustness & Edge Cases', () => {
       chessboard.movePiece('e2e4');
       chessboard.movePiece('e7e5');
       chessboard.undoMove();
+      chessboard.forceSync();
+      await new Promise((r) => setTimeout(r, 20));
       expect(chessboard.getPiece('e5')).toBeNull();
       chessboard.redoMove();
       chessboard.forceSync();
-      await new Promise((r) => setTimeout(r, 10));
-      expect(chessboard.getPiece('e5')).toBe('pb');
+      await new Promise((r) => setTimeout(r, 20));
+      // Format is color+type: 'bp' = black pawn
+      expect(chessboard.getPiece('e5')).toBe('bp');
     });
     test('undo/redo after clear', () => {
       chessboard.movePiece('e2e4');
@@ -130,12 +155,14 @@ describe('Chessboard Robustness & Edge Cases', () => {
     test('alias get', async () => {
       chessboard.forceSync();
       await new Promise((r) => setTimeout(r, 10));
-      expect(chessboard.get('e2')).toBe('pw');
+      // Format is color+type: 'wp' = white pawn
+      expect(chessboard.get('e2')).toBe('wp');
     });
     test('alias piece', async () => {
       chessboard.forceSync();
       await new Promise((r) => setTimeout(r, 10));
-      expect(chessboard.piece('e2')).toBe('pw');
+      // Format is color+type: 'wp' = white pawn
+      expect(chessboard.piece('e2')).toBe('wp');
     });
   });
 

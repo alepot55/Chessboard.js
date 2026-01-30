@@ -1,12 +1,36 @@
+import { vi, beforeAll, afterAll } from 'vitest';
 import Chessboard from '../../src/index.js';
 
 describe('Chessboard User Functions', () => {
   let chessboard;
   const config = { id_div: 'board', size: 400, position: 'start', orientation: 'w' };
 
+  beforeAll(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
+    // Clear timers and DOM
+    vi.clearAllTimers();
     document.body.innerHTML = '<div id="board"></div>';
     chessboard = new Chessboard(config);
+  });
+
+  afterEach(() => {
+    // Cleanup to prevent timer leaks
+    vi.clearAllTimers();
+    if (chessboard && typeof chessboard.destroy === 'function') {
+      try {
+        chessboard.destroy();
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+    chessboard = null;
   });
 
   test('turn() should return the current turn', () => {
@@ -34,7 +58,8 @@ describe('Chessboard User Functions', () => {
   });
 
   test('getPiece() should return the piece on the given square', () => {
-    expect(chessboard.getPiece('e2')).toBe('pw');
+    // Format is color+type: 'wp' = white pawn
+    expect(chessboard.getPiece('e2')).toBe('wp');
   });
 
   test('setPosition() should set the board to the given position', () => {
@@ -58,8 +83,9 @@ describe('Chessboard User Functions', () => {
   });
 
   test('putPiece() should insert a piece on the given square', () => {
-    chessboard.putPiece('qw', 'e4');
-    expect(chessboard.getPiece('e4')).toBe('qw');
+    // putPiece accepts both 'wq' and 'qw', getPiece returns 'wq' (color+type)
+    chessboard.putPiece('wq', 'e4');
+    expect(chessboard.getPiece('e4')).toBe('wq');
   });
 
   // isGameOver() returns boolean, not 'w', so adapt the test
@@ -99,7 +125,8 @@ describe('Chessboard User Functions', () => {
 
   // piece() is deprecated, use getPiece()
   test('getPiece() alias should return the piece on the given square', () => {
-    expect(chessboard.getPiece('e2')).toBe('pw');
+    // Format is color+type: 'wp' = white pawn
+    expect(chessboard.getPiece('e2')).toBe('wp');
   });
 
   // highlight/dehighlight tests depend on implementation details

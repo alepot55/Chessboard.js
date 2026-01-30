@@ -50,7 +50,8 @@ class Chessboard {
       this._handleConstructorError(error);
     }
     this._undoneMoves = [];
-    this._updateBoardPieces(true, true); // Forza popolamento DOM subito
+    // Force synchronous initial population (no animation delay)
+    this._doUpdateBoardPieces(false, true);
   }
 
   /**
@@ -165,7 +166,8 @@ class Chessboard {
     this._buildBoard();
     this._buildSquares();
     this._addListeners();
-    this._updateBoardPieces(true, true); // Initial position load
+    // Synchronous initial position load (no animation delay)
+    this._doUpdateBoardPieces(false, true);
   }
 
   /**
@@ -648,6 +650,13 @@ class Chessboard {
 
     const squares = this.boardService.getAllSquares();
     const gameStateBefore = this.positionService.getGame().fen();
+
+    // For initial position load, always use sequential (synchronous) update
+    // to ensure pieces are immediately available
+    if (isPositionLoad) {
+      this._doSequentialUpdate(squares, gameStateBefore, false);
+      return;
+    }
 
     // Determine which animation style to use
     const useSimultaneous = this.config.animationStyle === 'simultaneous';
@@ -1394,25 +1403,22 @@ class Chessboard {
    * @param {string} square
    * @param {Object} [opts]
    */
-  highlight(square, opts = {}) {
+  highlight(square) {
     if (!this.validationService.isValidSquare(square)) return;
-    if (this.boardService && this.boardService.highlightSquare) {
-      this.boardService.highlightSquare(square, opts);
-    } else if (this.eventService && this.eventService.highlightSquare) {
-      this.eventService.highlightSquare(square, opts);
+    const squareObj = this.boardService.getSquare(square);
+    if (squareObj && typeof squareObj.highlight === 'function') {
+      squareObj.highlight();
     }
   }
   /**
    * Remove highlight from a square
    * @param {string} square
-   * @param {Object} [opts]
    */
-  dehighlight(square, opts = {}) {
+  dehighlight(square) {
     if (!this.validationService.isValidSquare(square)) return;
-    if (this.boardService && this.boardService.dehighlightSquare) {
-      this.boardService.dehighlightSquare(square, opts);
-    } else if (this.eventService && this.eventService.dehighlightSquare) {
-      this.eventService.dehighlightSquare(square, opts);
+    const squareObj = this.boardService.getSquare(square);
+    if (squareObj && typeof squareObj.dehighlight === 'function') {
+      squareObj.dehighlight();
     }
   }
 
@@ -1563,14 +1569,53 @@ class Chessboard {
     }
   }
 
+  /**
+   * Move a piece using coordinate notation (e.g., 'e2e4', 'e7e8q')
+   * @param {string} moveStr - Move in coordinate notation
+   * @param {Object} [opts] - Options
+   * @param {boolean} [opts.animate=true] - Whether to animate
+   * @returns {boolean} True if move was successful
+   */
+  movePiece(moveStr, opts = {}) {
+    const animate = opts.animate !== undefined ? opts.animate : true;
+
+    if (typeof moveStr !== 'string' || moveStr.length < 4) {
+      console.error('[movePiece] Invalid move format:', moveStr);
+      return false;
+    }
+
+    const from = moveStr.substring(0, 2);
+    const to = moveStr.substring(2, 4);
+    const promotion = moveStr.length > 4 ? moveStr[4].toLowerCase() : null;
+
+    const fromSquare = this.boardService.getSquare(from);
+    const toSquare = this.boardService.getSquare(to);
+
+    if (!fromSquare || !toSquare) {
+      console.error('[movePiece] Invalid squares:', from, to);
+      return false;
+    }
+
+    // Clear redo stack on new move
+    this._undoneMoves = [];
+
+    return this._onMove(fromSquare, toSquare, promotion, animate);
+  }
+
+  /**
+   * Force synchronization of the visual board with the game state
+   * Useful after programmatic changes to ensure rendering is correct
+   */
+  forceSync() {
+    this._updateBoardPieces(false);
+  }
+
   // --- ALIASES/DEPRECATED ---
   /**
-   * Alias for move (deprecated)
+   * Alias for movePiece (deprecated)
    */
-  move(move, animate = true) {
-    // On any new move, clear the redo stack
-    this._undoneMoves = [];
-    return this.movePiece(move, { animate });
+  move(moveStr, animate = true) {
+    return this.movePiece(moveStr, { animate });
   }
   /**
    * Alias for clear (deprecated)
@@ -1993,15 +2038,12 @@ class Chessboard {
     return this.positionService.getGame().validateFen(fen);
   }
 
-  // Implementazioni reali per highlight/dehighlight
+  // Alias methods for highlight/dehighlight
   highlightSquare(square) {
-    return this.boardService.highlight(square);
+    return this.highlight(square);
   }
   dehighlightSquare(square) {
-    return this.boardService.dehighlight(square);
-  }
-  forceSync() {
-    this._updateBoardPieces(true, true);
+    return this.dehighlight(square);
   }
 }
 

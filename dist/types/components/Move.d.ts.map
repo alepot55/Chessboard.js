@@ -1,1 +1,1 @@
-{"version":3,"file":"Move.d.ts","sourceRoot":"","sources":["../../../src/components/Move.js"],"names":[],"mappings":";AAGA;IAEI,mEAOC;IANG,WAA0C;IAC1C,UAAgB;IAChB,QAAY;IACZ,eAA0B;IAK9B,wBAEC;IAED,mCAEC;IAED,iBAUC;IAED,4BAGC;CAGJ"}
+{"version":3,"file":"Move.d.ts","sourceRoot":"","sources":["../../../src/components/Move.js"],"names":[],"mappings":";AAGA;IACE,mEAOC;IANC,WAA0C;IAC1C,UAAgB;IAChB,QAAY;IACZ,eAA0B;IAK5B,wBAEC;IAED,mCAEC;IAED,iBAUC;IAED,4BAGC;CACF"}

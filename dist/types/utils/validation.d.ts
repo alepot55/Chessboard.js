@@ -1,3 +1,4 @@
+import { isValidSquare as validateSquare } from './coordinates.js';
 /**
  * Validate piece notation with caching
  * @param {string} piece - Piece notation (e.g., 'wP', 'bK')
@@ -43,5 +44,5 @@ export function clearValidationCache(): void;
  * @returns {Object} Cache statistics
  */
 export function getValidationCacheStats(): Object;
-export { isValidSquare } from './coordinates.js';
+export { validateSquare as isValidSquare };
 //# sourceMappingURL=validation.d.ts.map

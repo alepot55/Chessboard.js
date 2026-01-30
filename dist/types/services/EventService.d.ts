@@ -105,10 +105,9 @@ export class EventService {
      * @param {Function} onSelect - Select callback
      * @param {Function} onDeselect - Deselect callback
      * @param {boolean} [animate=true] - Whether to animate the move
-     * @param {boolean} [dragged=false] - Whether this was triggered by drag
      * @returns {boolean} True if move was successful
      */
-    onClick(square: Square, onMove: Function, onSelect: Function, onDeselect: Function, animate?: boolean, dragged?: boolean): boolean;
+    onClick(square: Square, onMove: Function, onSelect: Function, onDeselect: Function, animate?: boolean): boolean;
     /**
      * Schedules piece replacement after promotion animation
      * @private

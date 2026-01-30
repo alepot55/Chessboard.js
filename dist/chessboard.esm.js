@@ -1,11 +1,11 @@
-var Ye = Object.defineProperty;
-var Je = (a, e, t) => e in a ? Ye(a, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : a[e] = t;
-var E = (a, e, t) => Je(a, typeof e != "symbol" ? e + "" : e, t);
-const Re = {
+var Je = Object.defineProperty;
+var Xe = (a, e, t) => e in a ? Je(a, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : a[e] = t;
+var E = (a, e, t) => Xe(a, typeof e != "symbol" ? e + "" : e, t);
+const Ae = {
   start: "start",
   default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   empty: "8/8/8/8/8/8/8/8 w - - 0 1"
-}, Xe = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", fe = ["p", "r", "n", "b", "q", "k"], me = ["w", "b"], Ze = ["q", "r", "b", "n"], he = "abcdefgh", Ae = {
+}, Ze = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", fe = ["p", "r", "n", "b", "q", "k"], me = ["w", "b"], et = ["q", "r", "b", "n"], he = "abcdefgh", Me = {
   ROWS: 8,
   COLS: 8,
   TOTAL_SQUARES: 64
@@ -150,7 +150,7 @@ class L extends z {
     super(e, M.CONFIG_ERROR, { configKey: t, configValue: i }), this.name = "ConfigurationError", this.configKey = t, this.configValue = i;
   }
 }
-class Me extends z {
+class Oe extends z {
   /**
    * Creates a new MoveError instance
    * @param {string} message - Error message
@@ -162,7 +162,7 @@ class Me extends z {
     super(e, M.MOVE_ERROR, { from: t, to: i, piece: s }), this.name = "MoveError", this.from = t, this.to = i, this.piece = s;
   }
 }
-class et extends z {
+class tt extends z {
   /**
    * Creates a new DOMError instance
    * @param {string} message - Error message
@@ -183,13 +183,13 @@ class Se extends z {
     super(e, M.PIECE_ERROR, { pieceId: t, square: i }), this.name = "PieceError", this.pieceId = t, this.square = i;
   }
 }
-const tt = Object.freeze({
+const it = Object.freeze({
   square: /^[a-h][1-8]$/,
   piece: /^[prnbqkPRNBQK][wb]$/,
   fen: /^([rnbqkpRNBQKP1-8]+\/){7}[rnbqkpRNBQKP1-8]+\s[wb]\s[KQkq-]+\s[a-h1-8-]+\s\d+\s\d+$/,
   move: /^[a-h][1-8][a-h][1-8][qrnb]?$/,
   color: /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
-}), it = Object.freeze({
+}), st = Object.freeze({
   orientations: ["w", "b", "white", "black"],
   colors: ["w", "b", "white", "black"],
   movableColors: ["w", "b", "white", "black", "both", "none"],
@@ -198,7 +198,7 @@ const tt = Object.freeze({
   animationStyles: ["sequential", "simultaneous"],
   modes: ["normal", "creative", "analysis"],
   promotionPieces: ["q", "r", "b", "n", "Q", "R", "B", "N"]
-}), st = Object.freeze({
+}), nt = Object.freeze({
   min: 50,
   max: 2e3,
   maxTime: 1e4,
@@ -209,7 +209,7 @@ class Ie {
    * Creates a new ValidationService instance
    */
   constructor() {
-    this._validationCache = /* @__PURE__ */ new Map(), this._cacheMaxSize = 1e3, this._patterns = tt, this._validValues = it, this._constraints = st;
+    this._validationCache = /* @__PURE__ */ new Map(), this._cacheMaxSize = 1e3, this._patterns = it, this._validValues = st, this._constraints = nt;
   }
   /**
    * Validates a square identifier with caching
@@ -234,8 +234,8 @@ class Ie {
     const t = `piece:${e}`;
     if (this._validationCache.has(t))
       return this._validationCache.get(t);
-    const [i, s] = e.split(""), n = fe.includes(i.toLowerCase()) && me.includes(s), r = me.includes(i) && fe.includes(s.toLowerCase()), o = n || r;
-    return this._cacheValidationResult(t, o), o;
+    const [i, s] = e.split(""), n = fe.includes(i.toLowerCase()) && me.includes(s), o = me.includes(i) && fe.includes(s.toLowerCase()), r = n || o;
+    return this._cacheValidationResult(t, r), r;
   }
   /**
    * Validates a FEN string with comprehensive checks
@@ -266,8 +266,8 @@ class Ie {
     const i = t[0].split("/");
     if (i.length !== 8)
       return !1;
-    for (const r of i)
-      if (!this._validateRank(r))
+    for (const o of i)
+      if (!this._validateRank(o))
         return !1;
     if (!["w", "b"].includes(t[1]) || !/^[KQkq-]*$/.test(t[2]) || t[3] !== "-" && !this.isValidSquare(t[3]))
       return !1;
@@ -605,13 +605,13 @@ class Ie {
     this.clearCache(), this._validationCache = null, this._patterns = null, this._validValues = null, this._constraints = null;
   }
 }
-const Oe = Object.freeze({
+const qe = Object.freeze({
   fast: 200,
   slow: 600,
   normal: 400,
   verySlow: 1e3,
   veryFast: 100
-}), qe = Object.freeze({
+}), Le = Object.freeze({
   true: !0,
   false: !1,
   none: !1,
@@ -624,7 +624,7 @@ const Oe = Object.freeze({
   "ease-out": "ease-out",
   "ease-in-out": "ease-in-out",
   none: null
-}), nt = Object.freeze({
+}), ot = Object.freeze({
   id: "board",
   position: "start",
   orientation: "w",
@@ -667,7 +667,7 @@ const Oe = Object.freeze({
   coverSquare: "black",
   hintColor: "#ababaa"
 });
-class xe {
+class Be {
   /**
    * Creates a new ChessboardConfig instance
    * @param {Object} settings - User-provided configuration
@@ -700,7 +700,7 @@ class xe {
    * @returns {Object} Merged configuration
    */
   _mergeWithDefaults(e) {
-    return Object.assign({}, nt, e);
+    return Object.assign({}, ot, e);
   }
   /**
    * Processes and validates configuration values
@@ -821,8 +821,8 @@ class xe {
         throw new L("Invalid time value", "time", e);
       return e;
     }
-    if (typeof e == "string" && e in Oe)
-      return Oe[e];
+    if (typeof e == "string" && e in qe)
+      return qe[e];
     throw new L("Invalid time value", "time", e);
   }
   /**
@@ -835,8 +835,8 @@ class xe {
   _setBoolean(e) {
     if (typeof e == "boolean")
       return e;
-    if (e in qe)
-      return qe[e];
+    if (e in Le)
+      return Le[e];
     throw new L("Invalid boolean value", "boolean", e);
   }
   /**
@@ -946,16 +946,16 @@ class ge {
       return;
     }
     const n = this.element;
-    n.src, n.classList.add("transforming");
-    const r = [
+    n.classList.add("transforming");
+    const o = [
       { transform: "scale(1)", opacity: "1" },
       { transform: "scale(0.8)", opacity: "0.7" }
-    ], o = [
+    ], r = [
       { transform: "scale(0.8)", opacity: "0.7" },
       { transform: "scale(1)", opacity: "1" }
     ], l = i / 2;
     if (n.animate) {
-      const c = n.animate(r, {
+      const c = n.animate(o, {
         duration: l,
         easing: "ease-in",
         fill: "forwards"
@@ -966,7 +966,7 @@ class ge {
           return;
         }
         this.type = e, this.id = this.getId(), this.src = t, n.src = t, n.id = this.id;
-        const u = n.animate(o, {
+        const u = n.animate(r, {
           duration: l,
           easing: "ease-out",
           fill: "forwards"
@@ -1000,45 +1000,45 @@ class ge {
   }
   fadeIn(e, t, i, s) {
     const n = performance.now();
-    let r = 0;
-    const o = this, l = function() {
-      if (!o.element) {
-        console.debug(`[Piece] fadeIn: ${o.id} - element is null`), s && s();
+    let o = 0;
+    const r = () => {
+      if (!this.element) {
+        console.debug(`[Piece] fadeIn: ${this.id} - element is null`), s && s();
         return;
       }
-      const c = performance.now() - n;
-      if (r = i(c, e, t), o.element.style.opacity = r, c < e)
-        requestAnimationFrame(l);
+      const l = performance.now() - n;
+      if (o = i(l, e, t), this.element.style.opacity = o, l < e)
+        requestAnimationFrame(r);
       else {
-        if (!o.element) {
-          console.debug(`[Piece] fadeIn: ${o.id} - element is null (end)`), s && s();
+        if (!this.element) {
+          console.debug(`[Piece] fadeIn: ${this.id} - element is null (end)`), s && s();
           return;
         }
-        o.element.style.opacity = 1, console.debug(`[Piece] fadeIn complete: ${o.id}`), s && s();
+        this.element.style.opacity = 1, console.debug(`[Piece] fadeIn complete: ${this.id}`), s && s();
       }
     };
-    l();
+    r();
   }
   fadeOut(e, t, i, s) {
     const n = performance.now();
-    let r = 1;
-    const o = this, l = function() {
-      if (!o.element) {
-        console.debug(`[Piece] fadeOut: ${o.id} - element is null`), s && s();
+    let o = 1;
+    const r = () => {
+      if (!this.element) {
+        console.debug(`[Piece] fadeOut: ${this.id} - element is null`), s && s();
         return;
       }
-      const c = performance.now() - n;
-      if (r = 1 - i(c, e, t), o.element.style.opacity = r, c < e)
-        requestAnimationFrame(l);
+      const l = performance.now() - n;
+      if (o = 1 - i(l, e, t), this.element.style.opacity = o, l < e)
+        requestAnimationFrame(r);
       else {
-        if (!o.element) {
-          console.debug(`[Piece] fadeOut: ${o.id} - element is null (end)`), s && s();
+        if (!this.element) {
+          console.debug(`[Piece] fadeOut: ${this.id} - element is null (end)`), s && s();
           return;
         }
-        o.element.style.opacity = 0, console.debug(`[Piece] fadeOut complete: ${o.id}`), s && s();
+        this.element.style.opacity = 0, console.debug(`[Piece] fadeOut complete: ${this.id}`), s && s();
       }
     };
-    l();
+    r();
   }
   setDrag(e) {
     if (!this.element) {
@@ -1057,7 +1057,7 @@ class ge {
       console.debug(`[Piece] translate: ${this.id} - element is null`), n && n();
       return;
     }
-    const r = this.element.getBoundingClientRect(), o = e.getBoundingClientRect(), l = r.left + r.width / 2, c = r.top + r.height / 2, u = o.left + o.width / 2, d = o.top + o.height / 2, h = u - l, m = d - c, f = [
+    const o = this.element.getBoundingClientRect(), r = e.getBoundingClientRect(), l = o.left + o.width / 2, c = o.top + o.height / 2, u = r.left + r.width / 2, d = r.top + r.height / 2, h = u - l, m = d - c, f = [
       { transform: "translate(0, 0)" },
       { transform: `translate(${h}px, ${m}px)` }
     ];
@@ -1223,7 +1223,7 @@ let W = class {
     return e.moves({ square: this.from.id, verbose: !0 }).map((i) => i.to).indexOf(this.to.id) !== -1;
   }
 };
-class ot {
+class rt {
   /**
    * Creates a new AnimationService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -1265,18 +1265,18 @@ class ot {
    * @returns {number} Animation ID
    */
   animate(e, t, i, s = "ease", n) {
-    const r = ++this.animationId, o = this.createTimingFunction(s), l = performance.now(), c = {};
+    const o = ++this.animationId, r = this.createTimingFunction(s), l = performance.now(), c = {};
     Object.keys(t).forEach((d) => {
       c[d] = this._getInitialValue(e, d);
     });
     const u = (d) => {
-      const h = d - l, m = Math.min(h / i, 1), f = o(h, i);
+      const h = d - l, m = Math.min(h / i, 1), f = r(h, i);
       Object.keys(t).forEach((g) => {
         const b = c[g], w = t[g], y = this._interpolateValue(b, w, f);
         this._applyValue(e, g, y);
-      }), m < 1 && this.activeAnimations.has(r) ? requestAnimationFrame(u) : (this.activeAnimations.delete(r), n && n());
+      }), m < 1 && this.activeAnimations.has(o) ? requestAnimationFrame(u) : (this.activeAnimations.delete(o), n && n());
     };
-    return this.activeAnimations.set(r, { element: e, animate: u, callback: n }), requestAnimationFrame(u), r;
+    return this.activeAnimations.set(o, { element: e, animate: u, callback: n }), requestAnimationFrame(u), o;
   }
   /**
    * Cancels an animation
@@ -1357,7 +1357,7 @@ class ot {
     this.cancelAll();
   }
 }
-class rt {
+class at {
   /**
    * Creates a new BoardService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -1371,7 +1371,7 @@ class rt {
    */
   buildBoard() {
     if (console.log("BoardService.buildBoard: Looking for element with ID:", this.config.id_div), this.element = document.getElementById(this.config.id_div), !this.element)
-      throw new et(C.invalid_id_div + this.config.id_div, this.config.id_div);
+      throw new tt(C.invalid_id_div + this.config.id_div, this.config.id_div);
     this.resize(this.config.size), this.element.className = "board";
   }
   /**
@@ -1379,10 +1379,10 @@ class rt {
    * @param {Function} coordConverter - Function to convert row/col to real coordinates
    */
   buildSquares(e) {
-    for (let t = 0; t < Ae.ROWS; t++)
-      for (let i = 0; i < Ae.COLS; i++) {
-        const [s, n] = e(t, i), r = new Ee(s, n);
-        this.squares[r.getId()] = r, this.element.appendChild(r.element);
+    for (let t = 0; t < Me.ROWS; t++)
+      for (let i = 0; i < Me.COLS; i++) {
+        const [s, n] = e(t, i), o = new Ee(s, n);
+        this.squares[o.getId()] = o, this.element.appendChild(o.element);
       }
   }
   /**
@@ -1457,7 +1457,7 @@ class rt {
     this.removeSquares(), this.removeBoard(), this.element = null, this.squares = {};
   }
 }
-class at {
+class lt {
   /**
    * Creates a new CoordinateService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -1497,26 +1497,14 @@ class at {
    */
   getCoordinatesFromSquareID(e) {
     if (typeof e != "string" || e.length !== 2)
-      throw new k(
-        C.invalid_square + e,
-        "squareId",
-        e
-      );
+      throw new k(C.invalid_square + e, "squareId", e);
     const t = e[0], i = parseInt(e[1]), s = he.indexOf(t);
     if (s === -1)
-      throw new k(
-        C.invalid_square + e,
-        "squareId",
-        e
-      );
+      throw new k(C.invalid_square + e, "squareId", e);
     if (i < 1 || i > 8)
-      throw new k(
-        C.invalid_square + e,
-        "squareId",
-        e
-      );
-    let n, r;
-    return this.isWhiteOriented() ? (n = 8 - i, r = s) : (n = i - 1, r = 7 - s), [n, r];
+      throw new k(C.invalid_square + e, "squareId", e);
+    let n, o;
+    return this.isWhiteOriented() ? (n = 8 - i, o = s) : (n = i - 1, o = 7 - s), [n, o];
   }
   /**
    * Converts pixel coordinates to square ID
@@ -1527,10 +1515,10 @@ class at {
    */
   pixelToSquareID(e, t, i) {
     if (!i) return null;
-    const s = i.getBoundingClientRect(), { width: n, height: r } = s;
-    if (e < 0 || e >= n || t < 0 || t >= r)
+    const s = i.getBoundingClientRect(), { width: n, height: o } = s;
+    if (e < 0 || e >= n || t < 0 || t >= o)
       return null;
-    const o = n / 8, l = r / 8, c = Math.floor(e / o), u = Math.floor(t / l);
+    const r = n / 8, l = o / 8, c = Math.floor(e / r), u = Math.floor(t / l);
     try {
       return this.getSquareID(u, c);
     } catch {
@@ -1546,7 +1534,7 @@ class at {
   squareIDToPixel(e, t) {
     if (!t) return null;
     try {
-      const [i, s] = this.getCoordinatesFromSquareID(e), n = t.getBoundingClientRect(), { width: r, height: o } = n, l = r / 8, c = o / 8, u = s * l, d = i * c;
+      const [i, s] = this.getCoordinatesFromSquareID(e), n = t.getBoundingClientRect(), { width: o, height: r } = n, l = o / 8, c = r / 8, u = s * l, d = i * c;
       return { x: u, y: d };
     } catch {
       return null;
@@ -1561,10 +1549,10 @@ class at {
   getSquareCenter(e, t) {
     const i = this.squareIDToPixel(e, t);
     if (!i) return null;
-    const s = t.getBoundingClientRect(), n = s.width / 8, r = s.height / 8;
+    const s = t.getBoundingClientRect(), n = s.width / 8, o = s.height / 8;
     return {
       x: i.x + n / 2,
-      y: i.y + r / 2
+      y: i.y + o / 2
     };
   }
   /**
@@ -1575,8 +1563,8 @@ class at {
    */
   getSquareDistance(e, t) {
     try {
-      const [i, s] = this.getCoordinatesFromSquareID(e), [n, r] = this.getCoordinatesFromSquareID(t), o = Math.abs(n - i), l = Math.abs(r - s);
-      return Math.sqrt(o * o + l * l);
+      const [i, s] = this.getCoordinatesFromSquareID(e), [n, o] = this.getCoordinatesFromSquareID(t), r = Math.abs(n - i), l = Math.abs(o - s);
+      return Math.sqrt(r * r + l * l);
     } catch {
       return 0;
     }
@@ -1640,11 +1628,7 @@ class at {
    */
   getSquaresByRank(e) {
     if (e < 1 || e > 8)
-      throw new k(
-        `Invalid rank: ${e}`,
-        "rank",
-        e
-      );
+      throw new k(`Invalid rank: ${e}`, "rank", e);
     const t = [];
     for (let i = 0; i < 8; i++) {
       const s = this.isWhiteOriented() ? 8 - e : e - 1;
@@ -1660,18 +1644,14 @@ class at {
   getSquaresByFile(e) {
     const t = he.indexOf(e);
     if (t === -1)
-      throw new k(
-        `Invalid file: ${e}`,
-        "file",
-        e
-      );
+      throw new k(`Invalid file: ${e}`, "file", e);
     const i = [];
     for (let s = 0; s < 8; s++)
       i.push(this.getSquareID(s, t));
     return i;
   }
 }
-class Be {
+class Ve {
   /**
    * Creates a new PerformanceMonitor instance
    */
@@ -1765,7 +1745,7 @@ class Be {
    */
   _calculatePercentile(e, t) {
     if (e.length === 0) return 0;
-    const i = [...e].sort((n, r) => n - r), s = Math.ceil(t / 100 * i.length) - 1;
+    const i = [...e].sort((n, o) => n - o), s = Math.ceil(t / 100 * i.length) - 1;
     return i[Math.max(0, s)];
   }
   /**
@@ -1783,37 +1763,41 @@ class Be {
     this.observers.clear(), this.metrics.clear();
   }
 }
-function Gt(a, e) {
+function zt(a, e) {
   let t;
   return function(...i) {
-    const s = this;
-    t || (a.apply(s, i), t = !0, setTimeout(() => t = !1, e));
+    t || (a.apply(this, i), t = !0, setTimeout(() => {
+      t = !1;
+    }, e));
   };
 }
-function jt(a, e) {
+function Ht(a, e) {
   let t;
-  return function(...i) {
-    const s = this;
-    clearTimeout(t), t = setTimeout(() => a.apply(s, i), e);
+  const i = function(...s) {
+    clearTimeout(t), t = setTimeout(() => a.apply(i.context, s), e);
+  };
+  return function(...s) {
+    return i.context = this, i(...s);
   };
 }
-function Le(a) {
+function De(a) {
   let e = !1;
-  return function(...t) {
-    if (e) return;
-    const i = this;
-    e = !0, requestAnimationFrame(() => {
-      a.apply(i, t), e = !1;
-    });
+  const t = function(...i) {
+    e || (e = !0, requestAnimationFrame(() => {
+      a.apply(t.context, i), e = !1;
+    }));
+  };
+  return function(...i) {
+    return t.context = this, t(...i);
   };
 }
-function zt(a, e, t, i = 1) {
+function Kt(a, e, t, i = 1) {
   !a || !a.style || (a.style.transform = `translate3d(${e}px, ${t}px, 0) scale(${i})`, a.style.willChange = "transform");
 }
-function Ht(a) {
+function Ut(a) {
   !a || !a.style || (a.style.transform = "", a.style.left = "", a.style.top = "", a.style.willChange = "");
 }
-function Kt(a) {
+function Wt(a) {
   return new Promise((e) => {
     requestAnimationFrame(() => {
       const t = a();
@@ -1821,12 +1805,12 @@ function Kt(a) {
     });
   });
 }
-function Ut(a) {
+function Qt(a) {
   if (!a || !a.getBoundingClientRect) return !1;
   const e = a.getBoundingClientRect();
   return e.width > 0 && e.height > 0 && e.bottom > 0 && e.right > 0 && e.top < (window.innerHeight || document.documentElement.clientHeight) && e.left < (window.innerWidth || document.documentElement.clientWidth);
 }
-function Wt() {
+function Yt() {
   return typeof performance < "u" && performance.memory ? {
     used: performance.memory.usedJSHeapSize,
     total: performance.memory.totalJSHeapSize,
@@ -1838,7 +1822,7 @@ function Wt() {
     supported: !1
   };
 }
-function lt() {
+function ct() {
   const a = navigator.userAgent, e = a.includes("Chrome") && !a.includes("Edg"), t = a.includes("Firefox"), i = a.includes("Safari") && !a.includes("Chrome"), s = a.includes("Edg");
   return {
     isChrome: e,
@@ -1855,7 +1839,7 @@ const ue = {
    * @param {HTMLElement} element - Element to optimize
    */
   enableForDrag(a) {
-    const e = lt();
+    const e = ct();
     a.style.willChange = "left, top", a.style.pointerEvents = "none", e.isChrome && (a.style.transform = "translateZ(0)"), e.isFirefox && (a.style.backfaceVisibility = "hidden");
   },
   /**
@@ -1871,7 +1855,7 @@ const ue = {
   WARN: 2,
   ERROR: 3,
   NONE: 4
-}), ct = Object.freeze({
+}), ht = Object.freeze({
   level: Z.INFO,
   enableColors: !0,
   enableTimestamp: !0,
@@ -1880,7 +1864,7 @@ const ue = {
   enableConsole: !0,
   enableStorage: !1,
   storageKey: "chessboard-logs"
-}), De = Object.freeze({
+}), $e = Object.freeze({
   DEBUG: "\x1B[36m",
   // Cyan
   INFO: "\x1B[32m",
@@ -1899,7 +1883,7 @@ class ve {
    * @param {string} [name] - Logger name/namespace
    */
   constructor(e = {}, t = "Chessboard") {
-    this.config = { ...ct, ...e }, this.name = t, this.logs = [], this.startTime = Date.now(), this.debug = this._createLogMethod("DEBUG"), this.info = this._createLogMethod("INFO"), this.warn = this._createLogMethod("WARN"), this.error = this._createLogMethod("ERROR"), this.performances = /* @__PURE__ */ new Map(), this.config.enableStorage && this._initStorage();
+    this.config = { ...ht, ...e }, this.name = t, this.logs = [], this.startTime = Date.now(), this.debug = this._createLogMethod("DEBUG"), this.info = this._createLogMethod("INFO"), this.warn = this._createLogMethod("WARN"), this.error = this._createLogMethod("ERROR"), this.performances = /* @__PURE__ */ new Map(), this.config.enableStorage && this._initStorage();
   }
   /**
    * Creates a log method for a specific level
@@ -1923,8 +1907,8 @@ class ve {
   _log(e, t, i, s) {
     if (Z[e] < this.config.level)
       return;
-    const r = this._createLogEntry(e, t, i, s);
-    this._storeLogEntry(r), this.config.enableConsole && this._outputToConsole(r), this.config.enableStorage && this._storeInStorage(r);
+    const o = this._createLogEntry(e, t, i, s);
+    this._storeLogEntry(o), this.config.enableConsole && this._outputToConsole(o), this.config.enableStorage && this._storeInStorage(o);
   }
   /**
    * Creates a structured log entry
@@ -1967,12 +1951,12 @@ class ve {
    * @param {Object} entry - Log entry
    */
   _outputToConsole(e) {
-    const t = this.config.enableColors ? De[e.level] : "", i = this.config.enableColors ? De.RESET : "", s = this.config.enableTimestamp ? `[${new Date(e.timestamp).toLocaleTimeString()}] ` : "", r = `${`${t}${s}[${e.logger}:${e.level}]${i}`} ${e.message}`, o = this._getConsoleMethod(e.level);
-    Object.keys(e.data).length > 0 || e.error ? o(r, {
+    const t = this.config.enableColors ? $e[e.level] : "", i = this.config.enableColors ? $e.RESET : "", s = this.config.enableTimestamp ? `[${new Date(e.timestamp).toLocaleTimeString()}] ` : "", o = `${`${t}${s}[${e.logger}:${e.level}]${i}`} ${e.message}`, r = this._getConsoleMethod(e.level);
+    Object.keys(e.data).length > 0 || e.error ? r(o, {
       data: e.data,
       error: e.error,
       runtime: `${e.runtime}ms`
-    }) : o(r);
+    }) : r(o);
   }
   /**
    * Gets appropriate console method for log level
@@ -2057,14 +2041,14 @@ class ve {
     const t = this.performances.get(e);
     if (!t || t.measurements.length === 0)
       return null;
-    const i = t.measurements, s = i.reduce((l, c) => l + c, 0), n = s / i.length, r = Math.min(...i), o = Math.max(...i);
+    const i = t.measurements, s = i.reduce((l, c) => l + c, 0), n = s / i.length, o = Math.min(...i), r = Math.max(...i);
     return {
       name: e,
       count: i.length,
       total: s.toFixed(2),
       average: n.toFixed(2),
-      min: r.toFixed(2),
-      max: o.toFixed(2)
+      min: o.toFixed(2),
+      max: r.toFixed(2)
     };
   }
   /**
@@ -2122,10 +2106,10 @@ class ve {
   }
 }
 const v = new ve();
-function Qt(a, e) {
+function Jt(a, e) {
   return new ve(a, e);
 }
-class ht {
+class ut {
   /**
    * Creates a new EventService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -2159,16 +2143,16 @@ class ht {
    * @param {Function} onPieceLeave - Leave callback
    */
   _addSquareListeners(e, t, i, s) {
-    const n = [], r = Le((c) => {
+    const n = [], o = De(() => {
       !this.clicked && this.config.hints && i(e);
-    }), o = Le((c) => {
+    }), r = De(() => {
       !this.clicked && this.config.hints && s(e);
     }), l = (c) => {
       c.stopPropagation(), this.config.clickable && !this.isAnimating && (e.piece && e.piece._dragTimeout && (clearTimeout(e.piece._dragTimeout), e.piece._dragTimeout = null), t(e));
     };
-    e.element.addEventListener("mouseover", r), e.element.addEventListener("mouseout", o), e.element.addEventListener("click", l), e.element.addEventListener("touchstart", l), n.push(
-      { element: e.element, type: "mouseover", handler: r },
-      { element: e.element, type: "mouseout", handler: o },
+    e.element.addEventListener("mouseover", o), e.element.addEventListener("mouseout", r), e.element.addEventListener("click", l), e.element.addEventListener("touchstart", l), n.push(
+      { element: e.element, type: "mouseover", handler: o },
+      { element: e.element, type: "mouseout", handler: r },
       { element: e.element, type: "click", handler: l },
       { element: e.element, type: "touchstart", handler: l }
     ), this.eventListeners.set(e.id, n);
@@ -2185,8 +2169,12 @@ class ht {
    * @param {Function} onRemove - Remove piece callback
    * @returns {Function} Drag event handler
    */
-  createDragFunction(e, t, i, s, n, r, o, l) {
-    return console.log("Creating drag function for:", e.id, t ? `${t.color}${t.type}` : "null"), (c) => {
+  createDragFunction(e, t, i, s, n, o, r, l) {
+    return console.log(
+      "Creating drag function for:",
+      e.id,
+      t ? `${t.color}${t.type}` : "null"
+    ), (c) => {
       var T, F;
       if (c.preventDefault(), !this.config.draggable || !t || this.isAnimating || this.isDragging)
         return;
@@ -2208,25 +2196,25 @@ class ht {
         const V = A.clientX || 0, Q = A.clientY || 0, ee = Math.abs(V - b), te = Math.abs(Q - w);
         if (!d && (ee > 3 || te > 3)) {
           d = !0, this.config.clickable && h.select();
-          const ne = window.getComputedStyle(g), We = ne.width, Qe = ne.height;
-          if (g.style.position = "absolute", g.style.zIndex = "100", g.classList.add("dragging"), g.style.width = We, g.style.height = Qe, ue.enableForDrag(g), !i(e, t))
+          const ne = window.getComputedStyle(g), Qe = ne.width, Ye = ne.height;
+          if (g.style.position = "absolute", g.style.zIndex = "100", g.classList.add("dragging"), g.style.width = Qe, g.style.height = Ye, ue.enableForDrag(g), !i(e, t))
             return;
         }
         if (!d) return;
         y(A);
         const ie = this.boardService.element, X = ie.getBoundingClientRect(), se = A.clientX - X.left, _e = A.clientY - X.top;
-        let Te = null;
+        let Re = null;
         if (se >= 0 && se <= X.width && _e >= 0 && _e <= X.height) {
           const ne = this.coordinateService.pixelToSquareID(se, _e, ie);
-          Te = ne ? this.boardService.getSquare(ne) : null;
+          Re = ne ? this.boardService.getSquare(ne) : null;
         }
-        m = Te, s(h, m, t), m !== f && (m == null || m.highlight(), f == null || f.dehighlight(), f = m);
+        m = Re, s(h, m, t), m !== f && (m == null || m.highlight(), f == null || f.dehighlight(), f = m);
       }, P = () => {
         if (f == null || f.dehighlight(), document.removeEventListener("mousemove", p), window.removeEventListener("mouseup", P), g.removeEventListener("mouseup", P), !d)
           return;
-        console.log("onMouseUp: Handling drag completion for piece at", u.id), g.style.zIndex = "20", g.classList.remove("dragging"), g.style.willChange = "auto", ue.cleanupAfterDrag(g), this.isDragging = !1, this.clicked, this.clicked = null;
+        console.log("onMouseUp: Handling drag completion for piece at", u.id), g.style.zIndex = "20", g.classList.remove("dragging"), g.style.willChange = "auto", ue.cleanupAfterDrag(g), this.isDragging = !1, this.clicked = null;
         const A = n(u, m, t);
-        !m && (this.config.dropOffBoard === "trash" || A === "trash") ? this._handleTrashDrop(u, l) : m ? this._handleDrop(u, m, t, o, r) : (g.style.position = "", g.style.left = "", g.style.top = "", g.style.transform = "", g.style.width = "", g.style.height = "", ue.cleanupAfterDrag(g), this._handleSnapback(u, t, r), this._cleanupAfterFailedMove(u));
+        !m && (this.config.dropOffBoard === "trash" || A === "trash") ? this._handleTrashDrop(u, l) : m ? this._handleDrop(u, m, t, r, o) : (g.style.position = "", g.style.left = "", g.style.top = "", g.style.transform = "", g.style.width = "", g.style.height = "", ue.cleanupAfterDrag(g), this._handleSnapback(u, t, o), this._cleanupAfterFailedMove(u));
       };
       window.addEventListener("mouseup", P, { once: !0 }), document.addEventListener("mousemove", p), g.addEventListener("mouseup", P, { once: !0 });
     };
@@ -2267,22 +2255,22 @@ class ht {
       return;
     }
     this._isProcessingDrop = !0;
-    const r = () => {
+    const o = () => {
       this._isProcessingDrop = !1;
     };
     try {
       this.moveService.requiresPromotion(new W(e, t)) ? (v.debug("Drag move requires promotion:", e.id, "->", t.id), this.moveService.setupPromotion(
         new W(e, t),
         this.boardService.squares,
-        (o) => {
-          v.debug("Drag promotion selected:", o), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(e, t, o, !0) ? (this._schedulePromotionPieceReplacement(t, o), this._cleanupAfterSuccessfulMove(e)) : (this._handleSnapback(e, i, n), this._cleanupAfterFailedMove(e)), r();
+        (r) => {
+          v.debug("Drag promotion selected:", r), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(e, t, r, !0) ? (this._schedulePromotionPieceReplacement(t, r), this._cleanupAfterSuccessfulMove(e)) : (this._handleSnapback(e, i, n), this._cleanupAfterFailedMove(e)), o();
         },
         () => {
-          v.debug("Drag promotion cancelled"), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), this._handleSnapback(e, i, n), this._cleanupAfterFailedMove(e), r();
+          v.debug("Drag promotion cancelled"), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), this._handleSnapback(e, i, n), this._cleanupAfterFailedMove(e), o();
         }
-      )) : (s(e, t, null, !0) ? this._cleanupAfterSuccessfulMove(e) : (this._handleSnapback(e, i, n), this._cleanupAfterFailedMove(e)), r());
-    } catch (o) {
-      console.error("Error in _handleDrop:", o), r();
+      )) : (s(e, t, null, !0) ? this._cleanupAfterSuccessfulMove(e) : (this._handleSnapback(e, i, n), this._cleanupAfterFailedMove(e)), o());
+    } catch (r) {
+      console.error("Error in _handleDrop:", r), o();
     }
   }
   /**
@@ -2313,7 +2301,7 @@ class ht {
       i && i();
       return;
     }
-    const s = this.config.dropCenterTime, n = e.element.getBoundingClientRect(), r = t.element.getBoundingClientRect(), o = n.left + n.width / 2, l = n.top + n.height / 2, c = r.left + r.width / 2, u = r.top + r.height / 2, d = c - o, h = u - l;
+    const s = this.config.dropCenterTime, n = e.element.getBoundingClientRect(), o = t.element.getBoundingClientRect(), r = n.left + n.width / 2, l = n.top + n.height / 2, c = o.left + o.width / 2, u = o.top + o.height / 2, d = c - r, h = u - l;
     if (Math.abs(d) < 1 && Math.abs(h) < 1) {
       e.element.style.position = "", e.element.style.left = "", e.element.style.top = "", e.element.style.transform = "", e.element.style.zIndex = "", i && i();
       return;
@@ -2352,25 +2340,47 @@ class ht {
    * @param {Function} onSelect - Select callback
    * @param {Function} onDeselect - Deselect callback
    * @param {boolean} [animate=true] - Whether to animate the move
-   * @param {boolean} [dragged=false] - Whether this was triggered by drag
    * @returns {boolean} True if move was successful
    */
-  onClick(e, t, i, s, n = !0, r = !1) {
-    var u, d, h;
+  onClick(e, t, i, s, n = !0) {
+    var c, u, d;
     if (this.isDragging = !1, this.isAnimating)
       return v.debug("EventService.onClick: Ignoring click during animation"), !1;
-    v.debug("=== EventService.onClick START ==="), v.debug("EventService.onClick: square =", e.id, "clicked =", ((u = this.clicked) == null ? void 0 : u.id) || "none", "isAnimating =", this.isAnimating), v.debug("EventService.onClick: Square piece =", e.piece ? `${e.piece.color}${e.piece.type}` : "empty"), v.debug("EventService.onClick: Clicked square piece =", (d = this.clicked) != null && d.piece ? `${this.clicked.piece.color}${this.clicked.piece.type}` : this.clicked ? "empty" : "none");
-    let o = this.clicked, l = null;
-    return this.promoting && (this.promoting === "none" ? o = null : l = this.promoting, this.promoting = !1, this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover")), o ? (v.debug("EventService.onClick: We have a source square:", o.id, "target:", e.id), this.clicked === e ? (s(e), this.clicked = null, !1) : !l && this.moveService.requiresPromotion(new W(o, e)) ? (v.debug("Move requires promotion:", o.id, "->", e.id), this.moveService.setupPromotion(
+    v.debug("=== EventService.onClick START ==="), v.debug(
+      "EventService.onClick: square =",
+      e.id,
+      "clicked =",
+      ((c = this.clicked) == null ? void 0 : c.id) || "none",
+      "isAnimating =",
+      this.isAnimating
+    ), v.debug(
+      "EventService.onClick: Square piece =",
+      e.piece ? `${e.piece.color}${e.piece.type}` : "empty"
+    ), v.debug(
+      "EventService.onClick: Clicked square piece =",
+      (u = this.clicked) != null && u.piece ? `${this.clicked.piece.color}${this.clicked.piece.type}` : this.clicked ? "empty" : "none"
+    );
+    let o = this.clicked, r = null;
+    return this.promoting && (this.promoting === "none" ? o = null : r = this.promoting, this.promoting = !1, this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover")), o ? (v.debug("EventService.onClick: We have a source square:", o.id, "target:", e.id), this.clicked === e ? (s(e), this.clicked = null, !1) : !r && this.moveService.requiresPromotion(new W(o, e)) ? (v.debug("Move requires promotion:", o.id, "->", e.id), this.moveService.setupPromotion(
       new W(o, e),
       this.boardService.squares,
-      (m) => {
-        v.debug("Promotion selected:", m), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), t(o, e, m, n) && (this._schedulePromotionPieceReplacement(e, m), s(o), this.clicked = null);
+      (h) => {
+        v.debug("Promotion selected:", h), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), t(o, e, h, n) && (this._schedulePromotionPieceReplacement(e, h), s(o), this.clicked = null);
       },
       () => {
         v.debug("Promotion cancelled"), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(o), this.clicked = null;
       }
-    ), !1) : (v.debug("EventService.onClick: Attempting move from", o.id, "to", e.id), v.debug("EventService.onClick: Current game state before move attempt"), t(o, e, l, n) ? (v.debug("EventService.onClick: Move successful"), s(o), this.clicked = null, v.debug("=== EventService.onClick END (move successful) ==="), !0) : (v.debug("EventService.onClick: Move failed from", o.id, "to", e.id, "- resetting state"), s(o), this.clicked = null, this.isDragging = !1, this.boardService.applyToAllSquares("removeHint"), this.moveService.canMove(e) ? (v.debug("EventService.onClick: Can select new piece at", e.id), this.clicked = e, this.config.clickable && (i(e), v.debug("EventService.onClick: New piece selected visually:", e.id)), v.debug("EventService.onClick: New piece selected at", e.id)) : v.debug("EventService.onClick: Cannot select piece at", e.id, "- staying deselected"), v.debug("=== EventService.onClick END (move failed) ==="), !1))) : (v.debug("EventService.onClick: No source square, checking if can move:", e.id), this.moveService.canMove(e) ? (v.debug("EventService.onClick: Can move! Setting clicked to:", e.id), this.clicked = e, this.config.clickable && (i(e), v.debug("EventService.onClick: Square selected visually:", e.id)), v.debug("EventService.onClick: After setting, clicked =", ((h = this.clicked) == null ? void 0 : h.id) || "none"), !1) : (v.debug("EventService.onClick: Cannot move square:", e.id), !1));
+    ), !1) : (v.debug("EventService.onClick: Attempting move from", o.id, "to", e.id), v.debug("EventService.onClick: Current game state before move attempt"), t(o, e, r, n) ? (v.debug("EventService.onClick: Move successful"), s(o), this.clicked = null, v.debug("=== EventService.onClick END (move successful) ==="), !0) : (v.debug(
+      "EventService.onClick: Move failed from",
+      o.id,
+      "to",
+      e.id,
+      "- resetting state"
+    ), s(o), this.clicked = null, this.isDragging = !1, this.boardService.applyToAllSquares("removeHint"), this.moveService.canMove(e) ? (v.debug("EventService.onClick: Can select new piece at", e.id), this.clicked = e, this.config.clickable && (i(e), v.debug("EventService.onClick: New piece selected visually:", e.id)), v.debug("EventService.onClick: New piece selected at", e.id)) : v.debug(
+      "EventService.onClick: Cannot select piece at",
+      e.id,
+      "- staying deselected"
+    ), v.debug("=== EventService.onClick END (move failed) ==="), !1))) : (v.debug("EventService.onClick: No source square, checking if can move:", e.id), this.moveService.canMove(e) ? (v.debug("EventService.onClick: Can move! Setting clicked to:", e.id), this.clicked = e, this.config.clickable && (i(e), v.debug("EventService.onClick: Square selected visually:", e.id)), v.debug("EventService.onClick: After setting, clicked =", ((d = this.clicked) == null ? void 0 : d.id) || "none"), !1) : (v.debug("EventService.onClick: Cannot move square:", e.id), !1));
   }
   /**
    * Schedules piece replacement after promotion animation
@@ -2422,30 +2432,26 @@ class ht {
       v.debug("No piece found in game state for", i.id);
       return;
     }
-    const r = i.piece;
-    if (!r) {
+    const o = i.piece;
+    if (!o) {
       v.warn("No piece found on target square for promotion");
-      const c = t + n.color, u = this.chessboard.pieceService.getPiecePath(c), d = new ge(
-        n.color,
-        t,
-        u
-      );
+      const c = t + n.color, u = this.chessboard.pieceService.getPiecePath(c), d = new ge(n.color, t, u);
       i.putPiece(d);
       const h = this.chessboard._createDragFunction.bind(this.chessboard);
       d.setDrag(h(i, d)), v.debug("Created new promotion piece:", c, "on", i.id);
       return;
     }
-    const o = t + n.color, l = this.chessboard.pieceService.getPiecePath(o);
-    v.debug("Transforming piece to:", o, "with path:", l), r.transformTo(
+    const r = t + n.color, l = this.chessboard.pieceService.getPiecePath(r);
+    v.debug("Transforming piece to:", r, "with path:", l), o.transformTo(
       t,
       l,
       300,
       // Duration of the transformation animation
       () => {
         const c = this.chessboard._createDragFunction.bind(this.chessboard);
-        r.setDrag(c(i, r)), this.config.hints && this.chessboard.moveService && setTimeout(() => {
+        o.setDrag(c(i, o)), this.config.hints && this.chessboard.moveService && setTimeout(() => {
           this.chessboard.moveService.clearCache();
-        }, 100), v.debug("Successfully transformed piece on", i.id, "to", o);
+        }, 100), v.debug("Successfully transformed piece on", i.id, "to", r);
       }
     );
   }
@@ -2495,9 +2501,9 @@ class ht {
    * Removes all existing event listeners
    */
   removeListeners() {
-    this.eventListeners.forEach((e, t) => {
-      e.forEach(({ element: i, type: s, handler: n }) => {
-        i.removeEventListener(s, n);
+    this.eventListeners.forEach((e) => {
+      e.forEach(({ element: t, type: i, handler: s }) => {
+        t.removeEventListener(i, s);
       });
     }), this.eventListeners.clear();
   }
@@ -2505,9 +2511,9 @@ class ht {
    * Removes all event listeners
    */
   removeAllListeners() {
-    this.eventListeners.forEach((e, t) => {
-      e.forEach(({ element: i, type: s, handler: n }) => {
-        i.removeEventListener(s, n);
+    this.eventListeners.forEach((e) => {
+      e.forEach(({ element: t, type: i, handler: s }) => {
+        t.removeEventListener(i, s);
       });
     }), this.eventListeners.clear();
   }
@@ -2518,7 +2524,7 @@ class ht {
     this.removeAllListeners(), this.clicked = null, this.promoting = !1, this.isAnimating = !1, this.isDragging = !1;
   }
 }
-class ut {
+class dt {
   /**
    * Creates a new MoveService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -2555,10 +2561,10 @@ class ut {
     if (typeof e == "string" && e.length >= 4) {
       const i = e.slice(0, 2), s = e.slice(2, 4), n = e.slice(4, 5) || null;
       if (!t[i] || !t[s])
-        throw new Me(C.invalid_move_format, i, s);
+        throw new Oe(C.invalid_move_format, i, s);
       return new W(t[i], t[s], n);
     }
-    throw new Me(C.invalid_move_format, "unknown", "unknown");
+    throw new Oe(C.invalid_move_format, "unknown", "unknown");
   }
   /**
    * Checks if a move is legal
@@ -2666,11 +2672,11 @@ class ut {
       return console.log("Not reaching promotion rank, no promotion required"), !1;
     if (console.log("Pawn reaching promotion rank - promotion required"), !this._isPawnMoveValid(e.from, e.to, i.color))
       return console.log("Pawn move not valid, no promotion required"), !1;
-    const r = t.moves({ square: e.from.id, verbose: !0 }).find((l) => l.to === e.to.id);
-    if (!r)
+    const o = t.moves({ square: e.from.id, verbose: !0 }).find((l) => l.to === e.to.id);
+    if (!o)
       return console.log("Move not in legal moves list, no promotion required"), !1;
-    const o = r.flags.includes("p") || i.color === "w" && s === 8 || i.color === "b" && s === 1;
-    return console.log("Promotion required:", o), o;
+    const r = o.flags.includes("p") || i.color === "w" && s === 8 || i.color === "b" && s === 1;
+    return console.log("Promotion required:", r), r;
   }
   /**
    * Validates if a pawn move is theoretically possible
@@ -2681,9 +2687,9 @@ class ut {
    * @returns {boolean} True if the move is valid for a pawn
    */
   _isPawnMoveValid(e, t, i) {
-    const s = e.row, n = t.row, r = e.col, o = t.col;
-    console.log(`Validating pawn move: ${e.id} -> ${t.id} (${i})`), console.log(`Ranks: ${s} -> ${n}, Files: ${r} -> ${o}`);
-    const l = i === "w" ? 1 : -1, c = n - s, u = Math.abs(o - r);
+    const s = e.row, n = t.row, o = e.col, r = t.col;
+    console.log(`Validating pawn move: ${e.id} -> ${t.id} (${i})`), console.log(`Ranks: ${s} -> ${n}, Files: ${o} -> ${r}`);
+    const l = i === "w" ? 1 : -1, c = n - s, u = Math.abs(r - o);
     return c * l <= 0 ? (console.log("Invalid: Pawn cannot move backward or stay in place"), !1) : Math.abs(c) > 2 ? (console.log("Invalid: Pawn cannot move more than 2 ranks"), !1) : Math.abs(c) === 2 && s !== (i === "w" ? 2 : 7) ? (console.log(`Invalid: Pawn cannot move 2 ranks from rank ${s}`), !1) : u > 1 ? (console.log("Invalid: Pawn cannot move more than 1 file"), !1) : (console.log("Pawn move validation passed"), !0);
   }
   /**
@@ -2697,27 +2703,27 @@ class ut {
   setupPromotion(e, t, i, s) {
     if (!this.requiresPromotion(e) || !this.positionService || !this.positionService.getGame())
       return !1;
-    const r = this.positionService.getGame().get(e.from.id), o = e.to;
+    const o = this.positionService.getGame().get(e.from.id), r = e.to;
     return Object.values(t).forEach((l) => {
       l.removePromotion(), l.removeCover();
-    }), this._showPromotionInColumn(o, r, t, i, s), !0;
+    }), this._showPromotionInColumn(r, o, t, i, s), !0;
   }
   /**
    * Shows promotion choices in a column
    * @private
    */
   _showPromotionInColumn(e, t, i, s, n) {
-    return console.log("Setting up promotion for", e.id, "piece color:", t.color), Ze.forEach((r, o) => {
-      const l = this._findPromotionSquare(e, o, i);
+    return console.log("Setting up promotion for", e.id, "piece color:", t.color), et.forEach((o, r) => {
+      const l = this._findPromotionSquare(e, r, i);
       if (l) {
-        const c = r + t.color, u = this._getPiecePathForPromotion(c);
-        console.log("Setting up promotion choice:", r, "on square:", l.id), l.putPromotion(u, () => {
-          console.log("Promotion choice selected:", r), s(r);
+        const c = o + t.color, u = this._getPiecePathForPromotion(c);
+        console.log("Setting up promotion choice:", o, "on square:", l.id), l.putPromotion(u, () => {
+          console.log("Promotion choice selected:", o), s(o);
         });
       } else
-        console.log("Could not find square for promotion choice:", r, "index:", o);
-    }), Object.values(i).forEach((r) => {
-      r.hasPromotion() || r.putCover(() => {
+        console.log("Could not find square for promotion choice:", o, "index:", r);
+    }), Object.values(i).forEach((o) => {
+      o.hasPromotion() || o.putCover(() => {
         n();
       });
     }), !0;
@@ -2732,20 +2738,29 @@ class ut {
    */
   _findPromotionSquare(e, t, i) {
     const s = e.col, n = e.row;
-    console.log("Looking for promotion square - target:", e.id, "index:", t, "col:", s, "baseRow:", n);
-    let r;
+    console.log(
+      "Looking for promotion square - target:",
+      e.id,
+      "index:",
+      t,
+      "col:",
+      s,
+      "baseRow:",
+      n
+    );
+    let o;
     if (n === 8)
-      r = 8 - t;
+      o = 8 - t;
     else if (n === 1)
-      r = 1 + t;
+      o = 1 + t;
     else
       return console.log("Invalid promotion row:", n), null;
-    if (console.log("Calculated row:", r), r < 1 || r > 8)
-      return console.log("Row out of bounds:", r), null;
-    for (const o of Object.values(i))
-      if (o.col === s && o.row === r)
-        return console.log("Found promotion square:", o.id), o;
-    return console.log("No square found for col:", s, "row:", r), null;
+    if (console.log("Calculated row:", o), o < 1 || o > 8)
+      return console.log("Row out of bounds:", o), null;
+    for (const r of Object.values(i))
+      if (r.col === s && r.row === o)
+        return console.log("Found promotion square:", r.id), r;
+    return console.log("No square found for col:", s, "row:", o), null;
   }
   /**
    * Gets piece path for promotion UI
@@ -2823,7 +2838,7 @@ class ut {
     this.clearCache(), this.positionService = null;
   }
 }
-class dt {
+class ft {
   /**
    * Creates a new PieceService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -2865,8 +2880,8 @@ class dt {
         n = t, s = i.toLowerCase();
       else
         throw new Se(C.invalid_piece + e, e);
-      const r = this.getPiecePath(s + n);
-      return new ge(n, s, r);
+      const o = this.getPiecePath(s + n);
+      return new ge(n, s, o);
     }
     throw new Se(C.invalid_piece + e, e);
   }
@@ -2935,19 +2950,21 @@ class dt {
    * @param {Function} [callback] - Callback function when complete
    */
   translatePiece(e, t, i, s = null, n = null) {
-    if (console.debug(`[PieceService] translatePiece: ${e.piece.id} from ${e.from.id} to ${e.to.id}`), !e.piece) {
+    if (console.debug(
+      `[PieceService] translatePiece: ${e.piece.id} from ${e.from.id} to ${e.to.id}`
+    ), !e.piece) {
       console.warn("PieceService.translatePiece: move.piece is null, skipping translation"), n && n();
       return;
     }
     t && (e.to.deselect(), this.removePieceFromSquare(e.to, !1));
-    const r = () => {
+    const o = () => {
       e.from.piece === e.piece && e.from.removePiece(!0), e.to.piece !== e.piece && (e.to.putPiece(e.piece), s && this.config.draggable && e.piece.element && e.piece.setDrag(s(e.to, e.piece))), n && n();
     };
     if (e.piece.element.classList.contains("dragging"))
-      r();
+      o();
     else {
       const l = i ? this.config.moveTime : 0;
-      this.movePiece(e.piece, e.to, l, r);
+      this.movePiece(e.piece, e.to, l, o);
     }
   }
   /**
@@ -3061,10 +3078,10 @@ class le {
     E(this, "lan");
     E(this, "before");
     E(this, "after");
-    const { color: i, piece: s, from: n, to: r, flags: o, captured: l, promotion: c } = t, u = q(n), d = q(r);
+    const { color: i, piece: s, from: n, to: o, flags: r, captured: l, promotion: c } = t, u = q(n), d = q(o);
     this.color = i, this.piece = s, this.from = u, this.to = d, this.san = e._moveToSan(t, e._moves({ legal: !0 })), this.lan = u + d, this.before = e.fen(), e._makeMove(t), this.after = e.fen(), e._undoMove(), this.flags = "";
     for (const h in S)
-      S[h] & o && (this.flags += Y[h]);
+      S[h] & r && (this.flags += Y[h]);
     l && (this.captured = l), c && (this.promotion = c, this.lan += c);
   }
   isCapture() {
@@ -3170,13 +3187,13 @@ const $ = -1, Y = {
 }, Ce = {
   b: [16, 32, 17, 15],
   w: [-16, -32, -17, -15]
-}, $e = {
+}, Fe = {
   n: [-18, -33, -31, -14, 18, 33, 31, 14],
   b: [-17, -15, 17, 15],
   r: [-16, 1, 16, -1],
   q: [-17, -16, -15, 1, 17, 16, 15, -1],
   k: [-17, -16, -15, 1, 17, 16, 15, -1]
-}, ft = [
+}, mt = [
   20,
   0,
   0,
@@ -3416,7 +3433,7 @@ const $ = -1, Y = {
   0,
   0,
   20
-], mt = [
+], gt = [
   17,
   0,
   0,
@@ -3656,7 +3673,7 @@ const $ = -1, Y = {
   0,
   0,
   -17
-], gt = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 }, pt = "pnbrqkPNBRQK", Fe = [ke, de, re, U], vt = 7, _t = 6, St = 1, bt = 0, ce = {
+], pt = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 }, vt = "pnbrqkPNBRQK", Ne = [ke, de, re, U], _t = 7, St = 6, bt = 1, yt = 0, ce = {
   [I]: S.KSIDE_CASTLE,
   [U]: S.QSIDE_CASTLE
 }, H = {
@@ -3668,14 +3685,14 @@ const $ = -1, Y = {
     { square: _.a8, flag: S.QSIDE_CASTLE },
     { square: _.h8, flag: S.KSIDE_CASTLE }
   ]
-}, yt = { b: St, w: _t }, Ct = ["1-0", "0-1", "1/2-1/2", "*"];
+}, Ct = { b: bt, w: St }, Pt = ["1-0", "0-1", "1/2-1/2", "*"];
 function J(a) {
   return a >> 4;
 }
 function ae(a) {
   return a & 15;
 }
-function Ve(a) {
+function Ge(a) {
   return "0123456789".indexOf(a) !== -1;
 }
 function q(a) {
@@ -3685,7 +3702,7 @@ function q(a) {
 function oe(a) {
   return a === O ? x : O;
 }
-function Ge(a) {
+function je(a) {
   const e = a.split(/\s+/);
   if (e.length !== 6)
     return {
@@ -3716,61 +3733,61 @@ function Ge(a) {
       ok: !1,
       error: "Invalid FEN: piece data does not contain 8 '/'-delimited rows"
     };
-  for (let r = 0; r < s.length; r++) {
-    let o = 0, l = !1;
-    for (let c = 0; c < s[r].length; c++)
-      if (Ve(s[r][c])) {
+  for (let o = 0; o < s.length; o++) {
+    let r = 0, l = !1;
+    for (let c = 0; c < s[o].length; c++)
+      if (Ge(s[o][c])) {
         if (l)
           return {
             ok: !1,
             error: "Invalid FEN: piece data is invalid (consecutive number)"
           };
-        o += parseInt(s[r][c], 10), l = !0;
+        r += parseInt(s[o][c], 10), l = !0;
       } else {
-        if (!/^[prnbqkPRNBQK]$/.test(s[r][c]))
+        if (!/^[prnbqkPRNBQK]$/.test(s[o][c]))
           return {
             ok: !1,
             error: "Invalid FEN: piece data is invalid (invalid piece)"
           };
-        o += 1, l = !1;
+        r += 1, l = !1;
       }
-    if (o !== 8)
+    if (r !== 8)
       return {
         ok: !1,
         error: "Invalid FEN: piece data is invalid (too many squares in rank)"
       };
   }
-  if (e[3][1] == "3" && e[1] == "w" || e[3][1] == "6" && e[1] == "b")
+  if (e[3][1] === "3" && e[1] === "w" || e[3][1] === "6" && e[1] === "b")
     return { ok: !1, error: "Invalid FEN: illegal en-passant square" };
   const n = [
     { color: "white", regex: /K/g },
     { color: "black", regex: /k/g }
   ];
-  for (const { color: r, regex: o } of n) {
-    if (!o.test(e[0]))
-      return { ok: !1, error: `Invalid FEN: missing ${r} king` };
-    if ((e[0].match(o) || []).length > 1)
-      return { ok: !1, error: `Invalid FEN: too many ${r} kings` };
+  for (const { color: o, regex: r } of n) {
+    if (!r.test(e[0]))
+      return { ok: !1, error: `Invalid FEN: missing ${o} king` };
+    if ((e[0].match(r) || []).length > 1)
+      return { ok: !1, error: `Invalid FEN: too many ${o} kings` };
   }
-  return Array.from(s[0] + s[7]).some((r) => r.toUpperCase() === "P") ? {
+  return Array.from(s[0] + s[7]).some((o) => o.toUpperCase() === "P") ? {
     ok: !1,
     error: "Invalid FEN: some pawns are on the edge rows"
   } : { ok: !0 };
 }
-function Pt(a, e) {
+function wt(a, e) {
   const t = a.from, i = a.to, s = a.piece;
-  let n = 0, r = 0, o = 0;
+  let n = 0, o = 0, r = 0;
   for (let l = 0, c = e.length; l < c; l++) {
     const u = e[l].from, d = e[l].to, h = e[l].piece;
-    s === h && t !== u && i === d && (n++, J(t) === J(u) && r++, ae(t) === ae(u) && o++);
+    s === h && t !== u && i === d && (n++, J(t) === J(u) && o++, ae(t) === ae(u) && r++);
   }
-  return n > 0 ? r > 0 && o > 0 ? q(t) : o > 0 ? q(t).charAt(1) : q(t).charAt(0) : "";
+  return n > 0 ? o > 0 && r > 0 ? q(t) : r > 0 ? q(t).charAt(1) : q(t).charAt(0) : "";
 }
-function K(a, e, t, i, s, n = void 0, r = S.NORMAL) {
-  const o = J(i);
-  if (s === R && (o === vt || o === bt))
-    for (let l = 0; l < Fe.length; l++) {
-      const c = Fe[l];
+function K(a, e, t, i, s, n = void 0, o = S.NORMAL) {
+  const r = J(i);
+  if (s === R && (r === _t || r === yt))
+    for (let l = 0; l < Ne.length; l++) {
+      const c = Ne[l];
       a.push({
         color: e,
         from: t,
@@ -3778,7 +3795,7 @@ function K(a, e, t, i, s, n = void 0, r = S.NORMAL) {
         piece: s,
         captured: n,
         promotion: c,
-        flags: r | S.PROMOTION
+        flags: o | S.PROMOTION
       });
     }
   else
@@ -3788,10 +3805,10 @@ function K(a, e, t, i, s, n = void 0, r = S.NORMAL) {
       to: i,
       piece: s,
       captured: n,
-      flags: r
+      flags: o
     });
 }
-function Ne(a) {
+function xe(a) {
   let e = a.charAt(0);
   return e >= "a" && e <= "h" ? a.match(/[a-h]\d.*[a-h]\d/) ? void 0 : R : (e = e.toLowerCase(), e === "o" ? I : e);
 }
@@ -3801,7 +3818,7 @@ function Pe(a) {
 function we(a) {
   return a.split(" ").slice(0, 4).join(" ");
 }
-class wt {
+class Et {
   constructor(e = ye) {
     E(this, "_board", new Array(128));
     E(this, "_turn", O);
@@ -3823,52 +3840,52 @@ class wt {
   load(e, { skipValidation: t = !1, preserveHeaders: i = !1 } = {}) {
     let s = e.split(/\s+/);
     if (s.length >= 2 && s.length < 6) {
-      const o = ["-", "-", "0", "1"];
-      e = s.concat(o.slice(-(6 - s.length))).join(" ");
+      const r = ["-", "-", "0", "1"];
+      e = s.concat(r.slice(-(6 - s.length))).join(" ");
     }
     if (s = e.split(/\s+/), !t) {
-      const { ok: o, error: l } = Ge(e);
-      if (!o)
+      const { ok: r, error: l } = je(e);
+      if (!r)
         throw new Error(l);
     }
     const n = s[0];
-    let r = 0;
+    let o = 0;
     this.clear({ preserveHeaders: i });
-    for (let o = 0; o < n.length; o++) {
-      const l = n.charAt(o);
+    for (let r = 0; r < n.length; r++) {
+      const l = n.charAt(r);
       if (l === "/")
-        r += 8;
-      else if (Ve(l))
-        r += parseInt(l, 10);
+        o += 8;
+      else if (Ge(l))
+        o += parseInt(l, 10);
       else {
         const c = l < "a" ? O : x;
-        this._put({ type: l.toLowerCase(), color: c }, q(r)), r++;
+        this._put({ type: l.toLowerCase(), color: c }, q(o)), o++;
       }
     }
     this._turn = s[1], s[2].indexOf("K") > -1 && (this._castling.w |= S.KSIDE_CASTLE), s[2].indexOf("Q") > -1 && (this._castling.w |= S.QSIDE_CASTLE), s[2].indexOf("k") > -1 && (this._castling.b |= S.KSIDE_CASTLE), s[2].indexOf("q") > -1 && (this._castling.b |= S.QSIDE_CASTLE), this._epSquare = s[3] === "-" ? $ : _[s[3]], this._halfMoves = parseInt(s[4], 10), this._moveNumber = parseInt(s[5], 10), this._updateSetup(e), this._incPositionCount(e);
   }
   fen() {
-    var n, r;
+    var n, o;
     let e = 0, t = "";
-    for (let o = _.a8; o <= _.h1; o++) {
-      if (this._board[o]) {
+    for (let r = _.a8; r <= _.h1; r++) {
+      if (this._board[r]) {
         e > 0 && (t += e, e = 0);
-        const { color: l, type: c } = this._board[o];
+        const { color: l, type: c } = this._board[r];
         t += l === O ? c.toUpperCase() : c.toLowerCase();
       } else
         e++;
-      o + 1 & 136 && (e > 0 && (t += e), o !== _.h1 && (t += "/"), e = 0, o += 8);
+      r + 1 & 136 && (e > 0 && (t += e), r !== _.h1 && (t += "/"), e = 0, r += 8);
     }
     let i = "";
     this._castling[O] & S.KSIDE_CASTLE && (i += "K"), this._castling[O] & S.QSIDE_CASTLE && (i += "Q"), this._castling[x] & S.KSIDE_CASTLE && (i += "k"), this._castling[x] & S.QSIDE_CASTLE && (i += "q"), i = i || "-";
     let s = "-";
     if (this._epSquare !== $) {
-      const o = this._epSquare + (this._turn === O ? 16 : -16), l = [o + 1, o - 1];
+      const r = this._epSquare + (this._turn === O ? 16 : -16), l = [r + 1, r - 1];
       for (const c of l) {
         if (c & 136)
           continue;
         const u = this._turn;
-        if (((n = this._board[c]) == null ? void 0 : n.color) === u && ((r = this._board[c]) == null ? void 0 : r.type) === R) {
+        if (((n = this._board[c]) == null ? void 0 : n.color) === u && ((o = this._board[c]) == null ? void 0 : o.type) === R) {
           this._makeMove({
             color: u,
             from: c,
@@ -3885,14 +3902,7 @@ class wt {
         }
       }
     }
-    return [
-      t,
-      this._turn,
-      i,
-      s,
-      this._halfMoves,
-      this._moveNumber
-    ].join(" ");
+    return [t, this._turn, i, s, this._halfMoves, this._moveNumber].join(" ");
   }
   /*
    * Called when the initial board setup is changed with put() or remove().
@@ -3913,10 +3923,10 @@ class wt {
     return this._put({ type: e, color: t }, i) ? (this._updateCastlingRights(), this._updateEnPassantSquare(), this._updateSetup(this.fen()), !0) : !1;
   }
   _put({ type: e, color: t }, i) {
-    if (pt.indexOf(e.toLowerCase()) === -1 || !(i in _))
+    if (vt.indexOf(e.toLowerCase()) === -1 || !(i in _))
       return !1;
     const s = _[i];
-    if (e == I && !(this._kings[t] == $ || this._kings[t] == s))
+    if (e === I && !(this._kings[t] === $ || this._kings[t] === s))
       return !1;
     const n = this._board[s];
     return n && n.type === I && (this._kings[n.color] = $), this._board[s] = { type: e, color: t }, e === I && (this._kings[t] = s), !0;
@@ -3926,22 +3936,22 @@ class wt {
     return delete this._board[_[e]], t && t.type === I && (this._kings[t.color] = $), this._updateCastlingRights(), this._updateEnPassantSquare(), this._updateSetup(this.fen()), t;
   }
   _updateCastlingRights() {
-    var i, s, n, r, o, l, c, u, d, h, m, f;
-    const e = ((i = this._board[_.e1]) == null ? void 0 : i.type) === I && ((s = this._board[_.e1]) == null ? void 0 : s.color) === O, t = ((n = this._board[_.e8]) == null ? void 0 : n.type) === I && ((r = this._board[_.e8]) == null ? void 0 : r.color) === x;
-    (!e || ((o = this._board[_.a1]) == null ? void 0 : o.type) !== re || ((l = this._board[_.a1]) == null ? void 0 : l.color) !== O) && (this._castling.w &= -65), (!e || ((c = this._board[_.h1]) == null ? void 0 : c.type) !== re || ((u = this._board[_.h1]) == null ? void 0 : u.color) !== O) && (this._castling.w &= -33), (!t || ((d = this._board[_.a8]) == null ? void 0 : d.type) !== re || ((h = this._board[_.a8]) == null ? void 0 : h.color) !== x) && (this._castling.b &= -65), (!t || ((m = this._board[_.h8]) == null ? void 0 : m.type) !== re || ((f = this._board[_.h8]) == null ? void 0 : f.color) !== x) && (this._castling.b &= -33);
+    var i, s, n, o, r, l, c, u, d, h, m, f;
+    const e = ((i = this._board[_.e1]) == null ? void 0 : i.type) === I && ((s = this._board[_.e1]) == null ? void 0 : s.color) === O, t = ((n = this._board[_.e8]) == null ? void 0 : n.type) === I && ((o = this._board[_.e8]) == null ? void 0 : o.color) === x;
+    (!e || ((r = this._board[_.a1]) == null ? void 0 : r.type) !== re || ((l = this._board[_.a1]) == null ? void 0 : l.color) !== O) && (this._castling.w &= -65), (!e || ((c = this._board[_.h1]) == null ? void 0 : c.type) !== re || ((u = this._board[_.h1]) == null ? void 0 : u.color) !== O) && (this._castling.w &= -33), (!t || ((d = this._board[_.a8]) == null ? void 0 : d.type) !== re || ((h = this._board[_.a8]) == null ? void 0 : h.color) !== x) && (this._castling.b &= -65), (!t || ((m = this._board[_.h8]) == null ? void 0 : m.type) !== re || ((f = this._board[_.h8]) == null ? void 0 : f.color) !== x) && (this._castling.b &= -33);
   }
   _updateEnPassantSquare() {
-    var n, r;
+    var n, o;
     if (this._epSquare === $)
       return;
     const e = this._epSquare + (this._turn === O ? -16 : 16), t = this._epSquare + (this._turn === O ? 16 : -16), i = [t + 1, t - 1];
-    if (this._board[e] !== null || this._board[this._epSquare] !== null || ((n = this._board[t]) == null ? void 0 : n.color) !== oe(this._turn) || ((r = this._board[t]) == null ? void 0 : r.type) !== R) {
+    if (this._board[e] !== null || this._board[this._epSquare] !== null || ((n = this._board[t]) == null ? void 0 : n.color) !== oe(this._turn) || ((o = this._board[t]) == null ? void 0 : o.type) !== R) {
       this._epSquare = $;
       return;
     }
-    const s = (o) => {
+    const s = (r) => {
       var l, c;
-      return !(o & 136) && ((l = this._board[o]) == null ? void 0 : l.color) === this._turn && ((c = this._board[o]) == null ? void 0 : c.type) === R;
+      return !(r & 136) && ((l = this._board[r]) == null ? void 0 : l.color) === this._turn && ((c = this._board[r]) == null ? void 0 : c.type) === R;
     };
     i.some(s) || (this._epSquare = $);
   }
@@ -3954,26 +3964,26 @@ class wt {
       }
       if (this._board[n] === void 0 || this._board[n].color !== e)
         continue;
-      const r = this._board[n], o = n - t;
-      if (o === 0)
+      const o = this._board[n], r = n - t;
+      if (r === 0)
         continue;
-      const l = o + 119;
-      if (ft[l] & gt[r.type]) {
-        if (r.type === R) {
-          if (o > 0 && r.color === O || o <= 0 && r.color === x) {
+      const l = r + 119;
+      if (mt[l] & pt[o.type]) {
+        if (o.type === R) {
+          if (r > 0 && o.color === O || r <= 0 && o.color === x) {
             if (!i)
               return !0;
             s.push(q(n));
           }
           continue;
         }
-        if (r.type === "n" || r.type === "k") {
+        if (o.type === "n" || o.type === "k") {
           if (!i)
             return !0;
           s.push(q(n));
           continue;
         }
-        const c = mt[l];
+        const c = gt[l];
         let u = n + c, d = !1;
         for (; u !== t; ) {
           if (this._board[u] != null) {
@@ -4029,8 +4039,8 @@ class wt {
         n += 7;
         continue;
       }
-      const r = this._board[n];
-      r && (e[r.type] = r.type in e ? e[r.type] + 1 : 1, r.type === de && t.push(s), i++);
+      const o = this._board[n];
+      o && (e[o.type] = o.type in e ? e[o.type] + 1 : 1, o.type === de && t.push(s), i++);
     }
     if (i === 2)
       return !0;
@@ -4041,10 +4051,10 @@ class wt {
       return !0;
     if (i === e[de] + 2) {
       let n = 0;
-      const r = t.length;
-      for (let o = 0; o < r; o++)
-        n += t[o];
-      if (n === 0 || n === r)
+      const o = t.length;
+      for (let r = 0; r < o; r++)
+        n += t[r];
+      if (n === 0 || n === o)
         return !0;
     }
     return !1;
@@ -4067,7 +4077,7 @@ class wt {
   }
   _moves({ legal: e = !0, piece: t = void 0, square: i = void 0 } = {}) {
     var m;
-    const s = i ? i.toLowerCase() : void 0, n = t == null ? void 0 : t.toLowerCase(), r = [], o = this._turn, l = oe(o);
+    const s = i ? i.toLowerCase() : void 0, n = t == null ? void 0 : t.toLowerCase(), o = [], r = this._turn, l = oe(r);
     let c = _.a8, u = _.h1, d = !1;
     if (s) {
       if (!(s in _))
@@ -4084,46 +4094,42 @@ class wt {
       const { type: g } = this._board[f];
       let b;
       if (g === R) {
-        if (n && n !== g)
-          continue;
-        b = f + Ce[o][0], this._board[b] || (K(r, o, f, b, R), b = f + Ce[o][1], yt[o] === J(f) && !this._board[b] && K(r, o, f, b, R, void 0, S.BIG_PAWN));
+        if (n && n !== g) continue;
+        b = f + Ce[r][0], this._board[b] || (K(o, r, f, b, R), b = f + Ce[r][1], Ct[r] === J(f) && !this._board[b] && K(o, r, f, b, R, void 0, S.BIG_PAWN));
         for (let w = 2; w < 4; w++)
-          b = f + Ce[o][w], !(b & 136) && (((m = this._board[b]) == null ? void 0 : m.color) === l ? K(r, o, f, b, R, this._board[b].type, S.CAPTURE) : b === this._epSquare && K(r, o, f, b, R, R, S.EP_CAPTURE));
+          b = f + Ce[r][w], !(b & 136) && (((m = this._board[b]) == null ? void 0 : m.color) === l ? K(o, r, f, b, R, this._board[b].type, S.CAPTURE) : b === this._epSquare && K(o, r, f, b, R, R, S.EP_CAPTURE));
       } else {
-        if (n && n !== g)
-          continue;
-        for (let w = 0, y = $e[g].length; w < y; w++) {
-          const p = $e[g][w];
+        if (n && n !== g) continue;
+        for (let w = 0, y = Fe[g].length; w < y; w++) {
+          const p = Fe[g][w];
           for (b = f; b += p, !(b & 136); ) {
             if (!this._board[b])
-              K(r, o, f, b, g);
+              K(o, r, f, b, g);
             else {
-              if (this._board[b].color === o)
-                break;
-              K(r, o, f, b, g, this._board[b].type, S.CAPTURE);
+              if (this._board[b].color === r) break;
+              K(o, r, f, b, g, this._board[b].type, S.CAPTURE);
               break;
             }
-            if (g === ke || g === I)
-              break;
+            if (g === ke || g === I) break;
           }
         }
       }
     }
-    if ((n === void 0 || n === I) && (!d || u === this._kings[o])) {
-      if (this._castling[o] & S.KSIDE_CASTLE) {
-        const f = this._kings[o], g = f + 2;
-        !this._board[f + 1] && !this._board[g] && !this._attacked(l, this._kings[o]) && !this._attacked(l, f + 1) && !this._attacked(l, g) && K(r, o, this._kings[o], g, I, void 0, S.KSIDE_CASTLE);
+    if ((n === void 0 || n === I) && (!d || u === this._kings[r])) {
+      if (this._castling[r] & S.KSIDE_CASTLE) {
+        const f = this._kings[r], g = f + 2;
+        !this._board[f + 1] && !this._board[g] && !this._attacked(l, this._kings[r]) && !this._attacked(l, f + 1) && !this._attacked(l, g) && K(o, r, this._kings[r], g, I, void 0, S.KSIDE_CASTLE);
       }
-      if (this._castling[o] & S.QSIDE_CASTLE) {
-        const f = this._kings[o], g = f - 2;
-        !this._board[f - 1] && !this._board[f - 2] && !this._board[f - 3] && !this._attacked(l, this._kings[o]) && !this._attacked(l, f - 1) && !this._attacked(l, g) && K(r, o, this._kings[o], g, I, void 0, S.QSIDE_CASTLE);
+      if (this._castling[r] & S.QSIDE_CASTLE) {
+        const f = this._kings[r], g = f - 2;
+        !this._board[f - 1] && !this._board[f - 2] && !this._board[f - 3] && !this._attacked(l, this._kings[r]) && !this._attacked(l, f - 1) && !this._attacked(l, g) && K(o, r, this._kings[r], g, I, void 0, S.QSIDE_CASTLE);
       }
     }
-    if (!e || this._kings[o] === -1)
-      return r;
+    if (!e || this._kings[r] === -1)
+      return o;
     const h = [];
-    for (let f = 0, g = r.length; f < g; f++)
-      this._makeMove(r[f]), this._isKingAttacked(o) || h.push(r[f]), this._undoMove();
+    for (let f = 0, g = o.length; f < g; f++)
+      this._makeMove(o[f]), this._isKingAttacked(r) || h.push(o[f]), this._undoMove();
     return h;
   }
   move(e, { strict: t = !1 } = {}) {
@@ -4132,9 +4138,9 @@ class wt {
       i = this._moveFromSan(e, t);
     else if (typeof e == "object") {
       const n = this._moves();
-      for (let r = 0, o = n.length; r < o; r++)
-        if (e.from === q(n[r].from) && e.to === q(n[r].to) && (!("promotion" in n[r]) || e.promotion === n[r].promotion)) {
-          i = n[r];
+      for (let o = 0, r = n.length; o < r; o++)
+        if (e.from === q(n[o].from) && e.to === q(n[o].to) && (!("promotion" in n[o]) || e.promotion === n[o].promotion)) {
+          i = n[o];
           break;
         }
     }
@@ -4204,8 +4210,8 @@ class wt {
       } else
         this._board[t.to] = { type: t.captured, color: s };
     if (t.flags & (S.KSIDE_CASTLE | S.QSIDE_CASTLE)) {
-      let n, r;
-      t.flags & S.KSIDE_CASTLE ? (n = t.to + 1, r = t.to - 1) : (n = t.to - 2, r = t.to + 1), this._board[n] = this._board[r], delete this._board[r];
+      let n, o;
+      t.flags & S.KSIDE_CASTLE ? (n = t.to + 1, o = t.to - 1) : (n = t.to - 2, o = t.to + 1), this._board[n] = this._board[o], delete this._board[o];
     }
     return t;
   }
@@ -4223,24 +4229,24 @@ class wt {
         h = `${h}${f}{${m}}`;
       }
       return h;
-    }, r = [];
+    }, o = [];
     for (; this._history.length > 0; )
-      r.push(this._undoMove());
-    const o = [];
+      o.push(this._undoMove());
+    const r = [];
     let l = "";
-    for (r.length === 0 && o.push(n("")); r.length > 0; ) {
+    for (o.length === 0 && r.push(n("")); o.length > 0; ) {
       l = n(l);
-      const h = r.pop();
+      const h = o.pop();
       if (!h)
         break;
       if (!this._history.length && h.color === "b") {
         const m = `${this._moveNumber}. ...`;
         l = l ? `${l} ${m}` : m;
-      } else h.color === "w" && (l.length && o.push(l), l = `${this._moveNumber}.`);
+      } else h.color === "w" && (l.length && r.push(l), l = `${this._moveNumber}.`);
       l = `${l} ${this._moveToSan(h, this._moves({ legal: !0 }))}`, this._makeMove(h);
     }
-    if (l.length && o.push(n(l)), typeof this._header.Result < "u" && o.push(this._header.Result), t === 0)
-      return i.join("") + o.join(" ");
+    if (l.length && r.push(n(l)), typeof this._header.Result < "u" && r.push(this._header.Result), t === 0)
+      return i.join("") + r.join(" ");
     const c = function() {
       return i.length > 0 && i[i.length - 1] === " " ? (i.pop(), !0) : !1;
     }, u = function(h, m) {
@@ -4256,12 +4262,12 @@ class wt {
       return c() && h--, h;
     };
     let d = 0;
-    for (let h = 0; h < o.length; h++) {
-      if (d + o[h].length > t && o[h].includes("{")) {
-        d = u(d, o[h]);
+    for (let h = 0; h < r.length; h++) {
+      if (d + r[h].length > t && r[h].includes("{")) {
+        d = u(d, r[h]);
         continue;
       }
-      d + o[h].length > t && h !== 0 ? (i[i.length - 1] === " " && i.pop(), i.push(e), d = 0) : h !== 0 && (i.push(" "), d++), i.push(o[h]), d += o[h].length;
+      d + r[h].length > t && h !== 0 ? (i[i.length - 1] === " " && i.pop(), i.push(e), d = 0) : h !== 0 && (i.push(" "), d++), i.push(r[h]), d += r[h].length;
     }
     return i.join("");
   }
@@ -4297,7 +4303,9 @@ class wt {
       return P;
     }
     e = e.trim();
-    const o = new RegExp(`^(\\[((?:${s(i)})|.)*\\])((?:\\s*${s(i)}){2}|(?:\\s*${s(i)})*$)`).exec(e), l = o && o.length >= 2 ? o[1] : "";
+    const r = new RegExp(
+      `^(\\[((?:${s(i)})|.)*\\])((?:\\s*${s(i)}){2}|(?:\\s*${s(i)})*$)`
+    ).exec(e), l = r && r.length >= 2 ? r[1] : "";
     this.reset();
     const c = n(l);
     let u = "";
@@ -4314,7 +4322,7 @@ class wt {
       return Array.from(p).map((P) => P.charCodeAt(0) < 128 ? P.charCodeAt(0).toString(16) : encodeURIComponent(P).replace(/%/g, "").toLowerCase()).join("");
     }
     function h(p) {
-      return p.length == 0 ? "" : decodeURIComponent(`%${(p.match(/.{1,2}/g) || []).join("%")}`);
+      return p.length === 0 ? "" : decodeURIComponent(`%${(p.match(/.{1,2}/g) || []).join("%")}`);
     }
     const m = function(p) {
       return p = p.replace(new RegExp(s(i), "g"), " "), `{${d(p.slice(1, p.length - 1))}}`;
@@ -4342,7 +4350,7 @@ class wt {
       }
       const T = this._moveFromSan(w[p], t);
       if (T == null)
-        if (Ct.indexOf(w[p]) > -1)
+        if (Pt.indexOf(w[p]) > -1)
           y = w[p];
         else
           throw new Error(`Invalid move in PGN: ${w[p]}`);
@@ -4370,7 +4378,7 @@ class wt {
       i = "O-O-O";
     else {
       if (e.piece !== R) {
-        const s = Pt(e, t);
+        const s = wt(e, t);
         i += e.piece.toUpperCase() + s;
       }
       e.flags & (S.CAPTURE | S.EP_CAPTURE) && (e.piece === R && (i += q(e.from)[0]), i += "x"), i += q(e.to), e.promotion && (i += `=${e.promotion.toUpperCase()}`);
@@ -4380,25 +4388,25 @@ class wt {
   // convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
   _moveFromSan(e, t = !1) {
     const i = Pe(e);
-    let s = Ne(i), n = this._moves({ legal: !0, piece: s });
+    let s = xe(i), n = this._moves({ legal: !0, piece: s });
     for (let h = 0, m = n.length; h < m; h++)
       if (i === Pe(this._moveToSan(n[h], n)))
         return n[h];
     if (t)
       return null;
-    let r, o, l, c, u, d = !1;
-    if (o = i.match(/([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/), o ? (r = o[1], l = o[2], c = o[3], u = o[4], l.length == 1 && (d = !0)) : (o = i.match(/([pnbrqkPNBRQK])?([a-h]?[1-8]?)x?-?([a-h][1-8])([qrbnQRBN])?/), o && (r = o[1], l = o[2], c = o[3], u = o[4], l.length == 1 && (d = !0))), s = Ne(i), n = this._moves({
+    let o, r, l, c, u, d = !1;
+    if (r = i.match(/([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/), r ? (o = r[1], l = r[2], c = r[3], u = r[4], l.length === 1 && (d = !0)) : (r = i.match(/([pnbrqkPNBRQK])?([a-h]?[1-8]?)x?-?([a-h][1-8])([qrbnQRBN])?/), r && (o = r[1], l = r[2], c = r[3], u = r[4], l.length === 1 && (d = !0))), s = xe(i), n = this._moves({
       legal: !0,
-      piece: r || s
+      piece: o || s
     }), !c)
       return null;
     for (let h = 0, m = n.length; h < m; h++)
       if (l) {
-        if ((!r || r.toLowerCase() == n[h].piece) && _[l] == n[h].from && _[c] == n[h].to && (!u || u.toLowerCase() == n[h].promotion))
+        if ((!o || o.toLowerCase() === n[h].piece) && _[l] === n[h].from && _[c] === n[h].to && (!u || u.toLowerCase() === n[h].promotion))
           return n[h];
         if (d) {
           const f = q(n[h].from);
-          if ((!r || r.toLowerCase() == n[h].piece) && _[c] == n[h].to && (l == f[0] || l == f[1]) && (!u || u.toLowerCase() == n[h].promotion))
+          if ((!o || o.toLowerCase() === n[h].piece) && _[c] === n[h].to && (l === f[0] || l === f[1]) && (!u || u.toLowerCase() === n[h].promotion))
             return n[h];
         }
       } else if (i === Pe(this._moveToSan(n[h], n)).replace("x", ""))
@@ -4424,7 +4432,7 @@ class wt {
     const t = this._moves({ legal: !1 });
     let i = 0;
     const s = this._turn;
-    for (let n = 0, r = t.length; n < r; n++)
+    for (let n = 0, o = t.length; n < o; n++)
       this._makeMove(t[n]), this._isKingAttacked(s) || (e - 1 > 0 ? i += this.perft(e - 1) : i++), this._undoMove();
     return i;
   }
@@ -4541,7 +4549,7 @@ class wt {
     return this._moveNumber;
   }
 }
-class Et {
+class kt {
   /**
    * Creates a new PositionService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -4570,11 +4578,11 @@ class Et {
    */
   _convertStringPosition(e) {
     if (e === "start")
-      return Xe;
+      return Ze;
     if (this.validateFen(e))
       return e;
-    if (Re[e])
-      return Re[e];
+    if (Ae[e])
+      return Ae[e];
     throw new k(C.invalid_position + e, "position", e);
   }
   /**
@@ -4588,8 +4596,8 @@ class Et {
     for (let i = 0; i < 8; i++) {
       const s = [];
       let n = 0;
-      for (let r = 0; r < 8; r++) {
-        const o = this._getSquareID(i, r), l = e[o];
+      for (let o = 0; o < 8; o++) {
+        const r = this._getSquareID(i, o), l = e[r];
         if (l) {
           n > 0 && (s.push(n), n = 0);
           const c = l[1] === "w" ? l[0].toUpperCase() : l[0].toLowerCase();
@@ -4608,7 +4616,7 @@ class Et {
    */
   setGame(e, t = {}) {
     const i = this.convertFen(e);
-    this.game ? this.game.load(i, t) : this.game = new wt(i);
+    this.game ? this.game.load(i, t) : this.game = new Et(i);
   }
   /**
    * Gets the current game instance
@@ -4623,7 +4631,7 @@ class Et {
    * @returns {boolean} True if valid, false otherwise
    */
   validateFen(e) {
-    return Ge(e);
+    return je(e);
   }
   /**
    * Gets piece information for a specific square
@@ -4765,7 +4773,7 @@ let pe = class {
    */
   constructor(e) {
     try {
-      this._performanceMonitor = new Be(), this._performanceMonitor.startMeasure("chessboard-initialization"), this._validateAndInitializeConfig(e), this._initializeServices(), this._initialize(), this._performanceMonitor.endMeasure("chessboard-initialization");
+      this._performanceMonitor = new Ve(), this._performanceMonitor.startMeasure("chessboard-initialization"), this._validateAndInitializeConfig(e), this._initializeServices(), this._initialize(), this._performanceMonitor.endMeasure("chessboard-initialization");
     } catch (t) {
       this._handleConstructorError(t);
     }
@@ -4780,8 +4788,12 @@ let pe = class {
   _validateAndInitializeConfig(e) {
     if (!e || typeof e != "object")
       throw new L("Configuration must be an object", "config", e);
-    if (this.config = new xe(e), !this.config.id_div)
-      throw new L("Configuration must include id_div", "id_div", this.config.id_div);
+    if (this.config = new Be(e), !this.config.id_div)
+      throw new L(
+        "Configuration must include id_div",
+        "id_div",
+        this.config.id_div
+      );
   }
   /**
    * Handles constructor errors gracefully
@@ -4806,7 +4818,7 @@ let pe = class {
    * @private
    */
   _initializeServices() {
-    this.validationService = new Ie(), this.coordinateService = new at(this.config), this.positionService = new Et(this.config), this.boardService = new rt(this.config), this.pieceService = new dt(this.config), this.animationService = new ot(this.config), this.moveService = new ut(this.config, this.positionService), this.eventService = new ht(
+    this.validationService = new Ie(), this.coordinateService = new lt(this.config), this.positionService = new kt(this.config), this.boardService = new at(this.config), this.pieceService = new ft(this.config), this.animationService = new rt(this.config), this.moveService = new dt(this.config, this.positionService), this.eventService = new ut(
       this.config,
       this.boardService,
       this.moveService,
@@ -4845,7 +4857,9 @@ let pe = class {
     if (this._isUndoRedo)
       return;
     const e = document.getElementById(this.config.id_div);
-    e && (e.innerHTML = ""), this.boardService && this.boardService.squares && Object.values(this.boardService.squares).forEach((t) => t && t.forceRemoveAllPieces && t.forceRemoveAllPieces()), this.boardService && this.boardService.removeSquares && this.boardService.removeSquares(), this.boardService && this.boardService.removeBoard && this.boardService.removeBoard(), this.boardService.buildBoard();
+    e && (e.innerHTML = ""), this.boardService && this.boardService.squares && Object.values(this.boardService.squares).forEach(
+      (t) => t && t.forceRemoveAllPieces && t.forceRemoveAllPieces()
+    ), this.boardService && this.boardService.removeSquares && this.boardService.removeSquares(), this.boardService && this.boardService.removeBoard && this.boardService.removeBoard(), this.boardService.buildBoard();
   }
   /**
    * Builds all squares on the board
@@ -4923,9 +4937,8 @@ let pe = class {
   /**
    * Handles square deselection
    * @private
-   * @param {Square} square - Deselected square
    */
-  _onDeselect(e) {
+  _onDeselect() {
     this._clearVisualState();
   }
   /**
@@ -4983,7 +4996,7 @@ let pe = class {
       return;
     }
     this.boardService.applyToAllSquares("unmoved"), e.from.moved(), e.to.moved();
-    const n = this.moveService.isCastle(s), r = this.moveService.isEnPassant(s);
+    const n = this.moveService.isCastle(s), o = this.moveService.isEnPassant(s);
     t && e.from.piece ? (this.pieceService.translatePiece(
       e,
       !!e.to.piece,
@@ -4991,11 +5004,11 @@ let pe = class {
       t,
       this._createDragFunction.bind(this),
       () => {
-        n ? this._handleSpecialMoveAnimation(s) : r && this._handleSpecialMoveAnimation(s), this.config.onMoveEnd(s), this._updateBoardPieces(!1);
+        n ? this._handleSpecialMoveAnimation(s) : o && this._handleSpecialMoveAnimation(s), this.config.onMoveEnd(s), this._updateBoardPieces(!1);
       }
     ), n && this.config.animationStyle === "simultaneous" && setTimeout(() => {
       this._handleCastleMove(s, !0);
-    }, this.config.simultaneousAnimationDelay)) : (n ? this._handleSpecialMove(s) : r && this._handleSpecialMove(s), this._updateBoardPieces(!1), this.config.onMoveEnd(s));
+    }, this.config.simultaneousAnimationDelay)) : (n ? this._handleSpecialMove(s) : o && this._handleSpecialMove(s), this._updateBoardPieces(!1), this.config.onMoveEnd(s));
   }
   /**
    * Handles special moves (castle, en passant) without animation
@@ -5028,9 +5041,9 @@ let pe = class {
       return;
     }
     if (t) {
-      const r = s.piece;
+      const o = s.piece;
       this.pieceService.translatePiece(
-        { from: s, to: n, piece: r },
+        { from: s, to: n, piece: o },
         !1,
         // No capture for rook in castle
         t,
@@ -5108,14 +5121,14 @@ let pe = class {
    */
   _doSequentialUpdate(e, t, i) {
     const s = {};
-    Object.values(e).forEach((r) => {
-      s[r.id] = this.positionService.getGamePieceId(r.id);
-    }), Object.values(e).forEach((r) => {
-      const o = s[r.id], l = r.piece, c = l ? l.getId() : null;
-      if (c !== o && (l && c !== o && this.pieceService.removePieceFromSquare(r, i), o && c !== o)) {
-        const u = this.pieceService.convertPiece(o);
+    Object.values(e).forEach((o) => {
+      s[o.id] = this.positionService.getGamePieceId(o.id);
+    }), Object.values(e).forEach((o) => {
+      const r = s[o.id], l = o.piece, c = l ? l.getId() : null;
+      if (c !== r && (l && c !== r && this.pieceService.removePieceFromSquare(o, i), r && c !== r)) {
+        const u = this.pieceService.convertPiece(r);
         this.pieceService.addPieceOnSquare(
-          r,
+          o,
           u,
           i,
           this._createDragFunction.bind(this)
@@ -5145,19 +5158,19 @@ let pe = class {
         n[f] || (n[f] = []), n[f].push({ square: d, id: d.id });
       }
     });
-    let r = 0, o = 0;
+    let o = 0, r = 0;
     const l = i ? 0 : this.config.simultaneousAnimationDelay;
     let c = 0;
     if (Object.keys(n).forEach((d) => {
-      o += Math.max((s[d] || []).length, n[d].length);
-    }), o === 0) {
+      r += Math.max((s[d] || []).length, n[d].length);
+    }), r === 0) {
       this._addListeners();
       const d = this.positionService.getGame().fen();
       t !== d && this.config.onChange(d);
       return;
     }
     const u = () => {
-      if (r++, r === o) {
+      if (o++, o === r) {
         this._addListeners();
         const d = this.positionService.getGame().fen();
         t !== d && this.config.onChange(d);
@@ -5182,7 +5195,11 @@ let pe = class {
           g[p] = !0, b[P] = !0;
           continue;
         }
-        w.push({ from: h[p].square, to: m[P].square, piece: h[p].square.piece }), g[p] = !0, b[P] = !0;
+        w.push({
+          from: h[p].square,
+          to: m[P].square,
+          piece: h[p].square.piece
+        }), g[p] = !0, b[P] = !0;
       }
       for (let y = 0; y < h.length; y++)
         g[y] || (setTimeout(() => {
@@ -5224,10 +5241,10 @@ let pe = class {
       const u = c.piece, d = this.positionService.getGamePieceId(c.id);
       u && t.set(c.id, u.getId()), d && i.set(c.id, d);
     });
-    const s = [], n = [], r = [], o = [], l = /* @__PURE__ */ new Set();
+    const s = [], n = [], o = [], r = [], l = /* @__PURE__ */ new Set();
     return t.forEach((c, u) => {
       const d = i.get(u);
-      c === d && (o.push({
+      c === d && (r.push({
         piece: c,
         square: u
       }), l.add(u));
@@ -5238,7 +5255,7 @@ let pe = class {
         ([h, m]) => m === c && !l.has(h)
       );
       if (d) {
-        const [h, m] = d;
+        const [h] = d;
         s.push({
           piece: c,
           from: u,
@@ -5253,7 +5270,7 @@ let pe = class {
           squareObj: e[u]
         });
     }), i.forEach((c, u) => {
-      l.has(u) || r.push({
+      l.has(u) || o.push({
         piece: c,
         square: u,
         squareObj: e[u]
@@ -5261,9 +5278,9 @@ let pe = class {
     }), {
       moves: s,
       removes: n,
-      adds: r,
-      unchanged: o,
-      totalChanges: s.length + n.length + r.length
+      adds: o,
+      unchanged: r,
+      totalChanges: s.length + n.length + o.length
     };
   }
   /**
@@ -5274,9 +5291,9 @@ let pe = class {
    * @param {boolean} [isPositionLoad=false] - Whether this is a position load
    */
   _executeSimultaneousChanges(e, t, i = !1) {
-    const { moves: s, removes: n, adds: r } = e;
-    let o = 0;
-    const l = s.length + n.length + r.length;
+    const { moves: s, removes: n, adds: o } = e;
+    let r = 0;
+    const l = s.length + n.length + o.length;
     if (l === 0) {
       this._addListeners();
       const h = this.positionService.getGame().fen();
@@ -5284,7 +5301,7 @@ let pe = class {
       return;
     }
     const c = () => {
-      if (o++, o === l) {
+      if (r++, r === l) {
         this._addListeners();
         const h = this.positionService.getGame().fen();
         t !== h && this.config.onChange(h);
@@ -5301,7 +5318,7 @@ let pe = class {
       setTimeout(() => {
         this._animatePieceRemoval(h, c);
       }, m), d++;
-    }), r.forEach((h) => {
+    }), o.forEach((h) => {
       const m = d * u;
       setTimeout(() => {
         this._animatePieceAddition(h, c);
@@ -5508,9 +5525,9 @@ let pe = class {
       else
         throw new Error(`[putPiece] Invalid piece: ${e}`);
     }
-    const r = this.validationService.isValidSquare(t), o = this.validationService.isValidPiece(n);
-    if (!r) throw new Error(`[putPiece] Invalid square: ${t}`);
-    if (!o) throw new Error(`[putPiece] Invalid piece: ${n}`);
+    const o = this.validationService.isValidSquare(t), r = this.validationService.isValidPiece(n);
+    if (!o) throw new Error(`[putPiece] Invalid square: ${t}`);
+    if (!r) throw new Error(`[putPiece] Invalid piece: ${n}`);
     if (!this.positionService || !this.positionService.getGame())
       throw new Error("[putPiece] No positionService or game");
     const l = this.pieceService.convertPiece(n), c = this.boardService.getSquare(t);
@@ -5936,26 +5953,28 @@ let pe = class {
   put(e, t, i = !0) {
     console.debug("[put] called with:", { pieceId: e, squareId: t, animation: i });
     let s = null;
-    function n(o) {
-      if (typeof o != "string" || o.length !== 2) return null;
-      const l = o[0].toLowerCase(), c = o[1].toLowerCase(), u = "kqrbnp", d = "wb";
+    function n(r) {
+      if (typeof r != "string" || r.length !== 2) return null;
+      const l = r[0].toLowerCase(), c = r[1].toLowerCase(), u = "kqrbnp", d = "wb";
       return u.includes(l) && d.includes(c) ? { type: l, color: c } : d.includes(l) && u.includes(c) ? { type: c, color: l } : null;
     }
     if (typeof e == "string") {
       if (s = n(e), console.debug("[put] parsed piece string:", s), !s)
         return console.error(`[put] Invalid piece string: '${e}'. Use e.g. 'wQ', 'Qw', 'bK', 'kb'`), !1;
     } else if (typeof e == "object" && e.type && e.color) {
-      const o = String(e.type).toLowerCase(), l = String(e.color).toLowerCase();
-      if ("kqrbnp".includes(o) && "wb".includes(l))
-        s = { type: o, color: l }, console.debug("[put] normalized piece object:", s);
+      const r = String(e.type).toLowerCase(), l = String(e.color).toLowerCase();
+      if ("kqrbnp".includes(r) && "wb".includes(l))
+        s = { type: r, color: l }, console.debug("[put] normalized piece object:", s);
       else
-        return console.error(`[put] Invalid piece object: {type: '${e.type}', color: '${e.color}'}`), !1;
+        return console.error(
+          `[put] Invalid piece object: {type: '${e.type}', color: '${e.color}'}`
+        ), !1;
     } else
       return console.error("[put] Invalid pieceId:", e), !1;
     if (typeof t != "string" || t.length !== 2)
       return console.error("[put] Invalid squareId:", t), !1;
-    const r = this.putPiece(s, t, { animate: i });
-    return console.debug("[put] putPiece result:", r), r;
+    const o = this.putPiece(s, t, { animate: i });
+    return console.debug("[put] putPiece result:", o), o;
   }
   remove(e, t = !0) {
     return this.removePiece(e, { animate: t });
@@ -5992,12 +6011,12 @@ let pe = class {
     this._updateBoardPieces(!0, !0);
   }
 };
-class je {
+class ze {
   /**
    * Creates a new ChessboardFactory instance
    */
   constructor() {
-    this.instances = /* @__PURE__ */ new Map(), this.validationService = new Ie(), this.performanceMonitor = new Be(), this.logger = v.child("ChessboardFactory"), this.templates = /* @__PURE__ */ new Map(), this._initializeDefaultTemplates();
+    this.instances = /* @__PURE__ */ new Map(), this.validationService = new Ie(), this.performanceMonitor = new Ve(), this.logger = v.child("ChessboardFactory"), this.templates = /* @__PURE__ */ new Map(), this._initializeDefaultTemplates();
   }
   /**
    * Initializes default configuration templates
@@ -6056,19 +6075,27 @@ class je {
     this.performanceMonitor.startMeasure("chessboard-creation");
     try {
       if (!e || typeof e != "string")
-        throw new L("Container ID must be a non-empty string", "containerId", e);
+        throw new L(
+          "Container ID must be a non-empty string",
+          "containerId",
+          e
+        );
       const s = document.getElementById(e);
       if (!s)
-        throw new L(`Container element not found: ${e}`, "containerId", e);
+        throw new L(
+          `Container element not found: ${e}`,
+          "containerId",
+          e
+        );
       let n = { ...t };
       if (i) {
-        const o = this.templates.get(i);
-        o ? (n = { ...o, ...t }, this.logger.info(`Using template "${i}" for chessboard creation`)) : this.logger.warn(`Template "${i}" not found, using default configuration`);
+        const r = this.templates.get(i);
+        r ? (n = { ...r, ...t }, this.logger.info(`Using template "${i}" for chessboard creation`)) : this.logger.warn(`Template "${i}" not found, using default configuration`);
       }
       n.id = e, this.validationService.validateConfig(n);
-      const r = new pe(n);
+      const o = new pe(n);
       return this.instances.set(e, {
-        instance: r,
+        instance: o,
         config: n,
         template: i,
         createdAt: /* @__PURE__ */ new Date(),
@@ -6076,7 +6103,7 @@ class je {
       }), this.performanceMonitor.endMeasure("chessboard-creation"), this.logger.info(`Created chessboard instance for container: ${e}`, {
         template: i,
         configKeys: Object.keys(n)
-      }), r;
+      }), o;
     } catch (s) {
       throw this.performanceMonitor.endMeasure("chessboard-creation"), this.logger.error("Failed to create chessboard instance", { containerId: e, error: s }), s;
     }
@@ -6195,12 +6222,14 @@ class je {
     const t = [], i = [];
     for (const s of e)
       try {
-        const { containerId: n, template: r, ...o } = s, l = this.create(n, o, r);
+        const { containerId: n, template: o, ...r } = s, l = this.create(n, r, o);
         t.push({ containerId: n, instance: l, success: !0 });
       } catch (n) {
         i.push({ containerId: s.containerId, error: n, success: !1 }), this.logger.error(`Failed to create instance for ${s.containerId}`, { error: n });
       }
-    return i.length > 0 && this.logger.warn(`Failed to create ${i.length} out of ${e.length} instances`), { instances: t, errors: i };
+    return i.length > 0 && this.logger.warn(
+      `Failed to create ${i.length} out of ${e.length} instances`
+    ), { instances: t, errors: i };
   }
   /**
    * Gets factory statistics
@@ -6221,11 +6250,11 @@ class je {
     this.destroyAll(), this.validationService.destroy(), this.performanceMonitor.destroy(), this.templates.clear();
   }
 }
-const B = new je();
-function kt(a, e = {}, t = null) {
+const B = new ze();
+function It(a, e = {}, t = null) {
   return B.create(a, e, t);
 }
-function It(a, e, t = {}) {
+function Tt(a, e, t = {}) {
   return B.createFromTemplate(a, e, t);
 }
 function D(a, e = {}) {
@@ -6243,7 +6272,7 @@ function D(a, e = {}) {
     throw t.error("Failed to create chessboard instance", { error: i }), i;
   }
 }
-class ze extends pe {
+class He extends pe {
   /**
    * Creates a new ChessboardWrapper instance
    * @param {string|Object} containerElm - Container element ID or configuration object
@@ -6265,8 +6294,8 @@ class ze extends pe {
     }
   }
 }
-D.create = kt;
-D.fromTemplate = It;
+D.create = It;
+D.fromTemplate = Tt;
 D.factory = B;
 D.getInstance = (a) => B.getInstance(a);
 D.destroyInstance = (a) => B.destroy(a);
@@ -6277,39 +6306,39 @@ D.removeTemplate = (a) => B.removeTemplate(a);
 D.getTemplate = (a) => B.getTemplate(a);
 D.listTemplates = () => B.listTemplates();
 D.getStats = () => B.getStats();
-D.Class = ze;
-D.Chessboard = ze;
-D.Config = xe;
-D.Factory = je;
-function Tt(a) {
+D.Class = He;
+D.Chessboard = He;
+D.Config = Be;
+D.Factory = ze;
+function Rt(a) {
   const e = a.charCodeAt(0) - 97;
   return { row: 7 - (parseInt(a[1]) - 1), col: e };
 }
-function Jt(a, e) {
+function Zt(a, e) {
   const t = String.fromCharCode(97 + e), i = (8 - a).toString();
   return t + i;
 }
-function Xt(a) {
-  const { row: e, col: t } = Tt(a);
+function ei(a) {
+  const { row: e, col: t } = Rt(a);
   return (e + t) % 2 === 0 ? "dark" : "light";
 }
-function Zt(a, e) {
+function ti(a, e) {
   return a >= 0 && a <= 7 && e >= 0 && e <= 7;
 }
-function ei(a) {
+function At(a) {
   if (typeof a != "string" || a.length !== 2) return !1;
   const e = a[0], t = a[1];
   return e >= "a" && e <= "h" && t >= "1" && t <= "8";
 }
-const j = /* @__PURE__ */ new Map(), He = 1e3;
+const Te = At, j = /* @__PURE__ */ new Map(), Ke = 1e3;
 function G(a, e) {
-  if (j.size >= He) {
+  if (j.size >= Ke) {
     const t = j.keys().next().value;
     j.delete(t);
   }
   j.set(a, e);
 }
-function Ke(a) {
+function Ue(a) {
   if (typeof a != "string" || a.length !== 2)
     return !1;
   const e = `piece:${a}`;
@@ -6318,7 +6347,7 @@ function Ke(a) {
   const t = a[0], i = a[1], s = ["w", "b"].includes(t) && ["P", "R", "N", "B", "Q", "K"].includes(i);
   return G(e, s), s;
 }
-function Ue(a) {
+function We(a) {
   if (typeof a != "object" || a === null)
     return !1;
   try {
@@ -6327,26 +6356,26 @@ function Ue(a) {
     return !1;
   }
   for (const [e, t] of Object.entries(a))
-    if (!isValidSquare(e) || !Ke(t))
+    if (!Te(e) || !Ue(t))
       return !1;
-  return Rt(a);
+  return Mt(a);
 }
-function Rt(a) {
-  const e = Object.values(a), t = e.filter((r) => r === "wK").length, i = e.filter((r) => r === "bK").length;
+function Mt(a) {
+  const e = Object.values(a), t = e.filter((o) => o === "wK").length, i = e.filter((o) => o === "bK").length;
   if (t !== 1 || i !== 1)
     return !1;
-  const s = e.filter((r) => r === "wP").length, n = e.filter((r) => r === "bP").length;
+  const s = e.filter((o) => o === "wP").length, n = e.filter((o) => o === "bP").length;
   if (s > 8 || n > 8)
     return !1;
-  for (const [r, o] of Object.entries(a))
-    if (o === "wP" || o === "bP") {
-      const l = r[1];
+  for (const [o, r] of Object.entries(a))
+    if (r === "wP" || r === "bP") {
+      const l = o[1];
       if (l === "1" || l === "8")
         return !1;
     }
   return !0;
 }
-function At(a) {
+function Ot(a) {
   if (typeof a != "string")
     return { success: !1, error: "FEN must be a string" };
   const e = `fen:${a}`;
@@ -6354,47 +6383,47 @@ function At(a) {
     return j.get(e);
   const t = a.trim().split(" ");
   if (t.length !== 6) {
-    const o = { success: !1, error: "FEN must have 6 parts separated by spaces" };
-    return G(e, o), o;
+    const r = { success: !1, error: "FEN must have 6 parts separated by spaces" };
+    return G(e, r), r;
   }
   const i = t[0].split("/");
   if (i.length !== 8) {
-    const o = { success: !1, error: "Piece placement must have 8 ranks" };
-    return G(e, o), o;
+    const r = { success: !1, error: "Piece placement must have 8 ranks" };
+    return G(e, r), r;
   }
-  for (let o = 0; o < i.length; o++) {
-    const l = Mt(i[o]);
+  for (let r = 0; r < i.length; r++) {
+    const l = qt(i[r]);
     if (!l.success) {
-      const c = { success: !1, error: `Invalid rank ${o + 1}: ${l.error}` };
+      const c = { success: !1, error: `Invalid rank ${r + 1}: ${l.error}` };
       return G(e, c), c;
     }
   }
   if (!["w", "b"].includes(t[1])) {
-    const o = { success: !1, error: 'Active color must be "w" or "b"' };
-    return G(e, o), o;
+    const r = { success: !1, error: 'Active color must be "w" or "b"' };
+    return G(e, r), r;
   }
   if (!/^[KQkq-]*$/.test(t[2])) {
-    const o = { success: !1, error: "Invalid castling availability" };
-    return G(e, o), o;
+    const r = { success: !1, error: "Invalid castling availability" };
+    return G(e, r), r;
   }
-  if (t[3] !== "-" && !isValidSquare(t[3])) {
-    const o = { success: !1, error: "Invalid en passant target square" };
-    return G(e, o), o;
+  if (t[3] !== "-" && !Te(t[3])) {
+    const r = { success: !1, error: "Invalid en passant target square" };
+    return G(e, r), r;
   }
   const s = parseInt(t[4], 10);
   if (isNaN(s) || s < 0) {
-    const o = { success: !1, error: "Invalid halfmove clock" };
-    return G(e, o), o;
+    const r = { success: !1, error: "Invalid halfmove clock" };
+    return G(e, r), r;
   }
   const n = parseInt(t[5], 10);
   if (isNaN(n) || n < 1) {
-    const o = { success: !1, error: "Invalid fullmove number" };
-    return G(e, o), o;
+    const r = { success: !1, error: "Invalid fullmove number" };
+    return G(e, r), r;
   }
-  const r = { success: !0 };
-  return G(e, r), r;
+  const o = { success: !0 };
+  return G(e, o), o;
 }
-function Mt(a) {
+function qt(a) {
   if (typeof a != "string")
     return { success: !1, error: "Rank must be a string" };
   let e = 0;
@@ -6409,32 +6438,32 @@ function Mt(a) {
   }
   return e !== 8 ? { success: !1, error: `Rank must represent exactly 8 squares, got ${e}` } : { success: !0 };
 }
-function Ot(a) {
+function Lt(a) {
   if (typeof a != "string")
     return { success: !1, error: "Move must be a string" };
   const e = a.trim();
   return e.length === 0 ? { success: !1, error: "Move cannot be empty" } : e === "O-O" || e === "O-O-O" ? { success: !0, type: "castling" } : /^[a-h][1-8][a-h][1-8][qrnbQRNB]?$/.test(e) ? { success: !0, type: "coordinate" } : /^[PRNBQK]?[a-h]?[1-8]?x?[a-h][1-8](\+|#)?$/.test(e) ? { success: !0, type: "algebraic" } : { success: !1, error: "Invalid move format" };
 }
-function qt(a) {
+function Dt(a) {
   const e = [];
   if (!a || typeof a != "object")
     return { success: !1, errors: ["Configuration must be an object"] };
-  !a.id && !a.id_div && e.push('Configuration must include "id" or "id_div"'), a.orientation && !["white", "black", "w", "b"].includes(a.orientation) && e.push('Invalid orientation. Must be "white", "black", "w", or "b"'), a.position && a.position !== "start" && typeof a.position != "object" && e.push('Invalid position. Must be "start" or a position object'), a.position && typeof a.position == "object" && !Ue(a.position) && e.push("Invalid position object format"), a.size && !Lt(a.size) && e.push('Invalid size. Must be "auto", a positive number, or a valid CSS size'), a.movableColors && !["white", "black", "w", "b", "both", "none"].includes(a.movableColors) && e.push('Invalid movableColors. Must be "white", "black", "w", "b", "both", or "none"'), a.dropOffBoard && !["snapback", "trash"].includes(a.dropOffBoard) && e.push('Invalid dropOffBoard. Must be "snapback" or "trash"');
+  !a.id && !a.id_div && e.push('Configuration must include "id" or "id_div"'), a.orientation && !["white", "black", "w", "b"].includes(a.orientation) && e.push('Invalid orientation. Must be "white", "black", "w", or "b"'), a.position && a.position !== "start" && typeof a.position != "object" && e.push('Invalid position. Must be "start" or a position object'), a.position && typeof a.position == "object" && !We(a.position) && e.push("Invalid position object format"), a.size && !$t(a.size) && e.push('Invalid size. Must be "auto", a positive number, or a valid CSS size'), a.movableColors && !["white", "black", "w", "b", "both", "none"].includes(a.movableColors) && e.push('Invalid movableColors. Must be "white", "black", "w", "b", "both", or "none"'), a.dropOffBoard && !["snapback", "trash"].includes(a.dropOffBoard) && e.push('Invalid dropOffBoard. Must be "snapback" or "trash"');
   const t = ["onMove", "onMoveEnd", "onChange", "onDragStart", "onDragMove", "onDrop", "onSnapbackEnd"];
   for (const s of t)
     a[s] && typeof a[s] != "function" && e.push(`Invalid ${s}. Must be a function`);
   const i = ["whiteSquare", "blackSquare", "highlight", "hintColor"];
   for (const s of i)
-    a[s] && !Dt(a[s]) && e.push(`Invalid ${s}. Must be a valid CSS color`);
-  return a.moveAnimation && !$t(a.moveAnimation) && e.push("Invalid moveAnimation. Must be a valid easing function"), a.animationStyle && !["sequential", "simultaneous"].includes(a.animationStyle) && e.push('Invalid animationStyle. Must be "sequential" or "simultaneous"'), {
+    a[s] && !Ft(a[s]) && e.push(`Invalid ${s}. Must be a valid CSS color`);
+  return a.moveAnimation && !Nt(a.moveAnimation) && e.push("Invalid moveAnimation. Must be a valid easing function"), a.animationStyle && !["sequential", "simultaneous"].includes(a.animationStyle) && e.push('Invalid animationStyle. Must be "sequential" or "simultaneous"'), {
     success: e.length === 0,
     errors: e
   };
 }
-function Lt(a) {
+function $t(a) {
   return a === "auto" ? !0 : typeof a == "number" ? a > 0 && a <= 5e3 : typeof a == "string" ? /^\d+(px|em|rem|%|vh|vw)$/.test(a) : !1;
 }
-function Dt(a) {
+function Ft(a) {
   return typeof a != "string" ? !1 : /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(a) || /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[0-1](\.\d+)?)?\s*\)$/.test(a) || /^hsla?\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*(,\s*[0-1](\.\d+)?)?\s*\)$/.test(a) ? !0 : [
     "white",
     "black",
@@ -6453,7 +6482,7 @@ function Dt(a) {
     "pink"
   ].includes(a.toLowerCase());
 }
-function $t(a) {
+function Nt(a) {
   return [
     "linear",
     "ease",
@@ -6463,40 +6492,43 @@ function $t(a) {
     "cubic-bezier"
   ].includes(a) || /^cubic-bezier\(\s*[\d.-]+\s*,\s*[\d.-]+\s*,\s*[\d.-]+\s*,\s*[\d.-]+\s*\)$/.test(a);
 }
-function ti(a) {
+function ii(a) {
   return a.map((e) => {
     const { type: t, value: i } = e;
     switch (t) {
       case "piece":
-        return { ...e, valid: Ke(i) };
-      case "square":
-        return { ...e, valid: isValidSquare(i) };
-      case "position":
         return { ...e, valid: Ue(i) };
-      case "fen":
-        const s = At(i);
+      case "square":
+        return { ...e, valid: Te(i) };
+      case "position":
+        return { ...e, valid: We(i) };
+      case "fen": {
+        const s = Ot(i);
         return { ...e, valid: s.success, error: s.error };
-      case "move":
-        const n = Ot(i);
-        return { ...e, valid: n.success, error: n.error };
-      case "config":
-        const r = qt(i);
-        return { ...e, valid: r.success, errors: r.errors };
+      }
+      case "move": {
+        const s = Lt(i);
+        return { ...e, valid: s.success, error: s.error };
+      }
+      case "config": {
+        const s = Dt(i);
+        return { ...e, valid: s.success, errors: s.errors };
+      }
       default:
         return { ...e, valid: !1, error: "Unknown validation type" };
     }
   });
 }
-function ii() {
+function si() {
   j.clear();
 }
-function si() {
+function ni() {
   return {
     size: j.size,
-    maxSize: He
+    maxSize: Ke
   };
 }
-function ni(a) {
+function oi(a) {
   if (typeof a == "number") return a;
   switch (a) {
     case "fast":
@@ -6507,10 +6539,10 @@ function ni(a) {
       return 200;
   }
 }
-function oi(a) {
+function ri(a) {
   return ["ease", "ease-in", "ease-out", "ease-in-out", "linear"].includes(a) ? a : "ease";
 }
-function ri(a) {
+function ai(a) {
   return new Promise((e) => setTimeout(e, a));
 }
 /**
@@ -6521,82 +6553,82 @@ function ri(a) {
  * @author alepot55
  * @license ISC
  */
-const Ft = "2.2.1", Nt = process.env.BUILD_NUMBER || "dev", xt = process.env.BUILD_DATE || (/* @__PURE__ */ new Date()).toISOString(), ai = {
+const xt = "2.2.1", Bt = process.env.BUILD_NUMBER || "dev", Vt = process.env.BUILD_DATE || (/* @__PURE__ */ new Date()).toISOString(), li = {
   name: "Chessboard.js",
-  version: Ft,
-  build: Nt,
-  buildDate: xt,
+  version: xt,
+  build: Bt,
+  buildDate: Vt,
   author: "alepot55",
   license: "ISC",
   repository: "https://github.com/alepot55/Chessboardjs",
   homepage: "https://chessboardjs.com"
 };
 export {
-  ot as AnimationService,
+  rt as AnimationService,
   he as BOARD_LETTERS,
-  Ae as BOARD_SIZE,
-  rt as BoardService,
-  wt as Chess,
+  Me as BOARD_SIZE,
+  at as BoardService,
+  Et as Chess,
   D as Chessboard,
-  xe as ChessboardConfig,
+  Be as ChessboardConfig,
   z as ChessboardError,
-  je as ChessboardFactory,
+  ze as ChessboardFactory,
   L as ConfigurationError,
-  at as CoordinateService,
-  Xe as DEFAULT_STARTING_POSITION,
-  et as DOMError,
-  ht as EventService,
+  lt as CoordinateService,
+  Ze as DEFAULT_STARTING_POSITION,
+  tt as DOMError,
+  ut as EventService,
   Z as LOG_LEVELS,
   ve as Logger,
   W as Move,
-  Me as MoveError,
-  ut as MoveService,
+  Oe as MoveError,
+  dt as MoveService,
   me as PIECE_COLORS,
   fe as PIECE_TYPES,
-  Ze as PROMOTION_PIECES,
-  Be as PerformanceMonitor,
+  et as PROMOTION_PIECES,
+  Ve as PerformanceMonitor,
   ge as Piece,
   Se as PieceError,
-  dt as PieceService,
-  Et as PositionService,
-  Re as STANDARD_POSITIONS,
+  ft as PieceService,
+  kt as PositionService,
+  Ae as STANDARD_POSITIONS,
   Ee as Square,
   k as ValidationError,
   Ie as ValidationService,
-  Tt as algebraicToCoords,
-  ri as animationPromise,
-  Kt as batchDOMOperations,
-  ti as batchValidate,
-  Nt as build,
-  xt as buildDate,
+  Rt as algebraicToCoords,
+  ai as animationPromise,
+  Wt as batchDOMOperations,
+  ii as batchValidate,
+  Bt as build,
+  Vt as buildDate,
   B as chessboardFactory,
-  ii as clearValidationCache,
-  Jt as coordsToAlgebraic,
-  kt as createChessboard,
-  It as createChessboardFromTemplate,
-  Qt as createLogger,
-  jt as debounce,
+  si as clearValidationCache,
+  Zt as coordsToAlgebraic,
+  It as createChessboard,
+  Tt as createChessboardFromTemplate,
+  Jt as createLogger,
+  Ht as debounce,
   D as default,
-  Wt as getMemoryUsage,
-  Xt as getSquareColor,
-  si as getValidationCacheStats,
-  ai as info,
-  Ut as isElementVisible,
-  Zt as isValidCoords,
-  Ke as isValidPiece,
-  Ue as isValidPosition,
-  ei as isValidSquare,
+  Yt as getMemoryUsage,
+  ei as getSquareColor,
+  ni as getValidationCacheStats,
+  li as info,
+  Qt as isElementVisible,
+  ti as isValidCoords,
+  Ue as isValidPiece,
+  We as isValidPosition,
+  At as isValidSquare,
   v as logger,
-  oi as parseAnimation,
-  ni as parseTime,
-  Le as rafThrottle,
-  Ht as resetTransform,
-  zt as setTransform,
-  Gt as throttle,
-  qt as validateConfig,
-  Ge as validateFen,
-  At as validateFenFormat,
-  Ot as validateMove,
-  Ft as version
+  ri as parseAnimation,
+  oi as parseTime,
+  De as rafThrottle,
+  Ut as resetTransform,
+  Kt as setTransform,
+  zt as throttle,
+  Dt as validateConfig,
+  je as validateFen,
+  Ot as validateFenFormat,
+  Lt as validateMove,
+  xt as version
 };
 //# sourceMappingURL=chessboard.esm.js.map

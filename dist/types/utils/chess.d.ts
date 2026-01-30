@@ -121,12 +121,12 @@ export class Chess {
     isDrawByFiftyMoves(): boolean;
     isDraw(): boolean;
     isGameOver(): boolean;
-    moves({ verbose, square, piece, }?: {
+    moves({ verbose, square, piece }?: {
         verbose?: boolean | undefined;
         square?: undefined;
         piece?: undefined;
     }): string[] | Move[];
-    _moves({ legal, piece, square, }?: {
+    _moves({ legal, piece, square }?: {
         legal?: boolean | undefined;
         piece?: undefined;
         square?: undefined;
@@ -138,7 +138,7 @@ export class Chess {
     _makeMove(move: any): void;
     undo(): Move | null;
     _undoMove(): any;
-    pgn({ newline, maxWidth, }?: {
+    pgn({ newline, maxWidth }?: {
         newline?: string | undefined;
         maxWidth?: number | undefined;
     }): string;
@@ -146,7 +146,7 @@ export class Chess {
     setHeader(key: any, value: any): {};
     removeHeader(key: any): boolean;
     getHeaders(): {};
-    loadPgn(pgn: any, { strict, newlineChar, }?: {
+    loadPgn(pgn: any, { strict, newlineChar }?: {
         strict?: boolean | undefined;
         newlineChar?: string | undefined;
     }): void;

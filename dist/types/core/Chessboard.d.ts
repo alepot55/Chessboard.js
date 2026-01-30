@@ -126,7 +126,6 @@ export class Chessboard {
     /**
      * Handles square deselection
      * @private
-     * @param {Square} square - Deselected square
      */
     private _onDeselect;
     /**

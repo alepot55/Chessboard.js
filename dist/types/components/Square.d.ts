@@ -1,4 +1,3 @@
-import { default as Piece } from './Piece.js';
 export default Square;
 declare class Square {
     constructor(row: any, col: any);

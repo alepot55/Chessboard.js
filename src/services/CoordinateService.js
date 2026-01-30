@@ -131,7 +131,7 @@ export class CoordinateService {
 
     try {
       return this.getSquareID(row, col);
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -157,7 +157,7 @@ export class CoordinateService {
       const y = row * squareHeight;
 
       return { x, y };
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -197,7 +197,7 @@ export class CoordinateService {
       const colDiff = Math.abs(toCol - fromCol);
 
       return Math.sqrt(rowDiff * rowDiff + colDiff * colDiff);
-    } catch (error) {
+    } catch {
       return 0;
     }
   }

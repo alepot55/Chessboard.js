@@ -67,7 +67,6 @@ class Piece {
       return;
     }
     const element = this.element;
-    const oldSrc = element.src;
 
     // Add transformation class to disable all transitions temporarily
     element.classList.add('transforming');
@@ -190,27 +189,32 @@ class Piece {
   fadeIn(duration, speed, transition_f, callback) {
     const start = performance.now();
     let opacity = 0;
-    const piece = this;
-    const fade = function () {
-      if (!piece.element) {
-        console.debug(`[Piece] fadeIn: ${piece.id} - element is null`);
-        if (callback) callback();
+    const fade = () => {
+      if (!this.element) {
+        console.debug(`[Piece] fadeIn: ${this.id} - element is null`);
+        if (callback) {
+          callback();
+        }
         return;
       }
       const elapsed = performance.now() - start;
       opacity = transition_f(elapsed, duration, speed);
-      piece.element.style.opacity = opacity;
+      this.element.style.opacity = opacity;
       if (elapsed < duration) {
         requestAnimationFrame(fade);
       } else {
-        if (!piece.element) {
-          console.debug(`[Piece] fadeIn: ${piece.id} - element is null (end)`);
-          if (callback) callback();
+        if (!this.element) {
+          console.debug(`[Piece] fadeIn: ${this.id} - element is null (end)`);
+          if (callback) {
+            callback();
+          }
           return;
         }
-        piece.element.style.opacity = 1;
-        console.debug(`[Piece] fadeIn complete: ${piece.id}`);
-        if (callback) callback();
+        this.element.style.opacity = 1;
+        console.debug(`[Piece] fadeIn complete: ${this.id}`);
+        if (callback) {
+          callback();
+        }
       }
     };
     fade();
@@ -219,27 +223,32 @@ class Piece {
   fadeOut(duration, speed, transition_f, callback) {
     const start = performance.now();
     let opacity = 1;
-    const piece = this;
-    const fade = function () {
-      if (!piece.element) {
-        console.debug(`[Piece] fadeOut: ${piece.id} - element is null`);
-        if (callback) callback();
+    const fade = () => {
+      if (!this.element) {
+        console.debug(`[Piece] fadeOut: ${this.id} - element is null`);
+        if (callback) {
+          callback();
+        }
         return;
       }
       const elapsed = performance.now() - start;
       opacity = 1 - transition_f(elapsed, duration, speed);
-      piece.element.style.opacity = opacity;
+      this.element.style.opacity = opacity;
       if (elapsed < duration) {
         requestAnimationFrame(fade);
       } else {
-        if (!piece.element) {
-          console.debug(`[Piece] fadeOut: ${piece.id} - element is null (end)`);
-          if (callback) callback();
+        if (!this.element) {
+          console.debug(`[Piece] fadeOut: ${this.id} - element is null (end)`);
+          if (callback) {
+            callback();
+          }
           return;
         }
-        piece.element.style.opacity = 0;
-        console.debug(`[Piece] fadeOut complete: ${piece.id}`);
-        if (callback) callback();
+        this.element.style.opacity = 0;
+        console.debug(`[Piece] fadeOut complete: ${this.id}`);
+        if (callback) {
+          callback();
+        }
       }
     };
     fade();

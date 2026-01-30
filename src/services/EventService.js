@@ -6,7 +6,6 @@
 
 import { rafThrottle } from '../utils/performance.js';
 import { DragOptimizations } from '../utils/cross-browser.js';
-import { ValidationError } from '../errors/ChessboardError.js';
 import Move from '../components/Move.js';
 import Piece from '../components/Piece.js';
 import { logger } from '../utils/logger.js';
@@ -69,13 +68,13 @@ export class EventService {
     const listeners = [];
 
     // Throttled hover handlers for performance
-    const throttledHover = rafThrottle((e) => {
+    const throttledHover = rafThrottle(() => {
       if (!this.clicked && this.config.hints) {
         onPieceHover(square);
       }
     });
 
-    const throttledLeave = rafThrottle((e) => {
+    const throttledLeave = rafThrottle(() => {
       if (!this.clicked && this.config.hints) {
         onPieceLeave(square);
       }
@@ -278,7 +277,6 @@ export class EventService {
 
         // Ensure clicked state is clean before handling drop
         // This prevents drag operations from interfering with subsequent clicks
-        const previousClicked = this.clicked;
         this.clicked = null;
 
         // Handle drop
@@ -585,10 +583,9 @@ export class EventService {
    * @param {Function} onSelect - Select callback
    * @param {Function} onDeselect - Deselect callback
    * @param {boolean} [animate=true] - Whether to animate the move
-   * @param {boolean} [dragged=false] - Whether this was triggered by drag
    * @returns {boolean} True if move was successful
    */
-  onClick(square, onMove, onSelect, onDeselect, animate = true, dragged = false) {
+  onClick(square, onMove, onSelect, onDeselect, animate = true) {
     // Always ensure we're not in dragging state during click operations
     this.isDragging = false;
 
@@ -945,7 +942,7 @@ export class EventService {
    * Removes all existing event listeners
    */
   removeListeners() {
-    this.eventListeners.forEach((listeners, squareId) => {
+    this.eventListeners.forEach((listeners) => {
       listeners.forEach(({ element, type, handler }) => {
         element.removeEventListener(type, handler);
       });
@@ -958,7 +955,7 @@ export class EventService {
    * Removes all event listeners
    */
   removeAllListeners() {
-    this.eventListeners.forEach((listeners, squareId) => {
+    this.eventListeners.forEach((listeners) => {
       listeners.forEach(({ element, type, handler }) => {
         element.removeEventListener(type, handler);
       });

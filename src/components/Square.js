@@ -1,5 +1,3 @@
-import Piece from './Piece.js';
-
 class Square {
   constructor(row, col) {
     this.row = row;

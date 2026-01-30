@@ -5,7 +5,7 @@
  */
 
 import Move from '../components/Move.js';
-import { MoveError, ValidationError } from '../errors/ChessboardError.js';
+import { MoveError } from '../errors/ChessboardError.js';
 import { ERROR_MESSAGES } from '../errors/messages.js';
 import { PROMOTION_PIECES } from '../constants/positions.js';
 

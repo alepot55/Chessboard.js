@@ -16,8 +16,7 @@ import {
   PositionService,
   ValidationService,
 } from '../services/index.js';
-import { ERROR_MESSAGES } from '../errors/index.js';
-import { ChessboardError, ValidationError, ConfigurationError } from '../errors/ChessboardError.js';
+import { ChessboardError, ConfigurationError } from '../errors/ChessboardError.js';
 import { PerformanceMonitor } from '../utils/performance.js';
 
 /**
@@ -342,9 +341,8 @@ class Chessboard {
   /**
    * Handles square deselection
    * @private
-   * @param {Square} square - Deselected square
    */
-  _onDeselect(square) {
+  _onDeselect() {
     this._clearVisualState();
   }
 
@@ -920,7 +918,7 @@ class Chessboard {
       );
 
       if (availableDestination) {
-        const [toSquare, expectedId] = availableDestination;
+        const [toSquare] = availableDestination;
         moves.push({
           piece: currentPieceId,
           from: fromSquare,

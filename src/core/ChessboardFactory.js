@@ -5,7 +5,6 @@
  */
 
 import { Chessboard } from './Chessboard.js';
-import { ChessboardConfig } from './ChessboardConfig.js';
 import { ValidationService } from '../services/ValidationService.js';
 import { ConfigurationError } from '../errors/ChessboardError.js';
 import { logger } from '../utils/logger.js';

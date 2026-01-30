@@ -360,7 +360,7 @@ export function validateFen(fen) {
     }
   }
   // 9th criterion: is en-passant square legal?
-  if ((tokens[3][1] == '3' && tokens[1] == 'w') || (tokens[3][1] == '6' && tokens[1] == 'b')) {
+  if ((tokens[3][1] === '3' && tokens[1] === 'w') || (tokens[3][1] === '6' && tokens[1] === 'b')) {
     return { ok: false, error: 'Invalid FEN: illegal en-passant square' };
   }
   // 10th criterion: does chess position contain exact two kings?
@@ -686,7 +686,7 @@ export class Chess {
     }
     const sq = Ox88[square];
     // don't let the user place more than one king
-    if (type == KING && !(this._kings[color] == EMPTY || this._kings[color] == sq)) {
+    if (type === KING && !(this._kings[color] === EMPTY || this._kings[color] === sq)) {
       return false;
     }
     const currentPieceOnSquare = this._board[sq];
@@ -1522,7 +1522,7 @@ export class Chess {
         .join('');
     }
     function fromHex(s) {
-      return s.length == 0 ? '' : decodeURIComponent(`%${(s.match(/.{1,2}/g) || []).join('%')}`);
+      return s.length === 0 ? '' : decodeURIComponent(`%${(s.match(/.{1,2}/g) || []).join('%')}`);
     }
     const encodeComment = function (s) {
       s = s.replace(new RegExp(mask(newlineChar), 'g'), ' ');
@@ -1681,7 +1681,7 @@ export class Chess {
       from = matches[2];
       to = matches[3];
       promotion = matches[4];
-      if (from.length == 1) {
+      if (from.length === 1) {
         overlyDisambiguated = true;
       }
     } else {
@@ -1697,7 +1697,7 @@ export class Chess {
         from = matches[2];
         to = matches[3];
         promotion = matches[4];
-        if (from.length == 1) {
+        if (from.length === 1) {
           overlyDisambiguated = true;
         }
       }
@@ -1718,10 +1718,10 @@ export class Chess {
         }
         // hand-compare move properties with the results from our permissive regex
       } else if (
-        (!piece || piece.toLowerCase() == moves[i].piece) &&
-        Ox88[from] == moves[i].from &&
-        Ox88[to] == moves[i].to &&
-        (!promotion || promotion.toLowerCase() == moves[i].promotion)
+        (!piece || piece.toLowerCase() === moves[i].piece) &&
+        Ox88[from] === moves[i].from &&
+        Ox88[to] === moves[i].to &&
+        (!promotion || promotion.toLowerCase() === moves[i].promotion)
       ) {
         return moves[i];
       } else if (overlyDisambiguated) {
@@ -1731,10 +1731,10 @@ export class Chess {
          */
         const square = algebraic(moves[i].from);
         if (
-          (!piece || piece.toLowerCase() == moves[i].piece) &&
-          Ox88[to] == moves[i].to &&
-          (from == square[0] || from == square[1]) &&
-          (!promotion || promotion.toLowerCase() == moves[i].promotion)
+          (!piece || piece.toLowerCase() === moves[i].piece) &&
+          Ox88[to] === moves[i].to &&
+          (from === square[0] || from === square[1]) &&
+          (!promotion || promotion.toLowerCase() === moves[i].promotion)
         ) {
           return moves[i];
         }

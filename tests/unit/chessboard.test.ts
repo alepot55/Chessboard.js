@@ -5,16 +5,11 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import {
-  createBoardContainer,
-  removeBoardContainer,
-  STARTING_FEN,
-  TEST_POSITIONS,
-} from '../setup';
+import { createBoardContainer, removeBoardContainer, STARTING_FEN, TEST_POSITIONS } from '../setup';
 
 // Mock the Chessboard import until migration is complete
 const mockChessboard = vi.fn().mockImplementation((config) => ({
-  fen: vi.fn(() => config.position === 'start' ? STARTING_FEN : config.position || STARTING_FEN),
+  fen: vi.fn(() => (config.position === 'start' ? STARTING_FEN : config.position || STARTING_FEN)),
   turn: vi.fn(() => 'w'),
   getPosition: vi.fn(() => STARTING_FEN),
   setPosition: vi.fn(() => true),
@@ -24,7 +19,7 @@ const mockChessboard = vi.fn().mockImplementation((config) => ({
   undoMove: vi.fn(() => null),
   redoMove: vi.fn(() => null),
   getLegalMoves: vi.fn(() => []),
-  getPiece: vi.fn((square) => null),
+  getPiece: vi.fn((_square) => null),
   putPiece: vi.fn(() => true),
   removePiece: vi.fn(() => true),
   flipBoard: vi.fn(),
@@ -46,11 +41,10 @@ const mockChessboard = vi.fn().mockImplementation((config) => ({
 }));
 
 describe('Chessboard Core', () => {
-  let container: HTMLDivElement;
   let board: ReturnType<typeof mockChessboard>;
 
   beforeEach(() => {
-    container = createBoardContainer('test-board');
+    createBoardContainer('test-board');
     board = mockChessboard({
       id: 'test-board',
       position: 'start',
@@ -260,13 +254,12 @@ describe('Chessboard Validation', () => {
 });
 
 describe('Chessboard Events', () => {
-  let container: HTMLDivElement;
   let onMoveMock: ReturnType<typeof vi.fn>;
   let onMoveEndMock: ReturnType<typeof vi.fn>;
   let board: ReturnType<typeof mockChessboard>;
 
   beforeEach(() => {
-    container = createBoardContainer('event-test-board');
+    createBoardContainer('event-test-board');
     onMoveMock = vi.fn(() => true);
     onMoveEndMock = vi.fn();
 
@@ -295,8 +288,8 @@ describe('Chessboard Events', () => {
 describe('Chessboard Performance', () => {
   it('should initialize within acceptable time', () => {
     const start = performance.now();
-    const container = createBoardContainer('perf-test-board');
-    const board = mockChessboard({
+    createBoardContainer('perf-test-board');
+    const perfBoard = mockChessboard({
       id: 'perf-test-board',
       position: 'start',
     });
@@ -305,7 +298,7 @@ describe('Chessboard Performance', () => {
     // Initialization should be fast (mock is instant, real should be < 100ms)
     expect(duration).toBeLessThan(100);
 
-    board.destroy();
+    perfBoard.destroy();
     removeBoardContainer('perf-test-board');
   });
 });

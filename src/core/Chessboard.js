@@ -18,6 +18,7 @@ import {
 } from '../services/index.js';
 import { ChessboardError, ConfigurationError } from '../errors/ChessboardError.js';
 import { PerformanceMonitor } from '../utils/performance.js';
+import { ModeManager } from '../modes/index.js';
 
 /**
  * Main Chessboard class responsible for coordinating all services
@@ -148,6 +149,9 @@ class Chessboard {
     // State management
     this._updateTimeout = null;
     this._isAnimating = false;
+
+    // Initialize Mode Manager
+    this.modeManager = new ModeManager(this);
 
     // Bind methods to preserve context
     this._boundUpdateBoardPieces = this._updateBoardPieces.bind(this);
@@ -1518,6 +1522,12 @@ class Chessboard {
       if (this.boardService.removeBoard) this.boardService.removeBoard();
     }
 
+    // Stop and cleanup mode manager
+    if (this.modeManager) {
+      this.modeManager.destroy();
+      this.modeManager = null;
+    }
+
     // Null all services for garbage collection
     this.validationService = null;
     this.coordinateService = null;
@@ -1608,6 +1618,101 @@ class Chessboard {
    */
   forceSync() {
     this._updateBoardPieces(false);
+  }
+
+  // --- MODES API ---
+  /**
+   * Set the active game mode
+   * @param {'creative'|'pvp'|'vsBot'} modeName - Mode to activate
+   * @param {Object} [config={}] - Mode configuration
+   * @returns {Object|null} - The activated mode instance
+   * @example
+   * // Start creative mode
+   * board.setMode('creative');
+   *
+   * // Start PvP with time control
+   * board.setMode('pvp', { timeControl: { initial: 300, increment: 5 } });
+   *
+   * // Play against bot
+   * board.setMode('vsBot', { botDifficulty: 7, playerColor: 'w' });
+   */
+  setMode(modeName, config = {}) {
+    return this.modeManager.setMode(modeName, config);
+  }
+
+  /**
+   * Get the current active mode
+   * @returns {Object|null} - Current mode instance
+   */
+  getMode() {
+    return this.modeManager.getCurrentMode();
+  }
+
+  /**
+   * Get the current mode name
+   * @returns {string|null} - Mode name ('creative', 'pvp', 'vsBot')
+   */
+  getModeName() {
+    return this.modeManager.getCurrentModeName();
+  }
+
+  /**
+   * Get list of available modes
+   * @returns {string[]}
+   */
+  getAvailableModes() {
+    return this.modeManager.getAvailableModes();
+  }
+
+  /**
+   * Stop the current mode
+   */
+  stopMode() {
+    this.modeManager.stop();
+  }
+
+  /**
+   * Check if a specific mode is active
+   * @param {string} modeName - Mode name to check
+   * @returns {boolean}
+   */
+  isModeActive(modeName) {
+    return this.modeManager.isModeActive(modeName);
+  }
+
+  /**
+   * Start creative mode (shortcut)
+   * @param {Object} [config={}] - Creative mode config
+   * @returns {Object} - Creative mode instance
+   */
+  startCreativeMode(config = {}) {
+    return this.setMode('creative', config);
+  }
+
+  /**
+   * Start PvP mode (shortcut)
+   * @param {Object} [config={}] - PvP mode config
+   * @returns {Object} - PvP mode instance
+   */
+  startPvPMode(config = {}) {
+    return this.setMode('pvp', config);
+  }
+
+  /**
+   * Start vs Bot mode (shortcut)
+   * @param {Object} [config={}] - VsBot mode config
+   * @returns {Object} - VsBot mode instance
+   */
+  startVsBotMode(config = {}) {
+    return this.setMode('vsBot', config);
+  }
+
+  /**
+   * Get mode statistics
+   * @returns {Object|null}
+   */
+  getModeStats() {
+    return this.modeManager.getStats();
   }
 
   // --- ALIASES/DEPRECATED ---

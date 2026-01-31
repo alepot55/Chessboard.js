@@ -2,7 +2,7 @@
  * Chessboard.js - A beautiful, customizable chessboard widget
  * Main entry point for the library
  *
- * @version 3.1.0
+ * @version 3.2.0
  * @author alepot55
  * @license ISC
  */
@@ -82,12 +82,21 @@ export { BaseMode, ModeManager, CreativeMode, PvPMode, VsBotMode } from './modes
 // AI exports
 export { ChessAI } from './ai/index.js';
 
+// Engine integration exports
+export {
+  BaseEngine,
+  StockfishEngine,
+  UCIEngine,
+  CloudEngine,
+  EngineManager,
+} from './engines/index.js';
+
 // Default export for IIFE compatibility
 import { Chessboard as ChessboardClass } from './core/index.js';
 export default ChessboardClass;
 
 // Version information
-export const version = '3.1.0';
+export const version = '3.2.0';
 export const build = process.env.BUILD_NUMBER || 'dev';
 export const buildDate = process.env.BUILD_DATE || new Date().toISOString();
 

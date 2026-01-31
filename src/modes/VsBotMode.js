@@ -10,6 +10,7 @@
  * - Hint system
  * - Analysis mode
  * - Takeback support
+ * - External engine support (Stockfish.js, UCI, Cloud APIs)
  */
 
 import { BaseMode } from './BaseMode.js';
@@ -25,8 +26,12 @@ import { ChessAI } from '../ai/ChessAI.js';
  * @property {boolean} [allowHints=true] - Allow hint requests
  * @property {boolean} [allowTakeback=true] - Allow takeback
  * @property {boolean} [autoMove=true] - Bot moves automatically
+ * @property {Object} [engine=null] - External engine instance (StockfishEngine, UCIEngine, CloudEngine)
+ * @property {number} [engineDepth=20] - Search depth for external engine
+ * @property {number} [engineMoveTime=1000] - Move time for external engine in ms
  * @property {Function} [onBotMove] - Callback when bot moves
  * @property {Function} [onBotThinking] - Callback when bot starts thinking
+ * @property {Function} [onEngineInfo] - Callback for engine analysis info
  */
 
 /**
@@ -74,11 +79,13 @@ export class VsBotMode extends BaseMode {
     });
 
     this.ai = null;
+    this.engine = config.engine || null;
     this.botColor = this.config.playerColor === 'w' ? 'b' : 'w';
     this.isThinking = false;
     this.thinkingTimeout = null;
     this.hintsUsed = 0;
     this.lastBotMove = null;
+    this.useExternalEngine = !!config.engine;
   }
 
   /**
@@ -166,6 +173,52 @@ export class VsBotMode extends BaseMode {
       playerColor: color,
       botColor: this.botColor,
     });
+  }
+
+  /**
+   * Set external engine for bot moves
+   * @param {Object} engine - Engine instance (StockfishEngine, UCIEngine, CloudEngine)
+   * @param {Object} [options={}] - Engine options
+   * @param {number} [options.depth=20] - Search depth
+   * @param {number} [options.moveTime=1000] - Move time in ms
+   */
+  setEngine(engine, options = {}) {
+    this.engine = engine;
+    this.useExternalEngine = !!engine;
+    this.config.engineDepth = options.depth || this.config.engineDepth || 20;
+    this.config.engineMoveTime = options.moveTime || this.config.engineMoveTime || 1000;
+
+    // Set up engine event listeners
+    if (engine) {
+      engine.on('info', (info) => {
+        this._emit('engineInfo', info);
+        if (this.config.onEngineInfo) {
+          this.config.onEngineInfo(info);
+        }
+      });
+    }
+
+    this._emit('engineChanged', {
+      engine: engine?.getInfo?.() || null,
+      useExternalEngine: this.useExternalEngine,
+    });
+  }
+
+  /**
+   * Remove external engine and use built-in AI
+   */
+  removeEngine() {
+    this.engine = null;
+    this.useExternalEngine = false;
+    this._emit('engineChanged', { engine: null, useExternalEngine: false });
+  }
+
+  /**
+   * Check if using external engine
+   * @returns {boolean}
+   */
+  isUsingExternalEngine() {
+    return this.useExternalEngine && this.engine !== null;
   }
 
   /**
@@ -287,16 +340,35 @@ export class VsBotMode extends BaseMode {
    * Execute bot move
    * @private
    */
-  _makeBotMove() {
+  async _makeBotMove() {
     this.isThinking = false;
 
-    if (!this.ai || !this.isActive) {
+    if (!this.isActive) {
       this._emit('botThinking', { thinking: false });
       return;
     }
 
-    // Get best move from AI
-    const move = this.ai.getBestMove();
+    let move = null;
+    let engineStats = null;
+
+    // Try external engine first, fall back to built-in AI
+    if (this.useExternalEngine && this.engine) {
+      try {
+        move = await this._getEngineBestMove();
+        engineStats = { source: 'external', engine: this.engine.getInfo?.()?.name || 'unknown' };
+      } catch (error) {
+        console.warn('[VsBotMode] External engine failed, falling back to AI:', error);
+        // Fall back to built-in AI
+        if (this.ai) {
+          move = this.ai.getBestMove();
+          engineStats = { source: 'builtin', ...this.ai.getStats() };
+        }
+      }
+    } else if (this.ai) {
+      // Use built-in AI
+      move = this.ai.getBestMove();
+      engineStats = { source: 'builtin', ...this.ai.getStats() };
+    }
 
     if (!move) {
       this._emit('botThinking', { thinking: false });
@@ -314,7 +386,7 @@ export class VsBotMode extends BaseMode {
         ...move,
         player: 'bot',
         timestamp: Date.now(),
-        stats: this.ai.getStats(),
+        stats: engineStats,
       };
 
       this.moveHistory.push(moveData);
@@ -338,6 +410,41 @@ export class VsBotMode extends BaseMode {
   }
 
   /**
+   * Get best move from external engine
+   * @private
+   * @returns {Promise<Object>}
+   */
+  async _getEngineBestMove() {
+    if (!this.engine || !this.engine.ready()) {
+      throw new Error('Engine not ready');
+    }
+
+    const fen = this.chessboard.fen();
+
+    // Set position and get best move
+    await this.engine.setPosition(fen);
+    const analysis = await this.engine.go({
+      depth: this.config.engineDepth || 20,
+      moveTime: this.config.engineMoveTime || 1000,
+    });
+
+    if (!analysis?.bestMove) {
+      return null;
+    }
+
+    // Parse UCI move to {from, to, promotion} format
+    const uciMove = analysis.bestMove;
+    return {
+      from: uciMove.substring(0, 2),
+      to: uciMove.substring(2, 4),
+      promotion: uciMove.length > 4 ? uciMove[4] : undefined,
+      score: analysis.score,
+      depth: analysis.depth,
+      pv: analysis.pv,
+    };
+  }
+
+  /**
    * Trigger bot move manually (if autoMove is disabled)
    */
   triggerBotMove() {
@@ -347,18 +454,50 @@ export class VsBotMode extends BaseMode {
 
   /**
    * Get hint for player
-   * @returns {Object|null} - Suggested move
+   * @returns {Promise<Object|null>} - Suggested move
    */
-  getHint() {
+  async getHint() {
     if (!this.config.allowHints) return null;
     if (!this.isPlayerTurn()) return null;
 
-    const game = this.chessboard.positionService?.getGame();
-    if (!game) return null;
+    let hint = null;
 
-    // Use AI to find best move for player
-    const hintAI = new ChessAI(game, { difficulty: 8 });
-    const hint = hintAI.getBestMove();
+    // Try external engine first for higher quality hints
+    if (this.useExternalEngine && this.engine && this.engine.ready()) {
+      try {
+        const fen = this.chessboard.fen();
+        await this.engine.setPosition(fen);
+        const analysis = await this.engine.go({
+          depth: Math.min(this.config.engineDepth || 20, 15), // Faster for hints
+          moveTime: 500,
+        });
+
+        if (analysis?.bestMove) {
+          const uciMove = analysis.bestMove;
+          hint = {
+            from: uciMove.substring(0, 2),
+            to: uciMove.substring(2, 4),
+            promotion: uciMove.length > 4 ? uciMove[4] : undefined,
+            score: analysis.score,
+            source: 'engine',
+          };
+        }
+      } catch (error) {
+        console.warn('[VsBotMode] Engine hint failed:', error);
+      }
+    }
+
+    // Fall back to built-in AI
+    if (!hint) {
+      const game = this.chessboard.positionService?.getGame();
+      if (!game) return null;
+
+      const hintAI = new ChessAI(game, { difficulty: 8 });
+      hint = hintAI.getBestMove();
+      if (hint) {
+        hint.source = 'builtin';
+      }
+    }
 
     if (hint) {
       this.hintsUsed++;
@@ -468,18 +607,54 @@ export class VsBotMode extends BaseMode {
 
   /**
    * Analyze current position
-   * @returns {Object}
+   * @returns {Promise<Object>}
    */
-  analyzePosition() {
-    if (!this.ai) return null;
-
+  async analyzePosition() {
     const game = this.chessboard.positionService?.getGame();
     if (!game) return null;
 
-    // Get AI evaluation
-    const analysisAI = new ChessAI(game, { difficulty: 10 });
-    const bestMove = analysisAI.getBestMove();
-    const stats = analysisAI.getStats();
+    let bestMove = null;
+    let stats = null;
+    let source = 'builtin';
+
+    // Try external engine first for deeper analysis
+    if (this.useExternalEngine && this.engine && this.engine.ready()) {
+      try {
+        const fen = this.chessboard.fen();
+        await this.engine.setPosition(fen);
+        const analysis = await this.engine.go({
+          depth: this.config.engineDepth || 20,
+          moveTime: this.config.engineMoveTime || 2000,
+        });
+
+        if (analysis?.bestMove) {
+          const uciMove = analysis.bestMove;
+          bestMove = {
+            from: uciMove.substring(0, 2),
+            to: uciMove.substring(2, 4),
+            promotion: uciMove.length > 4 ? uciMove[4] : undefined,
+          };
+          stats = {
+            score: analysis.score,
+            depth: analysis.depth,
+            nodes: analysis.nodes,
+            nps: analysis.nps,
+            pv: analysis.pv,
+            time: analysis.time,
+          };
+          source = 'engine';
+        }
+      } catch (error) {
+        console.warn('[VsBotMode] Engine analysis failed:', error);
+      }
+    }
+
+    // Fall back to built-in AI
+    if (!bestMove && this.ai) {
+      const analysisAI = new ChessAI(game, { difficulty: 10 });
+      bestMove = analysisAI.getBestMove();
+      stats = analysisAI.getStats();
+    }
 
     // Get all legal moves
     const moves = game.moves({ verbose: true });
@@ -490,6 +665,7 @@ export class VsBotMode extends BaseMode {
       isCheck: game.isCheck?.() || false,
       turn: game.turn(),
       stats,
+      source,
     };
   }
 
@@ -509,6 +685,9 @@ export class VsBotMode extends BaseMode {
       isThinking: this.isThinking,
       lastBotMove: this.lastBotMove,
       aiStats: this.ai?.getStats() || null,
+      useExternalEngine: this.useExternalEngine,
+      engineInfo: this.engine?.getInfo?.() || null,
+      engineReady: this.engine?.ready?.() || false,
     };
   }
 

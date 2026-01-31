@@ -12,6 +12,7 @@ test
 
 *.html
 !examples/*.html
+!index.html
 script.js
 fogboard.js
 .vscode

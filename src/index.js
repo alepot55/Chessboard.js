@@ -97,8 +97,8 @@ export default ChessboardClass;
 
 // Version information
 export const version = '3.2.0';
-export const build = process.env.BUILD_NUMBER || 'dev';
-export const buildDate = process.env.BUILD_DATE || new Date().toISOString();
+export const build = 'dev';
+export const buildDate = new Date().toISOString();
 
 // Library information
 export const info = {

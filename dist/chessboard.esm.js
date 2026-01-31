@@ -9946,7 +9946,7 @@ let tt = z;
  * @author alepot55
  * @license ISC
  */
-const ri = "3.2.0", oi = process.env.BUILD_NUMBER || "dev", ai = process.env.BUILD_DATE || (/* @__PURE__ */ new Date()).toISOString(), Ti = {
+const ri = "3.2.0", oi = "dev", ai = (/* @__PURE__ */ new Date()).toISOString(), Ti = {
   name: "Chessboard.js",
   version: ri,
   build: oi,

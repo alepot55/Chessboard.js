@@ -226,7 +226,9 @@
     let currentMode = null;
 
     function initBoard() {
-      board = new Chessboard.default({
+      // Handle both IIFE (Chessboard.default) and direct access
+      const ChessboardClass = Chessboard.default || Chessboard;
+      board = new ChessboardClass({
         id: 'board',
         position: 'start',
         piecesPath: '../assets/themes/default',

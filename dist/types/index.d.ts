@@ -8,7 +8,7 @@ export * from './utils/animations.js';
 export { ChessAI } from './ai/index.js';
 export default ChessboardClass;
 export const version: "3.2.0";
-export const build: string;
+export const build: "dev";
 export const buildDate: string;
 export namespace info {
     export let name: string;

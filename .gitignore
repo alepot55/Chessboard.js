@@ -11,6 +11,7 @@ test
 !test/.travis.yml
 
 *.html
+!examples/*.html
 script.js
 fogboard.js
 .vscode

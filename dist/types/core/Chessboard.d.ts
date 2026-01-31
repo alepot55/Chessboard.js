@@ -1,6 +1,7 @@
 import { PerformanceMonitor } from '../utils/performance.js';
 import { default as ChessboardConfig } from './ChessboardConfig.js';
 import { ValidationService, CoordinateService, PositionService, BoardService, PieceService, AnimationService, MoveService, EventService } from '../services/index.js';
+import { ModeManager } from '../modes/index.js';
 export default Chessboard;
 /**
  * Main Chessboard class responsible for coordinating all services
@@ -50,6 +51,7 @@ export class Chessboard {
      */
     private _initializeServices;
     _isAnimating: boolean | undefined;
+    modeManager: ModeManager | null | undefined;
     _boundUpdateBoardPieces: ((animation?: boolean, isPositionLoad?: boolean) => void) | null | undefined;
     _boundOnSquareClick: ((square: Square, animate?: boolean, dragged?: boolean) => boolean) | null | undefined;
     _boundOnPieceHover: ((square: Square) => void) | null | undefined;
@@ -398,13 +400,12 @@ export class Chessboard {
      * @param {string} square
      * @param {Object} [opts]
      */
-    highlight(square: string, opts?: Object): void;
+    highlight(square: string): void;
     /**
      * Remove highlight from a square
      * @param {string} square
-     * @param {Object} [opts]
      */
-    dehighlight(square: string, opts?: Object): void;
+    dehighlight(square: string): void;
     /**
      * Get FEN string
      * @returns {string}
@@ -454,9 +455,88 @@ export class Chessboard {
      */
     updateConfig(newConfig: Object): void;
     /**
-     * Alias for move (deprecated)
+     * Move a piece using coordinate notation (e.g., 'e2e4', 'e7e8q')
+     * @param {string} moveStr - Move in coordinate notation
+     * @param {Object} [opts] - Options
+     * @param {boolean} [opts.animate=true] - Whether to animate
+     * @returns {boolean} True if move was successful
      */
-    move(move: any, animate?: boolean): any;
+    movePiece(moveStr: string, opts?: {
+        animate?: boolean | undefined;
+    }): boolean;
+    /**
+     * Force synchronization of the visual board with the game state
+     * Useful after programmatic changes to ensure rendering is correct
+     */
+    forceSync(): void;
+    /**
+     * Set the active game mode
+     * @param {'creative'|'pvp'|'vsBot'} modeName - Mode to activate
+     * @param {Object} [config={}] - Mode configuration
+     * @returns {Object|null} - The activated mode instance
+     * @example
+     * // Start creative mode
+     * board.setMode('creative');
+     *
+     * // Start PvP with time control
+     * board.setMode('pvp', { timeControl: { initial: 300, increment: 5 } });
+     *
+     * // Play against bot
+     * board.setMode('vsBot', { botDifficulty: 7, playerColor: 'w' });
+     */
+    setMode(modeName: "creative" | "pvp" | "vsBot", config?: Object): Object | null;
+    /**
+     * Get the current active mode
+     * @returns {Object|null} - Current mode instance
+     */
+    getMode(): Object | null;
+    /**
+     * Get the current mode name
+     * @returns {string|null} - Mode name ('creative', 'pvp', 'vsBot')
+     */
+    getModeName(): string | null;
+    /**
+     * Get list of available modes
+     * @returns {string[]}
+     */
+    getAvailableModes(): string[];
+    /**
+     * Stop the current mode
+     */
+    stopMode(): void;
+    /**
+     * Check if a specific mode is active
+     * @param {string} modeName - Mode name to check
+     * @returns {boolean}
+     */
+    isModeActive(modeName: string): boolean;
+    /**
+     * Start creative mode (shortcut)
+     * @param {Object} [config={}] - Creative mode config
+     * @returns {Object} - Creative mode instance
+     */
+    startCreativeMode(config?: Object): Object;
+    /**
+     * Start PvP mode (shortcut)
+     * @param {Object} [config={}] - PvP mode config
+     * @returns {Object} - PvP mode instance
+     */
+    startPvPMode(config?: Object): Object;
+    /**
+     * Start vs Bot mode (shortcut)
+     * @param {Object} [config={}] - VsBot mode config
+     * @returns {Object} - VsBot mode instance
+     */
+    startVsBotMode(config?: Object): Object;
+    /**
+     * Get mode statistics
+     * @returns {Object|null}
+     */
+    getModeStats(): Object | null;
+    /**
+     * Alias for movePiece (deprecated)
+     */
+    move(moveStr: any, animate?: boolean): boolean;
     /**
      * Alias for clear (deprecated)
      */
@@ -628,8 +708,7 @@ export class Chessboard {
     setComment(comment: any): void;
     setHeader(key: any, value: any): {};
     validateFen(fen: any): any;
-    highlightSquare(square: any): any;
-    dehighlightSquare(square: any): any;
-    forceSync(): void;
+    highlightSquare(square: any): void;
+    dehighlightSquare(square: any): void;
 }
 //# sourceMappingURL=Chessboard.d.ts.map

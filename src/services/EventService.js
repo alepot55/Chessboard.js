@@ -289,21 +289,27 @@ export class EventService {
    * @private
    */
   _handlePromotion(fromSquare, toSquare, piece, onMove, onSnapback, cleanup) {
+    // Reset piece position first - clear all drag styles so piece appears at fromSquare
+    if (piece && piece.element) {
+      this._resetPiecePosition(piece.element);
+    }
+
     // Show promotion UI
-    // Note: Don't reset piece position here - keep 'dragging' class so translatePiece
-    // uses instant mode and _updateBoardPieces is called synchronously
     this.moveService.setupPromotion(
       new Move(fromSquare, toSquare),
       this.boardService.squares,
       (selectedPiece) => {
-        // Promotion selected
+        // Promotion selected - remove UI
         this.boardService.applyToAllSquares('removePromotion');
         this.boardService.applyToAllSquares('removeCover');
 
-        const success = onMove(fromSquare, toSquare, selectedPiece, true);
+        // Execute move with animate=false to bypass translatePiece complexity
+        // This directly calls _updateBoardPieces which:
+        // - Removes pawn from fromSquare (e7)
+        // - Adds promoted piece to toSquare (e8)
+        const success = onMove(fromSquare, toSquare, selectedPiece, false);
 
         if (!success) {
-          this._resetPiecePosition(piece.element);
           onSnapback(fromSquare, piece);
         }
         cleanup();
@@ -312,7 +318,6 @@ export class EventService {
         // Promotion cancelled
         this.boardService.applyToAllSquares('removePromotion');
         this.boardService.applyToAllSquares('removeCover');
-        this._resetPiecePosition(piece.element);
         onSnapback(fromSquare, piece);
         cleanup();
       }

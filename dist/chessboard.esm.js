@@ -1742,14 +1742,14 @@ class wt {
    * @private
    */
   _handlePromotion(e, t, i, s, n, r) {
-    this.moveService.setupPromotion(
+    i && i.element && this._resetPiecePosition(i.element), this.moveService.setupPromotion(
       new Z(e, t),
       this.boardService.squares,
       (o) => {
-        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(e, t, o, !0) || (this._resetPiecePosition(i.element), n(e, i)), r();
+        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(e, t, o, !1) || n(e, i), r();
       },
       () => {
-        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), this._resetPiecePosition(i.element), n(e, i), r();
+        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), n(e, i), r();
       }
     );
   }

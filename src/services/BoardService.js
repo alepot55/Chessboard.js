@@ -29,8 +29,6 @@ export class BoardService {
    * @throws {DOMError} When the container element cannot be found
    */
   buildBoard() {
-    console.log('BoardService.buildBoard: Looking for element with ID:', this.config.id_div);
-
     this.element = document.getElementById(this.config.id_div);
     if (!this.element) {
       throw new DOMError(ERROR_MESSAGES.invalid_id_div + this.config.id_div, this.config.id_div);

@@ -14,11 +14,6 @@ export class MoveService {
     positionService: PositionService;
     _movesCache: Map<any, any>;
     _cacheTimeout: NodeJS.Timeout | null;
-    _lastPromotionCheck: any;
-    _lastPromotionResult: boolean | null;
-    _promotionCheckTimeout: NodeJS.Timeout | null;
-    _recentMoves: Set<any>;
-    _recentMovesTimeout: NodeJS.Timeout | null;
     /**
      * Checks if a piece on a square can move
      * @param {Square} square - Square to check
@@ -64,23 +59,6 @@ export class MoveService {
      * @returns {boolean} True if promotion is required
      */
     requiresPromotion(move: Move): boolean;
-    _lastPromotionTime: number | undefined;
-    /**
-     * Internal promotion check logic
-     * @private
-     * @param {Move} move - Move to check
-     * @returns {boolean} True if promotion is required
-     */
-    private _doRequiresPromotion;
-    /**
-     * Validates if a pawn move is theoretically possible
-     * @private
-     * @param {Square} from - Source square
-     * @param {Square} to - Target square
-     * @param {string} color - Pawn color ('w' or 'b')
-     * @returns {boolean} True if the move is valid for a pawn
-     */
-    private _isPawnMoveValid;
     /**
      * Handles promotion UI setup
      * @param {Move} move - Move requiring promotion

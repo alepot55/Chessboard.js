@@ -5,7 +5,6 @@ class Piece {
     this.id = this.getId();
     this.src = src;
     this.element = this.createElement(src, opacity);
-    console.debug(`[Piece] Constructed: ${this.id}`);
     this.check();
   }
 
@@ -31,14 +30,12 @@ class Piece {
   visible() {
     if (this.element) {
       this.element.style.opacity = 1;
-      console.debug(`[Piece] visible: ${this.id}`);
     }
   }
 
   invisible() {
     if (this.element) {
       this.element.style.opacity = 0;
-      console.debug(`[Piece] invisible: ${this.id}`);
     }
   }
 
@@ -62,7 +59,6 @@ class Piece {
    */
   transformTo(newType, newSrc, duration = 200, callback = null) {
     if (!this.element) {
-      console.debug(`[Piece] transformTo: ${this.id} - element is null`);
       if (callback) callback();
       return;
     }
@@ -94,7 +90,6 @@ class Piece {
 
       scaleDownAnimation.onfinish = () => {
         if (!this.element) {
-          console.debug(`[Piece] transformTo.scaleDown.onfinish: ${this.id} - element is null`);
           if (callback) callback();
           return;
         }
@@ -114,7 +109,6 @@ class Piece {
 
         scaleUpAnimation.onfinish = () => {
           if (!this.element) {
-            console.debug(`[Piece] transformTo.scaleUp.onfinish: ${this.id} - element is null`);
             if (callback) callback();
             return;
           }
@@ -132,7 +126,6 @@ class Piece {
             element.classList.remove('transform-complete');
           }, 400);
 
-          console.debug(`[Piece] transformTo complete: ${this.id}`);
           if (callback) callback();
         };
       };
@@ -144,7 +137,6 @@ class Piece {
 
       setTimeout(() => {
         if (!this.element) {
-          console.debug(`[Piece] transformTo (fallback): ${this.id} - element is null`);
           if (callback) callback();
           return;
         }
@@ -162,7 +154,6 @@ class Piece {
 
         setTimeout(() => {
           if (!this.element) {
-            console.debug(`[Piece] transformTo (fallback, cleanup): ${this.id} - element is null`);
             if (callback) callback();
             return;
           }
@@ -179,7 +170,6 @@ class Piece {
             element.classList.remove('transform-complete');
           }, 400);
 
-          console.debug(`[Piece] transformTo complete (fallback): ${this.id}`);
           if (callback) callback();
         }, halfDuration);
       }, halfDuration);
@@ -191,7 +181,6 @@ class Piece {
     let opacity = 0;
     const fade = () => {
       if (!this.element) {
-        console.debug(`[Piece] fadeIn: ${this.id} - element is null`);
         if (callback) {
           callback();
         }
@@ -204,14 +193,12 @@ class Piece {
         requestAnimationFrame(fade);
       } else {
         if (!this.element) {
-          console.debug(`[Piece] fadeIn: ${this.id} - element is null (end)`);
           if (callback) {
             callback();
           }
           return;
         }
         this.element.style.opacity = 1;
-        console.debug(`[Piece] fadeIn complete: ${this.id}`);
         if (callback) {
           callback();
         }
@@ -225,7 +212,6 @@ class Piece {
     let opacity = 1;
     const fade = () => {
       if (!this.element) {
-        console.debug(`[Piece] fadeOut: ${this.id} - element is null`);
         if (callback) {
           callback();
         }
@@ -238,14 +224,12 @@ class Piece {
         requestAnimationFrame(fade);
       } else {
         if (!this.element) {
-          console.debug(`[Piece] fadeOut: ${this.id} - element is null (end)`);
           if (callback) {
             callback();
           }
           return;
         }
         this.element.style.opacity = 0;
-        console.debug(`[Piece] fadeOut complete: ${this.id}`);
         if (callback) {
           callback();
         }
@@ -256,7 +240,6 @@ class Piece {
 
   setDrag(f) {
     if (!this.element) {
-      console.debug(`[Piece] setDrag: ${this.id} - element is null`);
       return;
     }
 
@@ -272,12 +255,9 @@ class Piece {
     // Use the drag function directly without timeout
     this._dragHandler = f;
     this.element.addEventListener('mousedown', this._dragHandler);
-    console.debug(`[Piece] setDrag: ${this.id}`);
   }
 
   destroy() {
-    console.debug(`[Piece] Destroy: ${this.id}`);
-
     // Remove all event listeners
     if (this.element) {
       if (this._dragHandler) {
@@ -300,7 +280,6 @@ class Piece {
 
   translate(to, duration, transition_f, speed, callback = null) {
     if (!this.element) {
-      console.debug(`[Piece] translate: ${this.id} - element is null`);
       if (callback) callback();
       return;
     }
@@ -327,20 +306,17 @@ class Piece {
 
       animation.onfinish = () => {
         if (!this.element) {
-          console.debug(`[Piece] translate.onfinish: ${this.id} - element is null`);
           if (callback) callback();
           return;
         }
         if (callback) callback();
         if (this.element) this.element.style = '';
-        console.debug(`[Piece] translate complete: ${this.id}`);
       };
     } else {
       this.element.style.transition = `transform ${duration}ms ease`;
       this.element.style.transform = `translate(${dx}px, ${dy}px)`;
       if (callback) callback();
       if (this.element) this.element.style = '';
-      console.debug(`[Piece] translate complete (no animate): ${this.id}`);
     }
   }
 

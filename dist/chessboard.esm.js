@@ -1,11 +1,11 @@
-var ft = Object.defineProperty;
-var mt = (a, e, t) => e in a ? ft(a, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : a[e] = t;
-var w = (a, e, t) => mt(a, typeof e != "symbol" ? e + "" : e, t);
-const Ue = {
+var ht = Object.defineProperty;
+var lt = (a, e, t) => e in a ? ht(a, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : a[e] = t;
+var y = (a, e, t) => lt(a, typeof e != "symbol" ? e + "" : e, t);
+const Ve = {
   start: "start",
   default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   empty: "8/8/8/8/8/8/8/8 w - - 0 1"
-}, gt = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", Se = ["p", "r", "n", "b", "q", "k"], ye = ["w", "b"], pt = ["q", "r", "b", "n"], ve = "abcdefgh", He = {
+}, ut = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", be = ["p", "r", "n", "b", "q", "k"], Se = ["w", "b"], dt = ["q", "r", "b", "n"], ve = "abcdefgh", Ue = {
   ROWS: 8,
   COLS: 8,
   TOTAL_SQUARES: 64
@@ -97,25 +97,25 @@ const Ue = {
   invalid_state: "Invalid state: ",
   memory_limit_exceeded: "Memory limit exceeded",
   performance_degraded: "Performance degraded: "
-}), x = Object.freeze({
+}), B = Object.freeze({
   LOW: "LOW",
   MEDIUM: "MEDIUM",
   HIGH: "HIGH",
   CRITICAL: "CRITICAL"
 });
 Object.freeze({
-  [I.VALIDATION_ERROR]: x.MEDIUM,
-  [I.CONFIG_ERROR]: x.HIGH,
-  [I.MOVE_ERROR]: x.LOW,
-  [I.DOM_ERROR]: x.HIGH,
-  [I.ANIMATION_ERROR]: x.LOW,
-  [I.PIECE_ERROR]: x.MEDIUM,
-  [I.INITIALIZATION_ERROR]: x.CRITICAL,
-  [I.POSITION_ERROR]: x.MEDIUM,
-  [I.FEN_ERROR]: x.MEDIUM,
-  [I.SQUARE_ERROR]: x.MEDIUM,
-  [I.THEME_ERROR]: x.LOW,
-  [I.NETWORK_ERROR]: x.MEDIUM
+  [I.VALIDATION_ERROR]: B.MEDIUM,
+  [I.CONFIG_ERROR]: B.HIGH,
+  [I.MOVE_ERROR]: B.LOW,
+  [I.DOM_ERROR]: B.HIGH,
+  [I.ANIMATION_ERROR]: B.LOW,
+  [I.PIECE_ERROR]: B.MEDIUM,
+  [I.INITIALIZATION_ERROR]: B.CRITICAL,
+  [I.POSITION_ERROR]: B.MEDIUM,
+  [I.FEN_ERROR]: B.MEDIUM,
+  [I.SQUARE_ERROR]: B.MEDIUM,
+  [I.THEME_ERROR]: B.LOW,
+  [I.NETWORK_ERROR]: B.MEDIUM
 });
 class U extends Error {
   /**
@@ -128,7 +128,7 @@ class U extends Error {
     super(e), this.name = "ChessboardError", this.code = t, this.context = i, this.timestamp = (/* @__PURE__ */ new Date()).toISOString(), Error.captureStackTrace && Error.captureStackTrace(this, U);
   }
 }
-class k extends U {
+class C extends U {
   /**
    * Creates a new ValidationError instance
    * @param {string} message - Error message
@@ -139,7 +139,7 @@ class k extends U {
     super(e, I.VALIDATION_ERROR, { field: t, value: i }), this.name = "ValidationError", this.field = t, this.value = i;
   }
 }
-class q extends U {
+class O extends U {
   /**
    * Creates a new ConfigurationError instance
    * @param {string} message - Error message
@@ -150,7 +150,7 @@ class q extends U {
     super(e, I.CONFIG_ERROR, { configKey: t, configValue: i }), this.name = "ConfigurationError", this.configKey = t, this.configValue = i;
   }
 }
-class Ke extends U {
+class He extends U {
   /**
    * Creates a new MoveError instance
    * @param {string} message - Error message
@@ -162,7 +162,7 @@ class Ke extends U {
     super(e, I.MOVE_ERROR, { from: t, to: i, piece: s }), this.name = "MoveError", this.from = t, this.to = i, this.piece = s;
   }
 }
-class vt extends U {
+class ft extends U {
   /**
    * Creates a new DOMError instance
    * @param {string} message - Error message
@@ -172,7 +172,7 @@ class vt extends U {
     super(e, I.DOM_ERROR, { elementId: t }), this.name = "DOMError", this.elementId = t;
   }
 }
-class Te extends U {
+class Ce extends U {
   /**
    * Creates a new PieceError instance
    * @param {string} message - Error message
@@ -183,13 +183,13 @@ class Te extends U {
     super(e, I.PIECE_ERROR, { pieceId: t, square: i }), this.name = "PieceError", this.pieceId = t, this.square = i;
   }
 }
-const _t = Object.freeze({
+const mt = Object.freeze({
   square: /^[a-h][1-8]$/,
   piece: /^[prnbqkPRNBQK][wb]$/,
   fen: /^([rnbqkpRNBQKP1-8]+\/){7}[rnbqkpRNBQKP1-8]+\s[wb]\s[KQkq-]+\s[a-h1-8-]+\s\d+\s\d+$/,
   move: /^[a-h][1-8][a-h][1-8][qrnb]?$/,
   color: /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
-}), bt = Object.freeze({
+}), gt = Object.freeze({
   orientations: ["w", "b", "white", "black"],
   colors: ["w", "b", "white", "black"],
   movableColors: ["w", "b", "white", "black", "both", "none"],
@@ -198,18 +198,18 @@ const _t = Object.freeze({
   animationStyles: ["sequential", "simultaneous"],
   modes: ["normal", "creative", "analysis"],
   promotionPieces: ["q", "r", "b", "n", "Q", "R", "B", "N"]
-}), St = Object.freeze({
+}), pt = Object.freeze({
   min: 50,
   max: 2e3,
   maxTime: 1e4,
   maxDelay: 5e3
 });
-class je {
+class Ge {
   /**
    * Creates a new ValidationService instance
    */
   constructor() {
-    this._validationCache = /* @__PURE__ */ new Map(), this._cacheMaxSize = 1e3, this._patterns = _t, this._validValues = bt, this._constraints = St;
+    this._validationCache = /* @__PURE__ */ new Map(), this._cacheMaxSize = 1e3, this._patterns = mt, this._validValues = gt, this._constraints = pt;
   }
   /**
    * Validates a square identifier with caching
@@ -234,7 +234,7 @@ class je {
     const t = `piece:${e}`;
     if (this._validationCache.has(t))
       return this._validationCache.get(t);
-    const [i, s] = e.split(""), n = Se.includes(i.toLowerCase()) && ye.includes(s), r = ye.includes(i) && Se.includes(s.toLowerCase()), o = n || r;
+    const [i, s] = e.split(""), n = be.includes(i.toLowerCase()) && Se.includes(s), r = Se.includes(i) && be.includes(s.toLowerCase()), o = n || r;
     return this._cacheValidationResult(t, o), o;
   }
   /**
@@ -416,7 +416,7 @@ class je {
    */
   validateSquare(e) {
     if (!this.isValidSquare(e))
-      throw new k(P.invalid_square + e, "square", e);
+      throw new C(P.invalid_square + e, "square", e);
     return e.toLowerCase();
   }
   /**
@@ -427,7 +427,7 @@ class je {
    */
   validatePiece(e) {
     if (!this.isValidPiece(e))
-      throw new k(P.invalid_piece + e, "piece", e);
+      throw new C(P.invalid_piece + e, "piece", e);
     return e.toLowerCase();
   }
   /**
@@ -438,7 +438,7 @@ class je {
    */
   validateFen(e) {
     if (!this.isValidFen(e))
-      throw new k(P.invalid_fen + e, "fen", e);
+      throw new C(P.invalid_fen + e, "fen", e);
     return e.trim();
   }
   /**
@@ -449,7 +449,7 @@ class je {
    */
   validateMove(e) {
     if (!this.isValidMove(e))
-      throw new k(P.invalid_move + e, "move", e);
+      throw new C(P.invalid_move + e, "move", e);
     return e.toLowerCase();
   }
   /**
@@ -460,7 +460,7 @@ class je {
    */
   validateOrientation(e) {
     if (!this.isValidOrientation(e))
-      throw new k(
+      throw new C(
         P.invalid_orientation + e,
         "orientation",
         e
@@ -475,7 +475,7 @@ class je {
    */
   validateColor(e) {
     if (!this.isValidColor(e))
-      throw new k(P.invalid_color + e, "color", e);
+      throw new C(P.invalid_color + e, "color", e);
     return e === "white" ? "w" : e === "black" ? "b" : e;
   }
   /**
@@ -486,7 +486,7 @@ class je {
    */
   validateSize(e) {
     if (!this.isValidSize(e))
-      throw new k(P.invalid_size + e, "size", e);
+      throw new C(P.invalid_size + e, "size", e);
     return e;
   }
   /**
@@ -497,7 +497,7 @@ class je {
    */
   validateConfig(e) {
     if (!e || typeof e != "object")
-      throw new k("Configuration must be an object", "config", e);
+      throw new C("Configuration must be an object", "config", e);
     const t = [];
     !e.id && !e.id_div && t.push("Configuration must include id or id_div"), e.orientation && !this.isValidOrientation(e.orientation) && t.push(P.invalid_orientation + e.orientation), e.size && !this.isValidSize(e.size) && t.push(P.invalid_size + e.size), e.movableColors && !this.isValidMovableColors(e.movableColors) && t.push(P.invalid_color + e.movableColors), e.dropOffBoard && !this.isValidDropOffBoard(e.dropOffBoard) && t.push(P.invalid_dropOffBoard + e.dropOffBoard), e.animationStyle && !this.isValidAnimationStyle(e.animationStyle) && t.push(P.invalid_animationStyle + e.animationStyle);
     const i = [
@@ -515,7 +515,7 @@ class je {
     for (const n of s)
       e[n] && !this.isValidCSSColor(e[n]) && t.push(`Invalid ${n} color: ${e[n]}`);
     if (t.length > 0)
-      throw new k(
+      throw new C(
         `Configuration validation failed: ${t.join(", ")}`,
         "config",
         e
@@ -585,26 +585,26 @@ class je {
     this.clearCache(), this._validationCache = null, this._patterns = null, this._validValues = null, this._constraints = null;
   }
 }
-const We = Object.freeze({
+const Ke = Object.freeze({
   fast: 200,
   slow: 600,
   normal: 400,
   verySlow: 1e3,
   veryFast: 100
-}), Qe = Object.freeze({
+}), We = Object.freeze({
   true: !0,
   false: !1,
   none: !1,
   1: !0,
   0: !1
-}), Ae = Object.freeze({
+}), Me = Object.freeze({
   ease: "ease",
   linear: "linear",
   "ease-in": "ease-in",
   "ease-out": "ease-out",
   "ease-in-out": "ease-in-out",
   none: null
-}), yt = Object.freeze({
+}), vt = Object.freeze({
   id: "board",
   position: "start",
   orientation: "w",
@@ -647,14 +647,14 @@ const We = Object.freeze({
   coverSquare: "black",
   hintColor: "#ababaa"
 });
-class it {
+class et {
   /**
    * Creates a new ChessboardConfig instance
    * @param {Object} settings - User-provided configuration
    * @throws {ConfigurationError} If configuration is invalid
    */
   constructor(e = {}) {
-    this._validationService = new je(), this._validateInput(e);
+    this._validationService = new Ge(), this._validateInput(e);
     const t = this._mergeWithDefaults(e);
     this._processConfiguration(t), this._setCSSProperties(t), this._configureModeSettings();
   }
@@ -666,11 +666,11 @@ class it {
    */
   _validateInput(e) {
     if (e !== null && typeof e != "object")
-      throw new q("Settings must be an object", "settings", e);
+      throw new O("Settings must be an object", "settings", e);
     try {
       this._validationService.validateConfig(e);
     } catch (t) {
-      throw new q(t.message, t.field, t.value);
+      throw new O(t.message, t.field, t.value);
     }
   }
   /**
@@ -680,7 +680,7 @@ class it {
    * @returns {Object} Merged configuration
    */
   _mergeWithDefaults(e) {
-    return Object.assign({}, yt, e);
+    return Object.assign({}, vt, e);
   }
   /**
    * Processes and validates configuration values
@@ -738,7 +738,7 @@ class it {
    */
   _validateCallback(e) {
     if (!this._validationService.isValidCallback(e))
-      throw new q("Callback must be a function", "callback", e);
+      throw new O("Callback must be a function", "callback", e);
     return e;
   }
   /**
@@ -750,7 +750,7 @@ class it {
    */
   _validateAnimationStyle(e) {
     if (!this._validationService.isValidAnimationStyle(e))
-      throw new q("Invalid animation style", "animationStyle", e);
+      throw new O("Invalid animation style", "animationStyle", e);
     return e;
   }
   /**
@@ -762,7 +762,7 @@ class it {
    */
   _validateDelay(e) {
     if (typeof e != "number" || e < 0 || e > 5e3)
-      throw new q("Invalid animation delay", "simultaneousAnimationDelay", e);
+      throw new O("Invalid animation delay", "simultaneousAnimationDelay", e);
     return e;
   }
   /**
@@ -798,12 +798,12 @@ class it {
   _setTime(e) {
     if (typeof e == "number") {
       if (!this._validationService.isValidTime(e))
-        throw new q("Invalid time value", "time", e);
+        throw new O("Invalid time value", "time", e);
       return e;
     }
-    if (typeof e == "string" && e in We)
-      return We[e];
-    throw new q("Invalid time value", "time", e);
+    if (typeof e == "string" && e in Ke)
+      return Ke[e];
+    throw new O("Invalid time value", "time", e);
   }
   /**
    * Validates and sets boolean value
@@ -815,9 +815,9 @@ class it {
   _setBoolean(e) {
     if (typeof e == "boolean")
       return e;
-    if (e in Qe)
-      return Qe[e];
-    throw new q("Invalid boolean value", "boolean", e);
+    if (e in We)
+      return We[e];
+    throw new O("Invalid boolean value", "boolean", e);
   }
   /**
    * Validates and sets transition function
@@ -828,12 +828,12 @@ class it {
    */
   _setTransitionFunction(e) {
     if (typeof e == "boolean")
-      return e ? Ae.ease : null;
-    if (typeof e == "string" && e in Ae)
-      return Ae[e];
+      return e ? Me.ease : null;
+    if (typeof e == "string" && e in Me)
+      return Me[e];
     if (e == null)
       return null;
-    throw new q("Invalid transition function", "transitionFunction", e);
+    throw new O("Invalid transition function", "transitionFunction", e);
   }
   /**
    * Gets the current configuration as a plain object
@@ -875,7 +875,7 @@ class it {
    */
   update(e) {
     if (!e || typeof e != "object")
-      throw new q("Updates must be an object", "updates", e);
+      throw new O("Updates must be an object", "updates", e);
     this._validationService.validateConfig(e);
     const t = Object.assign({}, this.toObject(), e);
     return this._processConfiguration(t), this._setCSSProperties(t), this._configureModeSettings(), this;
@@ -887,9 +887,9 @@ class it {
     this._validationService && (this._validationService.destroy(), this._validationService = null);
   }
 }
-class we {
+class Oe {
   constructor(e, t, i, s = 1) {
-    this.color = e, this.type = t, this.id = this.getId(), this.src = i, this.element = this.createElement(i, s), console.debug(`[Piece] Constructed: ${this.id}`), this.check();
+    this.color = e, this.type = t, this.id = this.getId(), this.src = i, this.element = this.createElement(i, s), this.check();
   }
   getId() {
     return this.type + this.color;
@@ -901,10 +901,10 @@ class we {
     }, i;
   }
   visible() {
-    this.element && (this.element.style.opacity = 1, console.debug(`[Piece] visible: ${this.id}`));
+    this.element && (this.element.style.opacity = 1);
   }
   invisible() {
-    this.element && (this.element.style.opacity = 0, console.debug(`[Piece] invisible: ${this.id}`));
+    this.element && (this.element.style.opacity = 0);
   }
   /**
    * Updates the piece image source
@@ -922,7 +922,7 @@ class we {
    */
   transformTo(e, t, i = 200, s = null) {
     if (!this.element) {
-      console.debug(`[Piece] transformTo: ${this.id} - element is null`), s && s();
+      s && s();
       return;
     }
     const n = this.element;
@@ -935,46 +935,46 @@ class we {
       { transform: "scale(1)", opacity: "1" }
     ], c = i / 2;
     if (n.animate) {
-      const l = n.animate(r, {
+      const h = n.animate(r, {
         duration: c,
         easing: "ease-in",
         fill: "forwards"
       });
-      l.onfinish = () => {
+      h.onfinish = () => {
         if (!this.element) {
-          console.debug(`[Piece] transformTo.scaleDown.onfinish: ${this.id} - element is null`), s && s();
+          s && s();
           return;
         }
         this.type = e, this.id = this.getId(), this.src = t, n.src = t, n.id = this.id;
-        const u = n.animate(o, {
+        const l = n.animate(o, {
           duration: c,
           easing: "ease-out",
           fill: "forwards"
         });
-        u.onfinish = () => {
+        l.onfinish = () => {
           if (!this.element) {
-            console.debug(`[Piece] transformTo.scaleUp.onfinish: ${this.id} - element is null`), s && s();
+            s && s();
             return;
           }
           n.style.transform = "", n.style.opacity = "", n.classList.remove("transforming"), n.classList.add("transform-complete"), setTimeout(() => {
             this.element && n.classList.remove("transform-complete");
-          }, 400), console.debug(`[Piece] transformTo complete: ${this.id}`), s && s();
+          }, 400), s && s();
         };
       };
     } else
       n.style.transition = `transform ${c}ms ease-in, opacity ${c}ms ease-in`, n.style.transform = "scale(0.8)", n.style.opacity = "0.7", setTimeout(() => {
         if (!this.element) {
-          console.debug(`[Piece] transformTo (fallback): ${this.id} - element is null`), s && s();
+          s && s();
           return;
         }
         this.type = e, this.id = this.getId(), this.src = t, n.src = t, n.id = this.id, n.style.transition = `transform ${c}ms ease-out, opacity ${c}ms ease-out`, n.style.transform = "scale(1)", n.style.opacity = "1", setTimeout(() => {
           if (!this.element) {
-            console.debug(`[Piece] transformTo (fallback, cleanup): ${this.id} - element is null`), s && s();
+            s && s();
             return;
           }
           n.style.transition = "", n.style.transform = "", n.style.opacity = "", n.classList.remove("transforming"), n.classList.add("transform-complete"), setTimeout(() => {
             this.element && n.classList.remove("transform-complete");
-          }, 400), console.debug(`[Piece] transformTo complete (fallback): ${this.id}`), s && s();
+          }, 400), s && s();
         }, c);
       }, c);
   }
@@ -983,7 +983,7 @@ class we {
     let r = 0;
     const o = () => {
       if (!this.element) {
-        console.debug(`[Piece] fadeIn: ${this.id} - element is null`), s && s();
+        s && s();
         return;
       }
       const c = performance.now() - n;
@@ -991,10 +991,10 @@ class we {
         requestAnimationFrame(o);
       else {
         if (!this.element) {
-          console.debug(`[Piece] fadeIn: ${this.id} - element is null (end)`), s && s();
+          s && s();
           return;
         }
-        this.element.style.opacity = 1, console.debug(`[Piece] fadeIn complete: ${this.id}`), s && s();
+        this.element.style.opacity = 1, s && s();
       }
     };
     o();
@@ -1004,7 +1004,7 @@ class we {
     let r = 1;
     const o = () => {
       if (!this.element) {
-        console.debug(`[Piece] fadeOut: ${this.id} - element is null`), s && s();
+        s && s();
         return;
       }
       const c = performance.now() - n;
@@ -1012,50 +1012,46 @@ class we {
         requestAnimationFrame(o);
       else {
         if (!this.element) {
-          console.debug(`[Piece] fadeOut: ${this.id} - element is null (end)`), s && s();
+          s && s();
           return;
         }
-        this.element.style.opacity = 0, console.debug(`[Piece] fadeOut complete: ${this.id}`), s && s();
+        this.element.style.opacity = 0, s && s();
       }
     };
     o();
   }
   setDrag(e) {
-    if (!this.element) {
-      console.debug(`[Piece] setDrag: ${this.id} - element is null`);
-      return;
-    }
-    this._dragHandler && this.element.removeEventListener("mousedown", this._dragHandler), this.element.ondragstart = (t) => {
+    this.element && (this._dragHandler && this.element.removeEventListener("mousedown", this._dragHandler), this.element.ondragstart = (t) => {
       t.preventDefault();
-    }, this._dragHandler = e, this.element.addEventListener("mousedown", this._dragHandler), console.debug(`[Piece] setDrag: ${this.id}`);
+    }, this._dragHandler = e, this.element.addEventListener("mousedown", this._dragHandler));
   }
   destroy() {
-    console.debug(`[Piece] Destroy: ${this.id}`), this.element && (this._dragHandler && (this.element.removeEventListener("mousedown", this._dragHandler), this._dragHandler = null), this.element.onmousedown = null, this.element.ondragstart = null, this.element.parentNode && this.element.parentNode.removeChild(this.element), this.element = null);
+    this.element && (this._dragHandler && (this.element.removeEventListener("mousedown", this._dragHandler), this._dragHandler = null), this.element.onmousedown = null, this.element.ondragstart = null, this.element.parentNode && this.element.parentNode.removeChild(this.element), this.element = null);
   }
   translate(e, t, i, s, n = null) {
     if (!this.element) {
-      console.debug(`[Piece] translate: ${this.id} - element is null`), n && n();
+      n && n();
       return;
     }
-    const r = this.element.getBoundingClientRect(), o = e.getBoundingClientRect(), c = r.left + r.width / 2, l = r.top + r.height / 2, u = o.left + o.width / 2, d = o.top + o.height / 2, h = u - c, m = d - l, f = [
+    const r = this.element.getBoundingClientRect(), o = e.getBoundingClientRect(), c = r.left + r.width / 2, h = r.top + r.height / 2, l = o.left + o.width / 2, d = o.top + o.height / 2, u = l - c, m = d - h, f = [
       { transform: "translate(0, 0)" },
-      { transform: `translate(${h}px, ${m}px)` }
+      { transform: `translate(${u}px, ${m}px)` }
     ];
     if (this.element.animate) {
-      const g = this.element.animate(f, {
+      const p = this.element.animate(f, {
         duration: t,
         easing: "ease",
         fill: "none"
       });
-      g.onfinish = () => {
+      p.onfinish = () => {
         if (!this.element) {
-          console.debug(`[Piece] translate.onfinish: ${this.id} - element is null`), n && n();
+          n && n();
           return;
         }
-        n && n(), this.element && (this.element.style = ""), console.debug(`[Piece] translate complete: ${this.id}`);
+        n && n(), this.element && (this.element.style = "");
       };
     } else
-      this.element.style.transition = `transform ${t}ms ease`, this.element.style.transform = `translate(${h}px, ${m}px)`, n && n(), this.element && (this.element.style = ""), console.debug(`[Piece] translate complete (no animate): ${this.id}`);
+      this.element.style.transition = `transform ${t}ms ease`, this.element.style.transform = `translate(${u}px, ${m}px)`, n && n(), this.element && (this.element.style = "");
   }
   check() {
     if (["p", "r", "n", "b", "q", "k"].indexOf(this.type) === -1)
@@ -1064,7 +1060,7 @@ class we {
       throw new Error("Invalid piece color");
   }
 }
-class $e {
+class qe {
   constructor(e, t) {
     this.row = e, this.col = t, this.id = this.getId(), this.element = this.createElement(), this.piece = null;
   }
@@ -1186,7 +1182,7 @@ class $e {
       throw new Error("Invalid square: col is out of bounds");
   }
 }
-let Q = class {
+let Z = class {
   constructor(e, t, i = null, s = !1) {
     this.piece = e ? e.getPiece() : null, this.from = e, this.to = t, this.promotion = i, s && this.check();
   }
@@ -1197,13 +1193,13 @@ let Q = class {
     this.promotion = e;
   }
   check() {
-    return !(this.piece === null || !(this.piece instanceof we) || ["q", "r", "b", "n", null].indexOf(this.promotion) === -1 || !(this.from instanceof $e) || !(this.to instanceof $e) || !this.to || !this.from || this.from === this.to);
+    return !(this.piece === null || !(this.piece instanceof Oe) || ["q", "r", "b", "n", null].indexOf(this.promotion) === -1 || !(this.from instanceof qe) || !(this.to instanceof qe) || !this.to || !this.from || this.from === this.to);
   }
   isLegal(e) {
     return e.moves({ square: this.from.id, verbose: !0 }).map((i) => i.to).indexOf(this.to.id) !== -1;
   }
 };
-class wt {
+class _t {
   /**
    * Creates a new AnimationService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -1245,18 +1241,18 @@ class wt {
    * @returns {number} Animation ID
    */
   animate(e, t, i, s = "ease", n) {
-    const r = ++this.animationId, o = this.createTimingFunction(s), c = performance.now(), l = {};
+    const r = ++this.animationId, o = this.createTimingFunction(s), c = performance.now(), h = {};
     Object.keys(t).forEach((d) => {
-      l[d] = this._getInitialValue(e, d);
+      h[d] = this._getInitialValue(e, d);
     });
-    const u = (d) => {
-      const h = d - c, m = Math.min(h / i, 1), f = o(h, i);
-      Object.keys(t).forEach((g) => {
-        const S = l[g], E = t[g], y = this._interpolateValue(S, E, f);
-        this._applyValue(e, g, y);
-      }), m < 1 && this.activeAnimations.has(r) ? requestAnimationFrame(u) : (this.activeAnimations.delete(r), n && n());
+    const l = (d) => {
+      const u = d - c, m = Math.min(u / i, 1), f = o(u, i);
+      Object.keys(t).forEach((p) => {
+        const b = h[p], w = t[p], S = this._interpolateValue(b, w, f);
+        this._applyValue(e, p, S);
+      }), m < 1 && this.activeAnimations.has(r) ? requestAnimationFrame(l) : (this.activeAnimations.delete(r), n && n());
     };
-    return this.activeAnimations.set(r, { element: e, animate: u, callback: n }), requestAnimationFrame(u), r;
+    return this.activeAnimations.set(r, { element: e, animate: l, callback: n }), requestAnimationFrame(l), r;
   }
   /**
    * Cancels an animation
@@ -1337,7 +1333,7 @@ class wt {
     this.cancelAll();
   }
 }
-class Pt {
+class bt {
   /**
    * Creates a new BoardService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -1350,8 +1346,8 @@ class Pt {
    * @throws {DOMError} When the container element cannot be found
    */
   buildBoard() {
-    if (console.log("BoardService.buildBoard: Looking for element with ID:", this.config.id_div), this.element = document.getElementById(this.config.id_div), !this.element)
-      throw new vt(P.invalid_id_div + this.config.id_div, this.config.id_div);
+    if (this.element = document.getElementById(this.config.id_div), !this.element)
+      throw new ft(P.invalid_id_div + this.config.id_div, this.config.id_div);
     this.resize(this.config.size), this.element.className = "board";
   }
   /**
@@ -1359,9 +1355,9 @@ class Pt {
    * @param {Function} coordConverter - Function to convert row/col to real coordinates
    */
   buildSquares(e) {
-    for (let t = 0; t < He.ROWS; t++)
-      for (let i = 0; i < He.COLS; i++) {
-        const [s, n] = e(t, i), r = new $e(s, n);
+    for (let t = 0; t < Ue.ROWS; t++)
+      for (let i = 0; i < Ue.COLS; i++) {
+        const [s, n] = e(t, i), r = new qe(s, n);
         this.squares[r.getId()] = r, this.element.appendChild(r.element);
       }
   }
@@ -1392,7 +1388,7 @@ class Pt {
       this.resize(t);
     } else {
       if (typeof e != "number")
-        throw new k(P.invalid_value + e, "size", e);
+        throw new C(P.invalid_value + e, "size", e);
       document.documentElement.style.setProperty("--dimBoard", `${e}px`);
     }
   }
@@ -1437,7 +1433,7 @@ class Pt {
     this.removeSquares(), this.removeBoard(), this.element = null, this.squares = {};
   }
 }
-class Ct {
+class St {
   /**
    * Creates a new CoordinateService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -1463,7 +1459,7 @@ class Ct {
    */
   getSquareID(e, t) {
     if (e = parseInt(e), t = parseInt(t), this.isWhiteOriented() ? (e = 8 - e, t = t + 1) : (e = e + 1, t = 8 - t), t < 1 || t > 8 || e < 1 || e > 8)
-      throw new k(
+      throw new C(
         `Invalid board coordinates: row=${e}, col=${t}`,
         "coordinates",
         { row: e, col: t }
@@ -1477,12 +1473,12 @@ class Ct {
    */
   getCoordinatesFromSquareID(e) {
     if (typeof e != "string" || e.length !== 2)
-      throw new k(P.invalid_square + e, "squareId", e);
+      throw new C(P.invalid_square + e, "squareId", e);
     const t = e[0], i = parseInt(e[1]), s = ve.indexOf(t);
     if (s === -1)
-      throw new k(P.invalid_square + e, "squareId", e);
+      throw new C(P.invalid_square + e, "squareId", e);
     if (i < 1 || i > 8)
-      throw new k(P.invalid_square + e, "squareId", e);
+      throw new C(P.invalid_square + e, "squareId", e);
     let n, r;
     return this.isWhiteOriented() ? (n = 8 - i, r = s) : (n = i - 1, r = 7 - s), [n, r];
   }
@@ -1498,9 +1494,9 @@ class Ct {
     const s = i.getBoundingClientRect(), { width: n, height: r } = s;
     if (e < 0 || e >= n || t < 0 || t >= r)
       return null;
-    const o = n / 8, c = r / 8, l = Math.floor(e / o), u = Math.floor(t / c);
+    const o = n / 8, c = r / 8, h = Math.floor(e / o), l = Math.floor(t / c);
     try {
-      return this.getSquareID(u, l);
+      return this.getSquareID(l, h);
     } catch {
       return null;
     }
@@ -1514,8 +1510,8 @@ class Ct {
   squareIDToPixel(e, t) {
     if (!t) return null;
     try {
-      const [i, s] = this.getCoordinatesFromSquareID(e), n = t.getBoundingClientRect(), { width: r, height: o } = n, c = r / 8, l = o / 8, u = s * c, d = i * l;
-      return { x: u, y: d };
+      const [i, s] = this.getCoordinatesFromSquareID(e), n = t.getBoundingClientRect(), { width: r, height: o } = n, c = r / 8, h = o / 8, l = s * c, d = i * h;
+      return { x: l, y: d };
     } catch {
       return null;
     }
@@ -1577,7 +1573,7 @@ class Ct {
   setOrientation(e) {
     const t = e === "white" ? "w" : e === "black" ? "b" : e;
     if (t !== "w" && t !== "b")
-      throw new k(
+      throw new C(
         `${P.invalid_orientation}${e}`,
         "orientation",
         e
@@ -1608,7 +1604,7 @@ class Ct {
    */
   getSquaresByRank(e) {
     if (e < 1 || e > 8)
-      throw new k(`Invalid rank: ${e}`, "rank", e);
+      throw new C(`Invalid rank: ${e}`, "rank", e);
     const t = [];
     for (let i = 0; i < 8; i++) {
       const s = this.isWhiteOriented() ? 8 - e : e - 1;
@@ -1624,185 +1620,14 @@ class Ct {
   getSquaresByFile(e) {
     const t = ve.indexOf(e);
     if (t === -1)
-      throw new k(`Invalid file: ${e}`, "file", e);
+      throw new C(`Invalid file: ${e}`, "file", e);
     const i = [];
     for (let s = 0; s < 8; s++)
       i.push(this.getSquareID(s, t));
     return i;
   }
 }
-class st {
-  /**
-   * Creates a new PerformanceMonitor instance
-   */
-  constructor() {
-    this.metrics = /* @__PURE__ */ new Map(), this.observers = /* @__PURE__ */ new Map(), this.isEnabled = typeof performance < "u" && performance.mark, this.isEnabled && this._setupObservers();
-  }
-  /**
-   * Sets up performance observers for automatic metrics collection
-   * @private
-   */
-  _setupObservers() {
-    try {
-      if (typeof PerformanceObserver < "u") {
-        const e = new PerformanceObserver((t) => {
-          for (const i of t.getEntries())
-            this.recordMetric(i.name, i.startTime);
-        });
-        e.observe({ entryTypes: ["paint"] }), this.observers.set("paint", e);
-      }
-    } catch (e) {
-      console.warn("Performance observers not available:", e.message);
-    }
-  }
-  /**
-   * Starts measuring performance for a given operation
-   * @param {string} name - Name of the operation
-   */
-  startMeasure(e) {
-    if (this.isEnabled)
-      try {
-        performance.mark(`${e}-start`);
-      } catch (t) {
-        console.warn(`Failed to start performance measure for ${e}:`, t.message);
-      }
-  }
-  /**
-   * Ends measuring performance for a given operation
-   * @param {string} name - Name of the operation
-   * @returns {number} Duration in milliseconds
-   */
-  endMeasure(e) {
-    if (!this.isEnabled) return 0;
-    try {
-      performance.mark(`${e}-end`);
-      const t = performance.measure(e, `${e}-start`, `${e}-end`);
-      return this.recordMetric(e, t.duration), performance.clearMarks(`${e}-start`), performance.clearMarks(`${e}-end`), performance.clearMeasures(e), t.duration;
-    } catch (t) {
-      return console.warn(`Failed to end performance measure for ${e}:`, t.message), 0;
-    }
-  }
-  /**
-   * Records a metric value
-   * @param {string} name - Metric name
-   * @param {number} value - Metric value
-   */
-  recordMetric(e, t) {
-    this.metrics.has(e) || this.metrics.set(e, {
-      count: 0,
-      total: 0,
-      min: 1 / 0,
-      max: -1 / 0,
-      values: []
-    });
-    const i = this.metrics.get(e);
-    i.count++, i.total += t, i.min = Math.min(i.min, t), i.max = Math.max(i.max, t), i.values.push(t), i.values.length > 100 && i.values.shift();
-  }
-  /**
-   * Gets metrics summary
-   * @returns {Object} Metrics summary
-   */
-  getMetrics() {
-    const e = {};
-    for (const [t, i] of this.metrics)
-      e[t] = {
-        count: i.count,
-        average: i.total / i.count,
-        min: i.min,
-        max: i.max,
-        total: i.total,
-        p95: this._calculatePercentile(i.values, 95),
-        p99: this._calculatePercentile(i.values, 99)
-      };
-    return e;
-  }
-  /**
-   * Calculates percentile for a set of values
-   * @private
-   * @param {Array<number>} values - Array of values
-   * @param {number} percentile - Percentile to calculate (0-100)
-   * @returns {number} Percentile value
-   */
-  _calculatePercentile(e, t) {
-    if (e.length === 0) return 0;
-    const i = [...e].sort((n, r) => n - r), s = Math.ceil(t / 100 * i.length) - 1;
-    return i[Math.max(0, s)];
-  }
-  /**
-   * Clears all metrics
-   */
-  clearMetrics() {
-    this.metrics.clear();
-  }
-  /**
-   * Destroys the performance monitor and cleans up resources
-   */
-  destroy() {
-    for (const e of this.observers.values())
-      e && typeof e.disconnect == "function" && e.disconnect();
-    this.observers.clear(), this.metrics.clear();
-  }
-}
-function hi(a, e) {
-  let t;
-  return function(...i) {
-    t || (a.apply(this, i), t = !0, setTimeout(() => {
-      t = !1;
-    }, e));
-  };
-}
-function ui(a, e) {
-  let t;
-  const i = function(...s) {
-    clearTimeout(t), t = setTimeout(() => a.apply(i.context, s), e);
-  };
-  return function(...s) {
-    return i.context = this, i(...s);
-  };
-}
-function Ye(a) {
-  let e = !1;
-  const t = function(...i) {
-    e || (e = !0, requestAnimationFrame(() => {
-      a.apply(t.context, i), e = !1;
-    }));
-  };
-  return function(...i) {
-    return t.context = this, t(...i);
-  };
-}
-function di(a, e, t, i = 1) {
-  !a || !a.style || (a.style.transform = `translate3d(${e}px, ${t}px, 0) scale(${i})`, a.style.willChange = "transform");
-}
-function fi(a) {
-  !a || !a.style || (a.style.transform = "", a.style.left = "", a.style.top = "", a.style.willChange = "");
-}
-function mi(a) {
-  return new Promise((e) => {
-    requestAnimationFrame(() => {
-      const t = a();
-      e(t);
-    });
-  });
-}
-function gi(a) {
-  if (!a || !a.getBoundingClientRect) return !1;
-  const e = a.getBoundingClientRect();
-  return e.width > 0 && e.height > 0 && e.bottom > 0 && e.right > 0 && e.top < (window.innerHeight || document.documentElement.clientHeight) && e.left < (window.innerWidth || document.documentElement.clientWidth);
-}
-function pi() {
-  return typeof performance < "u" && performance.memory ? {
-    used: performance.memory.usedJSHeapSize,
-    total: performance.memory.totalJSHeapSize,
-    limit: performance.memory.jsHeapSizeLimit
-  } : {
-    used: 0,
-    total: 0,
-    limit: 0,
-    supported: !1
-  };
-}
-function Et() {
+function yt() {
   const a = navigator.userAgent, e = a.includes("Chrome") && !a.includes("Edg"), t = a.includes("Firefox"), i = a.includes("Safari") && !a.includes("Chrome"), s = a.includes("Edg");
   return {
     isChrome: e,
@@ -1813,13 +1638,13 @@ function Et() {
     userAgent: a
   };
 }
-const _e = {
+const De = {
   /**
    * Apply browser-specific optimizations to an element
    * @param {HTMLElement} element - Element to optimize
    */
   enableForDrag(a) {
-    const e = Et();
+    const e = yt();
     a.style.willChange = "left, top", a.style.pointerEvents = "none", e.isChrome && (a.style.transform = "translateZ(0)"), e.isFirefox && (a.style.backfaceVisibility = "hidden");
   },
   /**
@@ -1829,267 +1654,8 @@ const _e = {
   cleanupAfterDrag(a) {
     a.style.willChange = "auto", a.style.pointerEvents = "", a.style.transform = "", a.style.backfaceVisibility = "";
   }
-}, te = Object.freeze({
-  DEBUG: 0,
-  INFO: 1,
-  WARN: 2,
-  ERROR: 3,
-  NONE: 4
-}), kt = Object.freeze({
-  level: te.INFO,
-  enableColors: !0,
-  enableTimestamp: !0,
-  enableStackTrace: !0,
-  maxLogSize: 1e3,
-  enableConsole: !0,
-  enableStorage: !1,
-  storageKey: "chessboard-logs"
-}), Je = Object.freeze({
-  DEBUG: "\x1B[36m",
-  // Cyan
-  INFO: "\x1B[32m",
-  // Green
-  WARN: "\x1B[33m",
-  // Yellow
-  ERROR: "\x1B[31m",
-  // Red
-  RESET: "\x1B[0m"
-  // Reset
-});
-class ke {
-  /**
-   * Creates a new Logger instance
-   * @param {Object} [config] - Logger configuration
-   * @param {string} [name] - Logger name/namespace
-   */
-  constructor(e = {}, t = "Chessboard") {
-    this.config = { ...kt, ...e }, this.name = t, this.logs = [], this.startTime = Date.now(), this.debug = this._createLogMethod("DEBUG"), this.info = this._createLogMethod("INFO"), this.warn = this._createLogMethod("WARN"), this.error = this._createLogMethod("ERROR"), this.performances = /* @__PURE__ */ new Map(), this.config.enableStorage && this._initStorage();
-  }
-  /**
-   * Creates a log method for a specific level
-   * @private
-   * @param {string} level - Log level
-   * @returns {Function} Log method
-   */
-  _createLogMethod(e) {
-    return (t, i = {}, s = null) => {
-      this._log(e, t, i, s);
-    };
-  }
-  /**
-   * Core logging method
-   * @private
-   * @param {string} level - Log level
-   * @param {string} message - Log message
-   * @param {Object} data - Additional data
-   * @param {Error} error - Error object
-   */
-  _log(e, t, i, s) {
-    if (te[e] < this.config.level)
-      return;
-    const r = this._createLogEntry(e, t, i, s);
-    this._storeLogEntry(r), this.config.enableConsole && this._outputToConsole(r), this.config.enableStorage && this._storeInStorage(r);
-  }
-  /**
-   * Creates a structured log entry
-   * @private
-   * @param {string} level - Log level
-   * @param {string} message - Log message
-   * @param {Object} data - Additional data
-   * @param {Error} error - Error object
-   * @returns {Object} Log entry
-   */
-  _createLogEntry(e, t, i, s) {
-    const n = {
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      level: e,
-      logger: this.name,
-      message: t,
-      data: { ...i },
-      runtime: Date.now() - this.startTime
-    };
-    return s && (n.error = {
-      name: s.name,
-      message: s.message,
-      stack: this.config.enableStackTrace ? s.stack : null
-    }), typeof performance < "u" && performance.memory && (n.memory = {
-      used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
-      total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024)
-    }), n;
-  }
-  /**
-   * Stores log entry in memory
-   * @private
-   * @param {Object} entry - Log entry
-   */
-  _storeLogEntry(e) {
-    this.logs.push(e), this.logs.length > this.config.maxLogSize && this.logs.shift();
-  }
-  /**
-   * Outputs log entry to console
-   * @private
-   * @param {Object} entry - Log entry
-   */
-  _outputToConsole(e) {
-    const t = this.config.enableColors ? Je[e.level] : "", i = this.config.enableColors ? Je.RESET : "", s = this.config.enableTimestamp ? `[${new Date(e.timestamp).toLocaleTimeString()}] ` : "", r = `${`${t}${s}[${e.logger}:${e.level}]${i}`} ${e.message}`, o = this._getConsoleMethod(e.level);
-    Object.keys(e.data).length > 0 || e.error ? o(r, {
-      data: e.data,
-      error: e.error,
-      runtime: `${e.runtime}ms`
-    }) : o(r);
-  }
-  /**
-   * Gets appropriate console method for log level
-   * @private
-   * @param {string} level - Log level
-   * @returns {Function} Console method
-   */
-  _getConsoleMethod(e) {
-    switch (e) {
-      case "DEBUG":
-        return console.debug || console.log;
-      case "INFO":
-        return console.info || console.log;
-      case "WARN":
-        return console.warn || console.log;
-      case "ERROR":
-        return console.error || console.log;
-      default:
-        return console.log;
-    }
-  }
-  /**
-   * Initializes localStorage for log storage
-   * @private
-   */
-  _initStorage() {
-    if (typeof localStorage > "u") {
-      this.config.enableStorage = !1;
-      return;
-    }
-    try {
-      localStorage.setItem("test", "test"), localStorage.removeItem("test");
-    } catch {
-      this.config.enableStorage = !1, console.warn("localStorage not available, disabling log storage");
-    }
-  }
-  /**
-   * Stores log entry in localStorage
-   * @private
-   * @param {Object} entry - Log entry
-   */
-  _storeInStorage(e) {
-    if (this.config.enableStorage)
-      try {
-        const t = JSON.parse(localStorage.getItem(this.config.storageKey) || "[]");
-        t.push(e), t.length > this.config.maxLogSize && t.shift(), localStorage.setItem(this.config.storageKey, JSON.stringify(t));
-      } catch (t) {
-        console.warn("Failed to store log entry:", t);
-      }
-  }
-  /**
-   * Starts performance measurement
-   * @param {string} name - Performance measurement name
-   */
-  startPerformance(e) {
-    this.performances.set(e, {
-      start: performance.now(),
-      measurements: []
-    }), this.debug(`Started performance measurement: ${e}`);
-  }
-  /**
-   * Ends performance measurement
-   * @param {string} name - Performance measurement name
-   * @returns {number} Duration in milliseconds
-   */
-  endPerformance(e) {
-    const t = this.performances.get(e);
-    if (!t)
-      return this.warn(`Performance measurement not found: ${e}`), 0;
-    const i = performance.now() - t.start;
-    return t.measurements.push(i), this.debug(`Performance measurement completed: ${e}`, {
-      duration: `${i.toFixed(2)}ms`,
-      measurements: t.measurements.length
-    }), i;
-  }
-  /**
-   * Gets performance statistics
-   * @param {string} name - Performance measurement name
-   * @returns {Object} Performance statistics
-   */
-  getPerformanceStats(e) {
-    const t = this.performances.get(e);
-    if (!t || t.measurements.length === 0)
-      return null;
-    const i = t.measurements, s = i.reduce((c, l) => c + l, 0), n = s / i.length, r = Math.min(...i), o = Math.max(...i);
-    return {
-      name: e,
-      count: i.length,
-      total: s.toFixed(2),
-      average: n.toFixed(2),
-      min: r.toFixed(2),
-      max: o.toFixed(2)
-    };
-  }
-  /**
-   * Creates a child logger with a specific namespace
-   * @param {string} namespace - Child logger namespace
-   * @returns {Logger} Child logger instance
-   */
-  child(e) {
-    return new ke(this.config, `${this.name}:${e}`);
-  }
-  /**
-   * Sets log level
-   * @param {string} level - Log level
-   */
-  setLevel(e) {
-    te[e] !== void 0 && (this.config.level = te[e]);
-  }
-  /**
-   * Gets current log level
-   * @returns {string} Current log level
-   */
-  getLevel() {
-    return Object.keys(te).find((e) => te[e] === this.config.level);
-  }
-  /**
-   * Gets all stored logs
-   * @returns {Array} Array of log entries
-   */
-  getLogs() {
-    return [...this.logs];
-  }
-  /**
-   * Clears all stored logs
-   */
-  clearLogs() {
-    if (this.logs = [], this.config.enableStorage)
-      try {
-        localStorage.removeItem(this.config.storageKey);
-      } catch (e) {
-        console.warn("Failed to clear stored logs:", e);
-      }
-  }
-  /**
-   * Exports logs as JSON
-   * @returns {string} JSON string of logs
-   */
-  exportLogs() {
-    return JSON.stringify(this.logs, null, 2);
-  }
-  /**
-   * Cleans up resources
-   */
-  destroy() {
-    this.clearLogs(), this.performances.clear();
-  }
-}
-const v = new ke();
-function vi(a, e) {
-  return new ke(a, e);
-}
-class Mt {
+};
+class wt {
   /**
    * Creates a new EventService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -2099,13 +1665,10 @@ class Mt {
    * @param {Chessboard} chessboard - Chessboard instance
    */
   constructor(e, t, i, s, n) {
-    this.config = e, this.boardService = t, this.moveService = i, this.coordinateService = s, this.chessboard = n, this.clicked = null, this.isDragging = !1, this.isAnimating = !1, this.promoting = !1, this._isProcessingDrop = !1, this.eventListeners = /* @__PURE__ */ new Map();
+    this.config = e, this.boardService = t, this.moveService = i, this.coordinateService = s, this.chessboard = n, this.selectedSquare = null, this.isDragging = !1, this.isProcessing = !1, this.eventListeners = /* @__PURE__ */ new Map();
   }
   /**
    * Adds event listeners to all squares
-   * @param {Function} onSquareClick - Callback for square clicks
-   * @param {Function} onPieceHover - Callback for piece hover
-   * @param {Function} onPieceLeave - Callback for piece leave
    */
   addListeners(e, t, i) {
     this.removeListeners();
@@ -2117,368 +1680,168 @@ class Mt {
   /**
    * Adds event listeners to a specific square
    * @private
-   * @param {Square} square - Square to add listeners to
-   * @param {Function} onSquareClick - Click callback
-   * @param {Function} onPieceHover - Hover callback
-   * @param {Function} onPieceLeave - Leave callback
    */
   _addSquareListeners(e, t, i, s) {
-    const n = [], r = Ye(() => {
-      !this.clicked && this.config.hints && i(e);
-    }), o = Ye(() => {
-      !this.clicked && this.config.hints && s(e);
-    }), c = (l) => {
-      l.stopPropagation(), this.config.clickable && !this.isAnimating && (e.piece && e.piece._dragTimeout && (clearTimeout(e.piece._dragTimeout), e.piece._dragTimeout = null), t(e));
+    const n = [], r = () => {
+      !this.selectedSquare && this.config.hints && e.piece && i(e);
+    }, o = () => {
+      !this.selectedSquare && this.config.hints && s(e);
+    }, c = (h) => {
+      h.stopPropagation(), this.config.clickable && !this.isProcessing && !this.isDragging && t(e);
     };
-    e.element.addEventListener("mouseover", r), e.element.addEventListener("mouseout", o), e.element.addEventListener("click", c), e.element.addEventListener("touchstart", c), n.push(
-      { element: e.element, type: "mouseover", handler: r },
-      { element: e.element, type: "mouseout", handler: o },
-      { element: e.element, type: "click", handler: c },
-      { element: e.element, type: "touchstart", handler: c }
+    e.element.addEventListener("mouseenter", r), e.element.addEventListener("mouseleave", o), e.element.addEventListener("click", c), n.push(
+      { element: e.element, type: "mouseenter", handler: r },
+      { element: e.element, type: "mouseleave", handler: o },
+      { element: e.element, type: "click", handler: c }
     ), this.eventListeners.set(e.id, n);
   }
   /**
    * Creates a drag function for a piece
-   * @param {Square} square - Square containing the piece
-   * @param {Piece} piece - Piece to create drag function for
-   * @param {Function} onDragStart - Drag start callback
-   * @param {Function} onDragMove - Drag move callback
-   * @param {Function} onDrop - Drop callback
-   * @param {Function} onSnapback - Snapback callback
-   * @param {Function} onMove - Move execution callback
-   * @param {Function} onRemove - Remove piece callback
-   * @returns {Function} Drag event handler
    */
   createDragFunction(e, t, i, s, n, r, o, c) {
-    return console.log(
-      "Creating drag function for:",
-      e.id,
-      t ? `${t.color}${t.type}` : "null"
-    ), (l) => {
-      var T, N;
-      if (l.preventDefault(), !this.config.draggable || !t || this.isAnimating || this.isDragging)
+    return (h) => {
+      var g, E, k, L;
+      if (h.preventDefault(), h.stopPropagation(), !this.config.draggable || !t || this.isProcessing || this.isDragging || !this.moveService.canMove(e))
         return;
-      this.isDragging = !0;
-      const u = e;
-      let d = !1;
-      const h = u;
-      let m = e, f = null;
-      const g = t.element;
-      if (!this.moveService.canMove(h))
-        return;
-      const S = l.clientX || l.touches && ((T = l.touches[0]) == null ? void 0 : T.clientX) || 0, E = l.clientY || l.touches && ((N = l.touches[0]) == null ? void 0 : N.clientY) || 0, y = (R) => {
-        const G = this.boardService.element, Y = G.offsetWidth / 8;
-        let ne, re;
-        R.touches && R.touches[0] ? (ne = R.touches[0].clientX, re = R.touches[0].clientY) : (ne = R.clientX, re = R.clientY);
-        const oe = G.getBoundingClientRect(), ee = ne - oe.left - Y / 2, ae = re - oe.top - Y / 2;
-        return g.style.left = `${ee}px`, g.style.top = `${ae}px`, !0;
-      }, p = (R) => {
-        const G = R.clientX || 0, Y = R.clientY || 0, ne = Math.abs(G - S), re = Math.abs(Y - E);
-        if (!d && (ne > 3 || re > 3)) {
-          d = !0, this.config.clickable && h.select();
-          const ce = window.getComputedStyle(g), ut = ce.width, dt = ce.height;
-          if (g.style.position = "absolute", g.style.zIndex = "100", g.classList.add("dragging"), g.style.width = ut, g.style.height = dt, _e.enableForDrag(g), !i(e, t))
-            return;
+      const l = t.element, d = h.clientX || ((E = (g = h.touches) == null ? void 0 : g[0]) == null ? void 0 : E.clientX) || 0, u = h.clientY || ((L = (k = h.touches) == null ? void 0 : k[0]) == null ? void 0 : L.clientY) || 0;
+      let m = !1, f = null, p = null;
+      const b = (N, F) => {
+        const H = this.boardService.element, G = H.getBoundingClientRect(), se = G.width / 8, fe = N - G.left - se / 2, me = F - G.top - se / 2;
+        l.style.left = `${fe}px`, l.style.top = `${me}px`;
+        const ne = N - G.left, re = F - G.top;
+        if (ne >= 0 && ne <= G.width && re >= 0 && re <= G.height) {
+          const oe = this.coordinateService.pixelToSquareID(ne, re, H);
+          f = oe ? this.boardService.getSquare(oe) : null;
+        } else
+          f = null;
+        f !== p && (p == null || p.dehighlight(), f == null || f.highlight(), p = f);
+      }, w = (N) => {
+        var G, se, fe, me;
+        const F = N.clientX || ((se = (G = N.touches) == null ? void 0 : G[0]) == null ? void 0 : se.clientX) || 0, H = N.clientY || ((me = (fe = N.touches) == null ? void 0 : fe[0]) == null ? void 0 : me.clientY) || 0;
+        if (!m) {
+          const ne = Math.abs(F - d), re = Math.abs(H - u);
+          if (ne > 3 || re > 3) {
+            m = !0, this.isDragging = !0, e.select();
+            const oe = window.getComputedStyle(l);
+            l.style.position = "absolute", l.style.zIndex = "100", l.style.width = oe.width, l.style.height = oe.height, l.classList.add("dragging"), De.enableForDrag(l), i(e, t);
+          }
         }
-        if (!d) return;
-        y(R);
-        const oe = this.boardService.element, ee = oe.getBoundingClientRect(), ae = R.clientX - ee.left, Me = R.clientY - ee.top;
-        let Ve = null;
-        if (ae >= 0 && ae <= ee.width && Me >= 0 && Me <= ee.height) {
-          const ce = this.coordinateService.pixelToSquareID(ae, Me, oe);
-          Ve = ce ? this.boardService.getSquare(ce) : null;
-        }
-        m = Ve, s(h, m, t), m !== f && (m == null || m.highlight(), f == null || f.dehighlight(), f = m);
-      }, C = () => {
-        if (f == null || f.dehighlight(), document.removeEventListener("mousemove", p), window.removeEventListener("mouseup", C), g.removeEventListener("mouseup", C), !d)
+        m && (b(F, H), s(e, f, t));
+      }, S = () => {
+        if (document.removeEventListener("mousemove", w), document.removeEventListener("touchmove", w), window.removeEventListener("mouseup", S), window.removeEventListener("touchend", S), p == null || p.dehighlight(), !m) {
+          this.isDragging = !1;
           return;
-        console.log("onMouseUp: Handling drag completion for piece at", u.id), g.style.zIndex = "20", g.classList.remove("dragging"), g.style.willChange = "auto", _e.cleanupAfterDrag(g), this.isDragging = !1, this.clicked = null;
-        const R = n(u, m, t);
-        !m && (this.config.dropOffBoard === "trash" || R === "trash") ? this._handleTrashDrop(u, c) : m ? this._handleDrop(u, m, t, o, r) : (g.style.position = "", g.style.left = "", g.style.top = "", g.style.transform = "", g.style.width = "", g.style.height = "", _e.cleanupAfterDrag(g), this._handleSnapback(u, t, r), this._cleanupAfterFailedMove(u));
+        }
+        l.classList.remove("dragging"), l.style.zIndex = "20", l.style.willChange = "auto", De.cleanupAfterDrag(l), this.isDragging = !1;
+        const N = n(e, f, t);
+        if (!f) {
+          this.config.dropOffBoard === "trash" || N === "trash" ? (this._resetPiecePosition(l), c(e)) : (this._resetPiecePosition(l), r(e, t)), e.deselect(), this.boardService.applyToAllSquares("removeHint");
+          return;
+        }
+        this._handleMove(e, f, t, o, r);
       };
-      window.addEventListener("mouseup", C, { once: !0 }), document.addEventListener("mousemove", p), g.addEventListener("mouseup", C, { once: !0 });
+      document.addEventListener("mousemove", w), document.addEventListener("touchmove", w, { passive: !1 }), window.addEventListener("mouseup", S), window.addEventListener("touchend", S);
     };
   }
   /**
-   * Handles trash drop (piece removal)
+   * Resets piece position after failed drag
    * @private
-   * @param {Square} fromSquare - Source square
-   * @param {Function} onRemove - Callback to remove piece
    */
-  _handleTrashDrop(e, t) {
-    this.boardService.applyToAllSquares("unmoved"), this.boardService.applyToAllSquares("removeHint"), e.deselect(), this.clicked = null, t && t(e.getId()), v.debug("EventService: Trash drop executed, state cleaned up");
+  _resetPiecePosition(e) {
+    e.style.position = "", e.style.left = "", e.style.top = "", e.style.transform = "", e.style.width = "", e.style.height = "";
   }
   /**
-   * Handles snapback animation
+   * Handles a move attempt (from drag or click)
    * @private
-   * @param {Square} fromSquare - Source square
-   * @param {Piece} piece - Piece to snapback
-   * @param {Function} onSnapback - Snapback callback
    */
-  _handleSnapback(e, t, i) {
-    e && e.piece && i && i(e, t), v.debug("EventService: Snapback executed, cleaning up state");
-  }
-  /**
-   * Handles successful drop
-   * @private
-   * @param {Square} fromSquare - Source square
-   * @param {Square} toSquare - Target square
-   * @param {Piece} piece - Piece being dropped
-   * @param {Function} onMove - Move callback
-   * @param {Function} onSnapback - Snapback callback
-   */
-  _handleDrop(e, t, i, s, n) {
-    if (console.log("=== _handleDrop CALLED ==="), console.log("From:", e.id, "To:", t.id), console.log("Piece:", i ? `${i.color}${i.type}` : "null"), console.log("Stack trace:", new Error().stack.split(`
-`)[1]), console.log("Caller:", new Error().stack.split(`
-`)[2]), this.isAnimating || this._isProcessingDrop) {
-      console.log("Drop ignored - already processing or animating");
-      return;
-    }
-    this._isProcessingDrop = !0;
+  _handleMove(e, t, i, s, n) {
+    if (this.isProcessing) return;
+    this.isProcessing = !0;
     const r = () => {
-      this._isProcessingDrop = !1;
-    };
-    try {
-      this.moveService.requiresPromotion(new Q(e, t)) ? (v.debug("Drag move requires promotion:", e.id, "->", t.id), this.moveService.setupPromotion(
-        new Q(e, t),
-        this.boardService.squares,
-        (o) => {
-          v.debug("Drag promotion selected:", o), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(e, t, o, !0) ? (this._schedulePromotionPieceReplacement(t, o), this._cleanupAfterSuccessfulMove(e)) : (this._handleSnapback(e, i, n), this._cleanupAfterFailedMove(e)), r();
-        },
-        () => {
-          v.debug("Drag promotion cancelled"), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), this._handleSnapback(e, i, n), this._cleanupAfterFailedMove(e), r();
-        }
-      )) : (s(e, t, null, !0) ? this._cleanupAfterSuccessfulMove(e) : (this._handleSnapback(e, i, n), this._cleanupAfterFailedMove(e)), r());
-    } catch (o) {
-      console.error("Error in _handleDrop:", o), r();
-    }
-  }
-  /**
-   * Cleans up visual state after a SUCCESSFUL move
-   * @private
-   * @param {Square} fromSquare - Source square
-   */
-  _cleanupAfterSuccessfulMove(e) {
-    this.clicked = null, this.isDragging = !1, e && e.deselect(), this.boardService.applyToAllSquares("removeHint"), this.boardService.applyToAllSquares("dehighlight"), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), v.debug("EventService: All visual state cleaned up after SUCCESSFUL move");
-  }
-  /**
-   * Cleans up visual state after a FAILED move (snapback, invalid move)
-   * @private
-   * @param {Square} fromSquare - Source square
-   */
-  _cleanupAfterFailedMove(e) {
-    this.clicked = null, this.isDragging = !1, this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), this.boardService.applyToAllSquares("removeHint"), e && e.deselect(), v.debug("EventService: Conservative cleanup after FAILED move");
-  }
-  /**
-   * Animates piece to center of target square (visual only)
-   * @private
-   * @param {Piece} piece - Piece to animate
-   * @param {Square} targetSquare - Target square
-   * @param {Function} callback - Callback when animation completes
-   */
-  _animatePieceToCenter(e, t, i = null) {
-    if (!e || !t) {
-      i && i();
+      this.isProcessing = !1, this.selectedSquare = null, e.deselect(), this.boardService.applyToAllSquares("removeHint");
+    }, o = new Z(e, t);
+    if (this.moveService.requiresPromotion(o)) {
+      this._handlePromotion(e, t, i, s, n, r);
       return;
     }
-    const s = this.config.dropCenterTime, n = e.element.getBoundingClientRect(), r = t.element.getBoundingClientRect(), o = n.left + n.width / 2, c = n.top + n.height / 2, l = r.left + r.width / 2, u = r.top + r.height / 2, d = l - o, h = u - c;
-    if (Math.abs(d) < 1 && Math.abs(h) < 1) {
-      e.element.style.position = "", e.element.style.left = "", e.element.style.top = "", e.element.style.transform = "", e.element.style.zIndex = "", i && i();
-      return;
-    }
-    const m = [
-      { transform: "translate(0, 0)" },
-      { transform: `translate(${d}px, ${h}px)` }
-    ];
-    if (e.element.animate) {
-      const f = e.element.animate(m, {
-        duration: s,
-        easing: "ease",
-        fill: "none"
-        // Don't keep the final position
+    s(e, t, null, !0) || (this._resetPiecePosition(i.element), n(e, i)), r();
+  }
+  /**
+   * Handles promotion move
+   * @private
+   */
+  _handlePromotion(e, t, i, s, n, r) {
+    this.moveService.setupPromotion(
+      new Z(e, t),
+      this.boardService.squares,
+      (o) => {
+        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(e, t, o, !0) ? this._updatePromotedPiece(t, o) : (this._resetPiecePosition(i.element), n(e, i)), r();
+      },
+      () => {
+        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), this._resetPiecePosition(i.element), n(e, i), r();
+      }
+    );
+  }
+  /**
+   * Updates piece after promotion
+   * @private
+   */
+  _updatePromotedPiece(e, t) {
+    setTimeout(() => {
+      const i = this.boardService.getSquare(e.id);
+      if (!(i != null && i.piece)) return;
+      const n = this.chessboard.positionService.getGame().get(e.id);
+      if (!n) return;
+      const r = t + n.color, o = this.chessboard.pieceService.getPiecePath(r);
+      i.piece.transformTo(t, o, 200, () => {
+        const c = this.chessboard._createDragFunction.bind(this.chessboard);
+        i.piece.setDrag(c(i, i.piece));
       });
-      f.onfinish = () => {
-        if (!e.element) {
-          i && i();
-          return;
-        }
-        e.element.style.position = "", e.element.style.left = "", e.element.style.top = "", e.element.style.transform = "", e.element.style.zIndex = "", e.element.style.transition = "", i && i();
-      };
-    } else
-      e.element.style.transition = `transform ${s}ms ease`, e.element.style.transform = `translate(${d}px, ${h}px)`, setTimeout(() => {
-        if (!e.element) {
-          i && i();
-          return;
-        }
-        e.element.style.position = "relative", e.element.style.left = "0", e.element.style.top = "0", e.element.style.transform = "translate(-50%, -50%)", e.element.style.zIndex = "20", e.element.style.transition = "none", i && i();
-      }, s);
+    }, 100);
   }
   /**
    * Handles square click events
-   * @param {Square} square - Clicked square
-   * @param {Function} onMove - Move callback
-   * @param {Function} onSelect - Select callback
-   * @param {Function} onDeselect - Deselect callback
-   * @param {boolean} [animate=true] - Whether to animate the move
-   * @returns {boolean} True if move was successful
    */
   onClick(e, t, i, s, n = !0) {
-    var l, u, d;
-    if (this.isDragging = !1, this.isAnimating)
-      return v.debug("EventService.onClick: Ignoring click during animation"), !1;
-    v.debug("=== EventService.onClick START ==="), v.debug(
-      "EventService.onClick: square =",
-      e.id,
-      "clicked =",
-      ((l = this.clicked) == null ? void 0 : l.id) || "none",
-      "isAnimating =",
-      this.isAnimating
-    ), v.debug(
-      "EventService.onClick: Square piece =",
-      e.piece ? `${e.piece.color}${e.piece.type}` : "empty"
-    ), v.debug(
-      "EventService.onClick: Clicked square piece =",
-      (u = this.clicked) != null && u.piece ? `${this.clicked.piece.color}${this.clicked.piece.type}` : this.clicked ? "empty" : "none"
-    );
-    let r = this.clicked, o = null;
-    return this.promoting && (this.promoting === "none" ? r = null : o = this.promoting, this.promoting = !1, this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover")), r ? (v.debug("EventService.onClick: We have a source square:", r.id, "target:", e.id), this.clicked === e ? (s(e), this.clicked = null, !1) : !o && this.moveService.requiresPromotion(new Q(r, e)) ? (v.debug("Move requires promotion:", r.id, "->", e.id), this.moveService.setupPromotion(
-      new Q(r, e),
-      this.boardService.squares,
-      (h) => {
-        v.debug("Promotion selected:", h), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), t(r, e, h, n) && (this._schedulePromotionPieceReplacement(e, h), s(r), this.clicked = null);
-      },
-      () => {
-        v.debug("Promotion cancelled"), this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(r), this.clicked = null;
-      }
-    ), !1) : (v.debug("EventService.onClick: Attempting move from", r.id, "to", e.id), v.debug("EventService.onClick: Current game state before move attempt"), t(r, e, o, n) ? (v.debug("EventService.onClick: Move successful"), s(r), this.clicked = null, v.debug("=== EventService.onClick END (move successful) ==="), !0) : (v.debug(
-      "EventService.onClick: Move failed from",
-      r.id,
-      "to",
-      e.id,
-      "- resetting state"
-    ), s(r), this.clicked = null, this.isDragging = !1, this.boardService.applyToAllSquares("removeHint"), this.moveService.canMove(e) ? (v.debug("EventService.onClick: Can select new piece at", e.id), this.clicked = e, this.config.clickable && (i(e), v.debug("EventService.onClick: New piece selected visually:", e.id)), v.debug("EventService.onClick: New piece selected at", e.id)) : v.debug(
-      "EventService.onClick: Cannot select piece at",
-      e.id,
-      "- staying deselected"
-    ), v.debug("=== EventService.onClick END (move failed) ==="), !1))) : (v.debug("EventService.onClick: No source square, checking if can move:", e.id), this.moveService.canMove(e) ? (v.debug("EventService.onClick: Can move! Setting clicked to:", e.id), this.clicked = e, this.config.clickable && (i(e), v.debug("EventService.onClick: Square selected visually:", e.id)), v.debug("EventService.onClick: After setting, clicked =", ((d = this.clicked) == null ? void 0 : d.id) || "none"), !1) : (v.debug("EventService.onClick: Cannot move square:", e.id), !1));
-  }
-  /**
-   * Schedules piece replacement after promotion animation
-   * @private
-   * @param {Square} square - Target square
-   * @param {string} promotionPiece - Piece to promote to
-   */
-  _schedulePromotionPieceReplacement(e, t) {
-    this.chessboard._isPromoting = !0, this._waitForPieceAndReplace(e, t, 0);
-  }
-  /**
-   * Waits for piece to be present and then replaces it
-   * @private
-   * @param {Square} square - Target square
-   * @param {string} promotionPiece - Piece to promote to
-   * @param {number} attempt - Current attempt number
-   */
-  _waitForPieceAndReplace(e, t, i) {
-    const n = this.boardService.getSquare(e.id);
-    if (!n) {
-      v.warn("Target square not found:", e.id), this.chessboard._isPromoting = !1;
-      return;
-    }
-    if (n.piece && n.piece.element) {
-      v.debug("Piece found on", e.id, "after", i, "attempts"), this._replacePromotionPiece(e, t), setTimeout(() => {
-        this.chessboard._isPromoting = !1, v.debug("Promotion protection ended"), this.chessboard._updateBoardPieces(!1);
-      }, 400);
-      return;
-    }
-    i < 20 ? setTimeout(() => {
-      this._waitForPieceAndReplace(e, t, i + 1);
-    }, 50) : (v.warn("Failed to find piece for promotion after", 20, "attempts"), this.chessboard._isPromoting = !1, this.chessboard._updateBoardPieces(!1));
-  }
-  /**
-   * Replaces the piece on the square with the promotion piece
-   * @private
-   * @param {Square} square - Target square
-   * @param {string} promotionPiece - Piece to promote to
-   */
-  _replacePromotionPiece(e, t) {
-    v.debug("Replacing piece on", e.id, "with", t);
-    const i = this.boardService.getSquare(e.id);
-    if (!i) {
-      v.debug("Target square not found:", e.id);
-      return;
-    }
-    const n = this.chessboard.positionService.getGame().get(i.id);
-    if (!n) {
-      v.debug("No piece found in game state for", i.id);
-      return;
-    }
-    const r = i.piece;
-    if (!r) {
-      v.warn("No piece found on target square for promotion");
-      const l = t + n.color, u = this.chessboard.pieceService.getPiecePath(l), d = new we(n.color, t, u);
-      i.putPiece(d);
-      const h = this.chessboard._createDragFunction.bind(this.chessboard);
-      d.setDrag(h(i, d)), v.debug("Created new promotion piece:", l, "on", i.id);
-      return;
-    }
-    const o = t + n.color, c = this.chessboard.pieceService.getPiecePath(o);
-    v.debug("Transforming piece to:", o, "with path:", c), r.transformTo(
+    if (this.isProcessing || this.isDragging)
+      return !1;
+    if (!this.selectedSquare)
+      return this.moveService.canMove(e) && (this.selectedSquare = e, i(e)), !1;
+    if (this.selectedSquare === e)
+      return s(e), this.selectedSquare = null, !1;
+    const r = this.selectedSquare, o = new Z(r, e);
+    return this.moveService.requiresPromotion(o) ? (this._handlePromotion(
+      r,
+      e,
+      r.piece,
       t,
-      c,
-      300,
-      // Duration of the transformation animation
       () => {
-        const l = this.chessboard._createDragFunction.bind(this.chessboard);
-        r.setDrag(l(i, r)), this.config.hints && this.chessboard.moveService && setTimeout(() => {
-          this.chessboard.moveService.clearCache();
-        }, 100), v.debug("Successfully transformed piece on", i.id, "to", o);
+      },
+      // No snapback needed for click moves
+      () => {
+        s(r), this.selectedSquare = null;
       }
-    );
+    ), !1) : t(r, e, null, n) ? (s(r), this.selectedSquare = null, !0) : (s(r), this.selectedSquare = null, this.boardService.applyToAllSquares("removeHint"), this.moveService.canMove(e) && (this.selectedSquare = e, i(e)), !1);
   }
-  /**
-   * Sets the clicked square
-   * @param {Square|null} square - Square to set as clicked
-   */
+  // State management
   setClicked(e) {
-    this.clicked = e;
+    this.selectedSquare = e;
   }
-  /**
-   * Gets the currently clicked square
-   * @returns {Square|null} Currently clicked square
-   */
   getClicked() {
-    return this.clicked;
+    return this.selectedSquare;
   }
-  /**
-   * Sets the promotion state
-   * @param {string|boolean} promotion - Promotion piece type or false
-   */
   setPromoting(e) {
-    this.promoting = e;
   }
-  /**
-   * Gets the promotion state
-   * @returns {string|boolean} Current promotion state
-   */
   getPromoting() {
-    return this.promoting;
+    return !1;
   }
-  /**
-   * Sets the animation state
-   * @param {boolean} isAnimating - Whether animations are in progress
-   */
   setAnimating(e) {
-    this.isAnimating = e;
   }
-  /**
-   * Gets the animation state
-   * @returns {boolean} Whether animations are in progress
-   */
   getAnimating() {
-    return this.isAnimating;
+    return this.isProcessing;
   }
   /**
-   * Removes all existing event listeners
+   * Removes all event listeners
    */
   removeListeners() {
     this.eventListeners.forEach((e) => {
@@ -2487,31 +1850,24 @@ class Mt {
       });
     }), this.eventListeners.clear();
   }
-  /**
-   * Removes all event listeners
-   */
   removeAllListeners() {
-    this.eventListeners.forEach((e) => {
-      e.forEach(({ element: t, type: i, handler: s }) => {
-        t.removeEventListener(i, s);
-      });
-    }), this.eventListeners.clear();
+    this.removeListeners();
   }
   /**
    * Cleans up resources
    */
   destroy() {
-    this.removeAllListeners(), this.clicked = null, this.promoting = !1, this.isAnimating = !1, this.isDragging = !1;
+    this.removeAllListeners(), this.selectedSquare = null, this.isDragging = !1, this.isProcessing = !1;
   }
 }
-class Tt {
+class Pt {
   /**
    * Creates a new MoveService instance
    * @param {ChessboardConfig} config - Board configuration
    * @param {PositionService} positionService - Position service instance
    */
   constructor(e, t) {
-    this.config = e, this.positionService = t, this._movesCache = /* @__PURE__ */ new Map(), this._cacheTimeout = null, this._lastPromotionCheck = null, this._lastPromotionResult = null, this._promotionCheckTimeout = null, this._recentMoves = /* @__PURE__ */ new Set(), this._recentMovesTimeout = null;
+    this.config = e, this.positionService = t, this._movesCache = /* @__PURE__ */ new Map(), this._cacheTimeout = null;
   }
   /**
    * Checks if a piece on a square can move
@@ -2536,15 +1892,15 @@ class Tt {
    * @throws {MoveError} When move format is invalid
    */
   convertMove(e, t) {
-    if (e instanceof Q)
+    if (e instanceof Z)
       return e;
     if (typeof e == "string" && e.length >= 4) {
       const i = e.slice(0, 2), s = e.slice(2, 4), n = e.slice(4, 5) || null;
       if (!t[i] || !t[s])
-        throw new Ke(P.invalid_move_format, i, s);
-      return new Q(t[i], t[s], n);
+        throw new He(P.invalid_move_format, i, s);
+      return new Z(t[i], t[s], n);
     }
-    throw new Ke(P.invalid_move_format, "unknown", "unknown");
+    throw new He(P.invalid_move_format, "unknown", "unknown");
   }
   /**
    * Checks if a move is legal
@@ -2600,13 +1956,7 @@ class Tt {
       from: e.from.id,
       to: e.to.id
     };
-    console.log("executeMove - move.promotion:", e.promotion), console.log("executeMove - move.hasPromotion():", e.hasPromotion()), e.hasPromotion() && (i.promotion = e.promotion), console.log("executeMove - moveOptions:", i);
-    const s = t.move(i);
-    if (console.log("executeMove - result:", s), s) {
-      const n = t.get(e.to.id);
-      console.log("executeMove - piece on destination after move:", n);
-    }
-    return s;
+    return e.hasPromotion() && (i.promotion = e.promotion), t.move(i);
   }
   /**
    * Checks if a move requires promotion
@@ -2614,63 +1964,17 @@ class Tt {
    * @returns {boolean} True if promotion is required
    */
   requiresPromotion(e) {
-    const t = `${e.from.id}->${e.to.id}`;
-    console.log("Checking if move requires promotion:", t);
-    const i = new Error().stack.split(`
-`);
-    console.log("Call stack:", i[1]), console.log("Caller:", i[2]), console.log("Caller 2:", i[3]), console.log("Caller 3:", i[4]);
-    const s = Date.now();
-    if (this._recentMoves.has(t))
-      return console.log("Move recently processed, skipping duplicate check"), !1;
-    if (this._lastPromotionCheck === t && this._lastPromotionResult !== null && s - this._lastPromotionTime < 100)
-      return console.log("Using cached promotion result:", this._lastPromotionResult), this._lastPromotionResult;
-    this._recentMoves.add(t);
-    const n = this._doRequiresPromotion(e);
-    return this._lastPromotionCheck = t, this._lastPromotionResult = n, this._lastPromotionTime = s, this._promotionCheckTimeout && clearTimeout(this._promotionCheckTimeout), this._promotionCheckTimeout = setTimeout(() => {
-      this._lastPromotionCheck = null, this._lastPromotionResult = null;
-    }, 500), this._recentMovesTimeout && clearTimeout(this._recentMovesTimeout), this._recentMovesTimeout = setTimeout(() => {
-      this._recentMoves.clear();
-    }, 1e3), n;
-  }
-  /**
-   * Internal promotion check logic
-   * @private
-   * @param {Move} move - Move to check
-   * @returns {boolean} True if promotion is required
-   */
-  _doRequiresPromotion(e) {
+    var o;
     if (!this.config.onlyLegalMoves)
-      return console.log("Not in legal moves mode, no promotion required"), !1;
-    const t = this.positionService.getGame();
+      return !1;
+    const t = (o = this.positionService) == null ? void 0 : o.getGame();
     if (!t)
-      return console.log("No game instance available"), !1;
+      return !1;
     const i = t.get(e.from.id);
     if (!i || i.type !== "p")
-      return console.log("Not a pawn move, no promotion required"), !1;
+      return !1;
     const s = e.to.row;
-    if (s !== 1 && s !== 8)
-      return console.log("Not reaching promotion rank, no promotion required"), !1;
-    if (console.log("Pawn reaching promotion rank - promotion required"), !this._isPawnMoveValid(e.from, e.to, i.color))
-      return console.log("Pawn move not valid, no promotion required"), !1;
-    const r = t.moves({ square: e.from.id, verbose: !0 }).find((c) => c.to === e.to.id);
-    if (!r)
-      return console.log("Move not in legal moves list, no promotion required"), !1;
-    const o = r.flags.includes("p") || i.color === "w" && s === 8 || i.color === "b" && s === 1;
-    return console.log("Promotion required:", o), o;
-  }
-  /**
-   * Validates if a pawn move is theoretically possible
-   * @private
-   * @param {Square} from - Source square
-   * @param {Square} to - Target square
-   * @param {string} color - Pawn color ('w' or 'b')
-   * @returns {boolean} True if the move is valid for a pawn
-   */
-  _isPawnMoveValid(e, t, i) {
-    const s = e.row, n = t.row, r = e.col, o = t.col;
-    console.log(`Validating pawn move: ${e.id} -> ${t.id} (${i})`), console.log(`Ranks: ${s} -> ${n}, Files: ${r} -> ${o}`);
-    const c = i === "w" ? 1 : -1, l = n - s, u = Math.abs(o - r);
-    return l * c <= 0 ? (console.log("Invalid: Pawn cannot move backward or stay in place"), !1) : Math.abs(l) > 2 ? (console.log("Invalid: Pawn cannot move more than 2 ranks"), !1) : Math.abs(l) === 2 && s !== (i === "w" ? 2 : 7) ? (console.log(`Invalid: Pawn cannot move 2 ranks from rank ${s}`), !1) : u > 1 ? (console.log("Invalid: Pawn cannot move more than 1 file"), !1) : (console.log("Pawn move validation passed"), !0);
+    return i.color === "w" && s !== 8 || i.color === "b" && s !== 1 ? !1 : !!t.moves({ square: e.from.id, verbose: !0 }).find((c) => c.to === e.to.id);
   }
   /**
    * Handles promotion UI setup
@@ -2681,11 +1985,14 @@ class Tt {
    * @returns {boolean} True if promotion UI was set up
    */
   setupPromotion(e, t, i, s) {
-    if (!this.requiresPromotion(e) || !this.positionService || !this.positionService.getGame())
-      return !1;
-    const r = this.positionService.getGame().get(e.from.id), o = e.to;
-    return Object.values(t).forEach((c) => {
-      c.removePromotion(), c.removeCover();
+    var c;
+    const n = (c = this.positionService) == null ? void 0 : c.getGame();
+    if (!n) return !1;
+    const r = n.get(e.from.id);
+    if (!r) return !1;
+    const o = e.to;
+    return Object.values(t).forEach((h) => {
+      h.removePromotion(), h.removeCover();
     }), this._showPromotionInColumn(o, r, t, i, s), !0;
   }
   /**
@@ -2693,15 +2000,14 @@ class Tt {
    * @private
    */
   _showPromotionInColumn(e, t, i, s, n) {
-    return console.log("Setting up promotion for", e.id, "piece color:", t.color), pt.forEach((r, o) => {
+    return dt.forEach((r, o) => {
       const c = this._findPromotionSquare(e, o, i);
       if (c) {
-        const l = r + t.color, u = this._getPiecePathForPromotion(l);
-        console.log("Setting up promotion choice:", r, "on square:", c.id), c.putPromotion(u, () => {
-          console.log("Promotion choice selected:", r), s(r);
+        const h = r + t.color, l = this._getPiecePathForPromotion(h);
+        c.putPromotion(l, () => {
+          s(r);
         });
-      } else
-        console.log("Could not find square for promotion choice:", r, "index:", o);
+      }
     }), Object.values(i).forEach((r) => {
       r.hasPromotion() || r.putCover(() => {
         n();
@@ -2718,29 +2024,19 @@ class Tt {
    */
   _findPromotionSquare(e, t, i) {
     const s = e.col, n = e.row;
-    console.log(
-      "Looking for promotion square - target:",
-      e.id,
-      "index:",
-      t,
-      "col:",
-      s,
-      "baseRow:",
-      n
-    );
     let r;
     if (n === 8)
       r = 8 - t;
     else if (n === 1)
       r = 1 + t;
     else
-      return console.log("Invalid promotion row:", n), null;
-    if (console.log("Calculated row:", r), r < 1 || r > 8)
-      return console.log("Row out of bounds:", r), null;
+      return null;
+    if (r < 1 || r > 8)
+      return null;
     for (const o of Object.values(i))
       if (o.col === s && o.row === r)
-        return console.log("Found promotion square:", o.id), o;
-    return console.log("No square found for col:", s, "row:", r), null;
+        return o;
+    return null;
   }
   /**
    * Gets piece path for promotion UI
@@ -2818,7 +2114,7 @@ class Tt {
     this.clearCache(), this.positionService = null;
   }
 }
-class At {
+class Et {
   /**
    * Creates a new PieceService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -2840,7 +2136,7 @@ class At {
       return t[e];
     if (typeof t == "function")
       return t(e);
-    throw new k(P.invalid_piecesPath, "piecesPath", t);
+    throw new C(P.invalid_piecesPath, "piecesPath", t);
   }
   /**
    * Converts various piece formats to a Piece instance
@@ -2849,21 +2145,21 @@ class At {
    * @throws {PieceError} When piece format is invalid
    */
   convertPiece(e) {
-    if (e instanceof we)
+    if (e instanceof Oe)
       return e;
     if (typeof e == "string" && e.length === 2) {
       const [t, i] = e.split("");
       let s, n;
-      if (Se.includes(t.toLowerCase()) && ye.includes(i))
+      if (be.includes(t.toLowerCase()) && Se.includes(i))
         s = t.toLowerCase(), n = i;
-      else if (ye.includes(t) && Se.includes(i.toLowerCase()))
+      else if (Se.includes(t) && be.includes(i.toLowerCase()))
         n = t, s = i.toLowerCase();
       else
-        throw new Te(P.invalid_piece + e, e);
+        throw new Ce(P.invalid_piece + e, e);
       const r = this.getPiecePath(s + n);
-      return new we(n, s, r);
+      return new Oe(n, s, r);
     }
-    throw new Te(P.invalid_piece + e, e);
+    throw new Ce(P.invalid_piece + e, e);
   }
   /**
    * Adds a piece to a square with optional fade-in animation
@@ -2874,7 +2170,7 @@ class At {
    * @param {Function} [callback] - Callback when animation completes
    */
   addPieceOnSquare(e, t, i = !0, s, n) {
-    console.debug(`[PieceService] addPieceOnSquare: ${t.id} to ${e.id}`), e.putPiece(t), s && t.setDrag(s(e, t)), i && this.config.fadeTime > 0 ? t.fadeIn(
+    e.putPiece(t), s && t.setDrag(s(e, t)), i && this.config.fadeTime > 0 ? t.fadeIn(
       this.config.fadeTime,
       this.config.fadeAnimation,
       this._getTransitionTimingFunction(),
@@ -2890,10 +2186,10 @@ class At {
    * @throws {PieceError} When square has no piece to remove
    */
   removePieceFromSquare(e, t = !0, i) {
-    console.debug(`[PieceService] removePieceFromSquare: ${e.id}`), e.check();
+    e.check();
     const s = e.piece;
     if (!s)
-      throw i && i(), new Te(P.square_no_piece, null, e.getId());
+      throw i && i(), new Ce(P.square_no_piece, null, e.getId());
     return t && this.config.fadeTime > 0 ? s.fadeOut(
       this.config.fadeTime,
       this.config.fadeAnimation,
@@ -2909,8 +2205,8 @@ class At {
    * @param {Function} [callback] - Callback function when animation completes
    */
   movePiece(e, t, i, s) {
-    if (console.debug(`[PieceService] movePiece: ${e.id} to ${t.id}`), !e) {
-      console.warn("PieceService.movePiece: piece is null, skipping animation"), s && s();
+    if (!e) {
+      s && s();
       return;
     }
     e.translate(
@@ -2930,10 +2226,8 @@ class At {
    * @param {Function} [callback] - Callback function when complete
    */
   translatePiece(e, t, i, s = null, n = null) {
-    if (console.debug(
-      `[PieceService] translatePiece: ${e.piece.id} from ${e.from.id} to ${e.to.id}`
-    ), !e.piece) {
-      console.warn("PieceService.translatePiece: move.piece is null, skipping translation"), n && n();
+    if (!e.piece) {
+      n && n();
       return;
     }
     t && (e.to.deselect(), this.removePieceFromSquare(e.to, !1));
@@ -2956,7 +2250,7 @@ class At {
     if (!e || !e.piece)
       return;
     const i = e.piece, s = t ? this.config.snapbackTime : 0;
-    console.debug(`[PieceService] snapbackPiece: ${i.id} on ${e.id}`), i.translate(
+    i.translate(
       e,
       s,
       this._getTransitionTimingFunction(),
@@ -2972,13 +2266,13 @@ class At {
     if (!e || !e.piece)
       return;
     const i = e.piece, s = t ? this.config.dropCenterTime : 0;
-    console.debug(`[PieceService] centerPiece: ${i.id} on ${e.id}`), i.translate(
+    i.translate(
       e,
       s,
       this._getTransitionTimingFunction(),
       this.config.dropCenterAnimation,
       () => {
-        i.element && (i.element.style.position = "", i.element.style.left = "", i.element.style.top = "", i.element.style.transform = "", i.element.style.zIndex = "", i.element.style.width = "", i.element.style.height = "", i.element.classList.remove("dragging"), _e.cleanupAfterDrag(i.element));
+        i.element && (i.element.style.position = "", i.element.style.left = "", i.element.style.top = "", i.element.style.transform = "", i.element.style.zIndex = "", i.element.style.width = "", i.element.style.height = "", i.element.classList.remove("dragging"), De.cleanupAfterDrag(i.element));
       }
     );
   }
@@ -3038,52 +2332,52 @@ class At {
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-const O = "w", B = "b", A = "p", Le = "n", be = "b", ue = "r", W = "q", M = "k", Re = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const R = "w", x = "b", T = "p", Le = "n", _e = "b", he = "r", Q = "q", M = "k", ke = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 class ge {
   constructor(e, t) {
-    w(this, "color");
-    w(this, "from");
-    w(this, "to");
-    w(this, "piece");
-    w(this, "captured");
-    w(this, "promotion");
+    y(this, "color");
+    y(this, "from");
+    y(this, "to");
+    y(this, "piece");
+    y(this, "captured");
+    y(this, "promotion");
     /**
      * @deprecated This field is deprecated and will be removed in version 2.0.0.
      * Please use move descriptor functions instead: `isCapture`, `isPromotion`,
      * `isEnPassant`, `isKingsideCastle`, `isQueensideCastle`, `isCastle`, and
      * `isBigPawn`
      */
-    w(this, "flags");
-    w(this, "san");
-    w(this, "lan");
-    w(this, "before");
-    w(this, "after");
-    const { color: i, piece: s, from: n, to: r, flags: o, captured: c, promotion: l } = t, u = D(n), d = D(r);
-    this.color = i, this.piece = s, this.from = u, this.to = d, this.san = e._moveToSan(t, e._moves({ legal: !0 })), this.lan = u + d, this.before = e.fen(), e._makeMove(t), this.after = e.fen(), e._undoMove(), this.flags = "";
-    for (const h in b)
-      b[h] & o && (this.flags += J[h]);
-    c && (this.captured = c), l && (this.promotion = l, this.lan += l);
+    y(this, "flags");
+    y(this, "san");
+    y(this, "lan");
+    y(this, "before");
+    y(this, "after");
+    const { color: i, piece: s, from: n, to: r, flags: o, captured: c, promotion: h } = t, l = A(n), d = A(r);
+    this.color = i, this.piece = s, this.from = l, this.to = d, this.san = e._moveToSan(t, e._moves({ legal: !0 })), this.lan = l + d, this.before = e.fen(), e._makeMove(t), this.after = e.fen(), e._undoMove(), this.flags = "";
+    for (const u in _)
+      _[u] & o && (this.flags += Y[u]);
+    c && (this.captured = c), h && (this.promotion = h, this.lan += h);
   }
   isCapture() {
-    return this.flags.indexOf(J.CAPTURE) > -1;
+    return this.flags.indexOf(Y.CAPTURE) > -1;
   }
   isPromotion() {
-    return this.flags.indexOf(J.PROMOTION) > -1;
+    return this.flags.indexOf(Y.PROMOTION) > -1;
   }
   isEnPassant() {
-    return this.flags.indexOf(J.EP_CAPTURE) > -1;
+    return this.flags.indexOf(Y.EP_CAPTURE) > -1;
   }
   isKingsideCastle() {
-    return this.flags.indexOf(J.KSIDE_CASTLE) > -1;
+    return this.flags.indexOf(Y.KSIDE_CASTLE) > -1;
   }
   isQueensideCastle() {
-    return this.flags.indexOf(J.QSIDE_CASTLE) > -1;
+    return this.flags.indexOf(Y.QSIDE_CASTLE) > -1;
   }
   isBigPawn() {
-    return this.flags.indexOf(J.BIG_PAWN) > -1;
+    return this.flags.indexOf(Y.BIG_PAWN) > -1;
   }
 }
-const L = -1, J = {
+const D = -1, Y = {
   NORMAL: "n",
   CAPTURE: "c",
   BIG_PAWN: "b",
@@ -3091,7 +2385,7 @@ const L = -1, J = {
   PROMOTION: "p",
   KSIDE_CASTLE: "k",
   QSIDE_CASTLE: "q"
-}, b = {
+}, _ = {
   NORMAL: 1,
   CAPTURE: 2,
   BIG_PAWN: 4,
@@ -3099,7 +2393,7 @@ const L = -1, J = {
   PROMOTION: 16,
   KSIDE_CASTLE: 32,
   QSIDE_CASTLE: 64
-}, _ = {
+}, v = {
   a8: 0,
   b8: 1,
   c8: 2,
@@ -3164,16 +2458,16 @@ const L = -1, J = {
   f1: 117,
   g1: 118,
   h1: 119
-}, Ie = {
+}, Te = {
   b: [16, 32, 17, 15],
   w: [-16, -32, -17, -15]
-}, Xe = {
+}, Qe = {
   n: [-18, -33, -31, -14, 18, 33, 31, 14],
   b: [-17, -15, 17, 15],
   r: [-16, 1, 16, -1],
   q: [-17, -16, -15, 1, 17, 16, 15, -1],
   k: [-17, -16, -15, 1, 17, 16, 15, -1]
-}, Rt = [
+}, Ct = [
   20,
   0,
   0,
@@ -3413,7 +2707,7 @@ const L = -1, J = {
   0,
   0,
   20
-], It = [
+], Mt = [
   17,
   0,
   0,
@@ -3653,36 +2947,36 @@ const L = -1, J = {
   0,
   0,
   -17
-], Ot = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 }, Dt = "pnbrqkPNBRQK", Ze = [Le, be, ue, W], qt = 7, $t = 6, Lt = 1, Nt = 0, pe = {
-  [M]: b.KSIDE_CASTLE,
-  [W]: b.QSIDE_CASTLE
-}, H = {
+], kt = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 }, Tt = "pnbrqkPNBRQK", Ye = [Le, _e, he, Q], It = 7, Rt = 6, At = 1, Ot = 0, pe = {
+  [M]: _.KSIDE_CASTLE,
+  [Q]: _.QSIDE_CASTLE
+}, K = {
   w: [
-    { square: _.a1, flag: b.QSIDE_CASTLE },
-    { square: _.h1, flag: b.KSIDE_CASTLE }
+    { square: v.a1, flag: _.QSIDE_CASTLE },
+    { square: v.h1, flag: _.KSIDE_CASTLE }
   ],
   b: [
-    { square: _.a8, flag: b.QSIDE_CASTLE },
-    { square: _.h8, flag: b.KSIDE_CASTLE }
+    { square: v.a8, flag: _.QSIDE_CASTLE },
+    { square: v.h8, flag: _.KSIDE_CASTLE }
   ]
-}, xt = { b: Lt, w: $t }, Bt = ["1-0", "0-1", "1/2-1/2", "*"];
-function Z(a) {
+}, qt = { b: At, w: Rt }, Dt = ["1-0", "0-1", "1/2-1/2", "*"];
+function X(a) {
   return a >> 4;
 }
-function de(a) {
+function le(a) {
   return a & 15;
 }
-function nt(a) {
+function tt(a) {
   return "0123456789".indexOf(a) !== -1;
 }
-function D(a) {
-  const e = de(a), t = Z(a);
+function A(a) {
+  const e = le(a), t = X(a);
   return "abcdefgh".substring(e, e + 1) + "87654321".substring(t, t + 1);
 }
-function le(a) {
-  return a === O ? B : O;
+function ae(a) {
+  return a === R ? x : R;
 }
-function rt(a) {
+function it(a) {
   const e = a.split(/\s+/);
   if (e.length !== 6)
     return {
@@ -3715,16 +3009,16 @@ function rt(a) {
     };
   for (let r = 0; r < s.length; r++) {
     let o = 0, c = !1;
-    for (let l = 0; l < s[r].length; l++)
-      if (nt(s[r][l])) {
+    for (let h = 0; h < s[r].length; h++)
+      if (tt(s[r][h])) {
         if (c)
           return {
             ok: !1,
             error: "Invalid FEN: piece data is invalid (consecutive number)"
           };
-        o += parseInt(s[r][l], 10), c = !0;
+        o += parseInt(s[r][h], 10), c = !0;
       } else {
-        if (!/^[prnbqkPRNBQK]$/.test(s[r][l]))
+        if (!/^[prnbqkPRNBQK]$/.test(s[r][h]))
           return {
             ok: !1,
             error: "Invalid FEN: piece data is invalid (invalid piece)"
@@ -3754,28 +3048,28 @@ function rt(a) {
     error: "Invalid FEN: some pawns are on the edge rows"
   } : { ok: !0 };
 }
-function Ft(a, e) {
+function Lt(a, e) {
   const t = a.from, i = a.to, s = a.piece;
   let n = 0, r = 0, o = 0;
-  for (let c = 0, l = e.length; c < l; c++) {
-    const u = e[c].from, d = e[c].to, h = e[c].piece;
-    s === h && t !== u && i === d && (n++, Z(t) === Z(u) && r++, de(t) === de(u) && o++);
+  for (let c = 0, h = e.length; c < h; c++) {
+    const l = e[c].from, d = e[c].to, u = e[c].piece;
+    s === u && t !== l && i === d && (n++, X(t) === X(l) && r++, le(t) === le(l) && o++);
   }
-  return n > 0 ? r > 0 && o > 0 ? D(t) : o > 0 ? D(t).charAt(1) : D(t).charAt(0) : "";
+  return n > 0 ? r > 0 && o > 0 ? A(t) : o > 0 ? A(t).charAt(1) : A(t).charAt(0) : "";
 }
-function K(a, e, t, i, s, n = void 0, r = b.NORMAL) {
-  const o = Z(i);
-  if (s === A && (o === qt || o === Nt))
-    for (let c = 0; c < Ze.length; c++) {
-      const l = Ze[c];
+function W(a, e, t, i, s, n = void 0, r = _.NORMAL) {
+  const o = X(i);
+  if (s === T && (o === It || o === Ot))
+    for (let c = 0; c < Ye.length; c++) {
+      const h = Ye[c];
       a.push({
         color: e,
         from: t,
         to: i,
         piece: s,
         captured: n,
-        promotion: l,
-        flags: r | b.PROMOTION
+        promotion: h,
+        flags: r | _.PROMOTION
       });
     }
   else
@@ -3788,34 +3082,34 @@ function K(a, e, t, i, s, n = void 0, r = b.NORMAL) {
       flags: r
     });
 }
-function et(a) {
+function Je(a) {
   let e = a.charAt(0);
-  return e >= "a" && e <= "h" ? a.match(/[a-h]\d.*[a-h]\d/) ? void 0 : A : (e = e.toLowerCase(), e === "o" ? M : e);
+  return e >= "a" && e <= "h" ? a.match(/[a-h]\d.*[a-h]\d/) ? void 0 : T : (e = e.toLowerCase(), e === "o" ? M : e);
 }
-function Oe(a) {
+function Ie(a) {
   return a.replace(/=/, "").replace(/[+#]?[?!]*$/, "");
 }
-function De(a) {
+function Re(a) {
   return a.split(" ").slice(0, 4).join(" ");
 }
-class Gt {
-  constructor(e = Re) {
-    w(this, "_board", new Array(128));
-    w(this, "_turn", O);
-    w(this, "_header", {});
-    w(this, "_kings", { w: L, b: L });
-    w(this, "_epSquare", -1);
-    w(this, "_halfMoves", 0);
-    w(this, "_moveNumber", 0);
-    w(this, "_history", []);
-    w(this, "_comments", {});
-    w(this, "_castling", { w: 0, b: 0 });
+class Nt {
+  constructor(e = ke) {
+    y(this, "_board", new Array(128));
+    y(this, "_turn", R);
+    y(this, "_header", {});
+    y(this, "_kings", { w: D, b: D });
+    y(this, "_epSquare", -1);
+    y(this, "_halfMoves", 0);
+    y(this, "_moveNumber", 0);
+    y(this, "_history", []);
+    y(this, "_comments", {});
+    y(this, "_castling", { w: 0, b: 0 });
     // tracks number of times a position has been seen for repetition checking
-    w(this, "_positionCount", {});
+    y(this, "_positionCount", {});
     this.load(e);
   }
   clear({ preserveHeaders: e = !1 } = {}) {
-    this._board = new Array(128), this._kings = { w: L, b: L }, this._turn = O, this._castling = { w: 0, b: 0 }, this._epSquare = L, this._halfMoves = 0, this._moveNumber = 1, this._history = [], this._comments = {}, this._header = e ? this._header : {}, this._positionCount = {}, delete this._header.SetUp, delete this._header.FEN;
+    this._board = new Array(128), this._kings = { w: D, b: D }, this._turn = R, this._castling = { w: 0, b: 0 }, this._epSquare = D, this._halfMoves = 0, this._moveNumber = 1, this._history = [], this._comments = {}, this._header = e ? this._header : {}, this._positionCount = {}, delete this._header.SetUp, delete this._header.FEN;
   }
   load(e, { skipValidation: t = !1, preserveHeaders: i = !1 } = {}) {
     let s = e.split(/\s+/);
@@ -3824,7 +3118,7 @@ class Gt {
       e = s.concat(o.slice(-(6 - s.length))).join(" ");
     }
     if (s = e.split(/\s+/), !t) {
-      const { ok: o, error: c } = rt(e);
+      const { ok: o, error: c } = it(e);
       if (!o)
         throw new Error(c);
     }
@@ -3835,48 +3129,48 @@ class Gt {
       const c = n.charAt(o);
       if (c === "/")
         r += 8;
-      else if (nt(c))
+      else if (tt(c))
         r += parseInt(c, 10);
       else {
-        const l = c < "a" ? O : B;
-        this._put({ type: c.toLowerCase(), color: l }, D(r)), r++;
+        const h = c < "a" ? R : x;
+        this._put({ type: c.toLowerCase(), color: h }, A(r)), r++;
       }
     }
-    this._turn = s[1], s[2].indexOf("K") > -1 && (this._castling.w |= b.KSIDE_CASTLE), s[2].indexOf("Q") > -1 && (this._castling.w |= b.QSIDE_CASTLE), s[2].indexOf("k") > -1 && (this._castling.b |= b.KSIDE_CASTLE), s[2].indexOf("q") > -1 && (this._castling.b |= b.QSIDE_CASTLE), this._epSquare = s[3] === "-" ? L : _[s[3]], this._halfMoves = parseInt(s[4], 10), this._moveNumber = parseInt(s[5], 10), this._updateSetup(e), this._incPositionCount(e);
+    this._turn = s[1], s[2].indexOf("K") > -1 && (this._castling.w |= _.KSIDE_CASTLE), s[2].indexOf("Q") > -1 && (this._castling.w |= _.QSIDE_CASTLE), s[2].indexOf("k") > -1 && (this._castling.b |= _.KSIDE_CASTLE), s[2].indexOf("q") > -1 && (this._castling.b |= _.QSIDE_CASTLE), this._epSquare = s[3] === "-" ? D : v[s[3]], this._halfMoves = parseInt(s[4], 10), this._moveNumber = parseInt(s[5], 10), this._updateSetup(e), this._incPositionCount(e);
   }
   fen() {
     var n, r;
     let e = 0, t = "";
-    for (let o = _.a8; o <= _.h1; o++) {
+    for (let o = v.a8; o <= v.h1; o++) {
       if (this._board[o]) {
         e > 0 && (t += e, e = 0);
-        const { color: c, type: l } = this._board[o];
-        t += c === O ? l.toUpperCase() : l.toLowerCase();
+        const { color: c, type: h } = this._board[o];
+        t += c === R ? h.toUpperCase() : h.toLowerCase();
       } else
         e++;
-      o + 1 & 136 && (e > 0 && (t += e), o !== _.h1 && (t += "/"), e = 0, o += 8);
+      o + 1 & 136 && (e > 0 && (t += e), o !== v.h1 && (t += "/"), e = 0, o += 8);
     }
     let i = "";
-    this._castling[O] & b.KSIDE_CASTLE && (i += "K"), this._castling[O] & b.QSIDE_CASTLE && (i += "Q"), this._castling[B] & b.KSIDE_CASTLE && (i += "k"), this._castling[B] & b.QSIDE_CASTLE && (i += "q"), i = i || "-";
+    this._castling[R] & _.KSIDE_CASTLE && (i += "K"), this._castling[R] & _.QSIDE_CASTLE && (i += "Q"), this._castling[x] & _.KSIDE_CASTLE && (i += "k"), this._castling[x] & _.QSIDE_CASTLE && (i += "q"), i = i || "-";
     let s = "-";
-    if (this._epSquare !== L) {
-      const o = this._epSquare + (this._turn === O ? 16 : -16), c = [o + 1, o - 1];
-      for (const l of c) {
-        if (l & 136)
+    if (this._epSquare !== D) {
+      const o = this._epSquare + (this._turn === R ? 16 : -16), c = [o + 1, o - 1];
+      for (const h of c) {
+        if (h & 136)
           continue;
-        const u = this._turn;
-        if (((n = this._board[l]) == null ? void 0 : n.color) === u && ((r = this._board[l]) == null ? void 0 : r.type) === A) {
+        const l = this._turn;
+        if (((n = this._board[h]) == null ? void 0 : n.color) === l && ((r = this._board[h]) == null ? void 0 : r.type) === T) {
           this._makeMove({
-            color: u,
-            from: l,
+            color: l,
+            from: h,
             to: this._epSquare,
-            piece: A,
-            captured: A,
-            flags: b.EP_CAPTURE
+            piece: T,
+            captured: T,
+            flags: _.EP_CAPTURE
           });
-          const d = !this._isKingAttacked(u);
+          const d = !this._isKingAttacked(l);
           if (this._undoMove(), d) {
-            s = D(this._epSquare);
+            s = A(this._epSquare);
             break;
           }
         }
@@ -3891,53 +3185,53 @@ class Gt {
    * is only updated if history.length is zero, ie moves haven't been made.
    */
   _updateSetup(e) {
-    this._history.length > 0 || (e !== Re ? (this._header.SetUp = "1", this._header.FEN = e) : (delete this._header.SetUp, delete this._header.FEN));
+    this._history.length > 0 || (e !== ke ? (this._header.SetUp = "1", this._header.FEN = e) : (delete this._header.SetUp, delete this._header.FEN));
   }
   reset() {
-    this.load(Re);
+    this.load(ke);
   }
   get(e) {
-    return this._board[_[e]];
+    return this._board[v[e]];
   }
   put({ type: e, color: t }, i) {
     return this._put({ type: e, color: t }, i) ? (this._updateCastlingRights(), this._updateEnPassantSquare(), this._updateSetup(this.fen()), !0) : !1;
   }
   _put({ type: e, color: t }, i) {
-    if (Dt.indexOf(e.toLowerCase()) === -1 || !(i in _))
+    if (Tt.indexOf(e.toLowerCase()) === -1 || !(i in v))
       return !1;
-    const s = _[i];
-    if (e === M && !(this._kings[t] === L || this._kings[t] === s))
+    const s = v[i];
+    if (e === M && !(this._kings[t] === D || this._kings[t] === s))
       return !1;
     const n = this._board[s];
-    return n && n.type === M && (this._kings[n.color] = L), this._board[s] = { type: e, color: t }, e === M && (this._kings[t] = s), !0;
+    return n && n.type === M && (this._kings[n.color] = D), this._board[s] = { type: e, color: t }, e === M && (this._kings[t] = s), !0;
   }
   remove(e) {
     const t = this.get(e);
-    return delete this._board[_[e]], t && t.type === M && (this._kings[t.color] = L), this._updateCastlingRights(), this._updateEnPassantSquare(), this._updateSetup(this.fen()), t;
+    return delete this._board[v[e]], t && t.type === M && (this._kings[t.color] = D), this._updateCastlingRights(), this._updateEnPassantSquare(), this._updateSetup(this.fen()), t;
   }
   _updateCastlingRights() {
-    var i, s, n, r, o, c, l, u, d, h, m, f;
-    const e = ((i = this._board[_.e1]) == null ? void 0 : i.type) === M && ((s = this._board[_.e1]) == null ? void 0 : s.color) === O, t = ((n = this._board[_.e8]) == null ? void 0 : n.type) === M && ((r = this._board[_.e8]) == null ? void 0 : r.color) === B;
-    (!e || ((o = this._board[_.a1]) == null ? void 0 : o.type) !== ue || ((c = this._board[_.a1]) == null ? void 0 : c.color) !== O) && (this._castling.w &= -65), (!e || ((l = this._board[_.h1]) == null ? void 0 : l.type) !== ue || ((u = this._board[_.h1]) == null ? void 0 : u.color) !== O) && (this._castling.w &= -33), (!t || ((d = this._board[_.a8]) == null ? void 0 : d.type) !== ue || ((h = this._board[_.a8]) == null ? void 0 : h.color) !== B) && (this._castling.b &= -65), (!t || ((m = this._board[_.h8]) == null ? void 0 : m.type) !== ue || ((f = this._board[_.h8]) == null ? void 0 : f.color) !== B) && (this._castling.b &= -33);
+    var i, s, n, r, o, c, h, l, d, u, m, f;
+    const e = ((i = this._board[v.e1]) == null ? void 0 : i.type) === M && ((s = this._board[v.e1]) == null ? void 0 : s.color) === R, t = ((n = this._board[v.e8]) == null ? void 0 : n.type) === M && ((r = this._board[v.e8]) == null ? void 0 : r.color) === x;
+    (!e || ((o = this._board[v.a1]) == null ? void 0 : o.type) !== he || ((c = this._board[v.a1]) == null ? void 0 : c.color) !== R) && (this._castling.w &= -65), (!e || ((h = this._board[v.h1]) == null ? void 0 : h.type) !== he || ((l = this._board[v.h1]) == null ? void 0 : l.color) !== R) && (this._castling.w &= -33), (!t || ((d = this._board[v.a8]) == null ? void 0 : d.type) !== he || ((u = this._board[v.a8]) == null ? void 0 : u.color) !== x) && (this._castling.b &= -65), (!t || ((m = this._board[v.h8]) == null ? void 0 : m.type) !== he || ((f = this._board[v.h8]) == null ? void 0 : f.color) !== x) && (this._castling.b &= -33);
   }
   _updateEnPassantSquare() {
     var n, r;
-    if (this._epSquare === L)
+    if (this._epSquare === D)
       return;
-    const e = this._epSquare + (this._turn === O ? -16 : 16), t = this._epSquare + (this._turn === O ? 16 : -16), i = [t + 1, t - 1];
-    if (this._board[e] !== null || this._board[this._epSquare] !== null || ((n = this._board[t]) == null ? void 0 : n.color) !== le(this._turn) || ((r = this._board[t]) == null ? void 0 : r.type) !== A) {
-      this._epSquare = L;
+    const e = this._epSquare + (this._turn === R ? -16 : 16), t = this._epSquare + (this._turn === R ? 16 : -16), i = [t + 1, t - 1];
+    if (this._board[e] !== null || this._board[this._epSquare] !== null || ((n = this._board[t]) == null ? void 0 : n.color) !== ae(this._turn) || ((r = this._board[t]) == null ? void 0 : r.type) !== T) {
+      this._epSquare = D;
       return;
     }
     const s = (o) => {
-      var c, l;
-      return !(o & 136) && ((c = this._board[o]) == null ? void 0 : c.color) === this._turn && ((l = this._board[o]) == null ? void 0 : l.type) === A;
+      var c, h;
+      return !(o & 136) && ((c = this._board[o]) == null ? void 0 : c.color) === this._turn && ((h = this._board[o]) == null ? void 0 : h.type) === T;
     };
-    i.some(s) || (this._epSquare = L);
+    i.some(s) || (this._epSquare = D);
   }
   _attacked(e, t, i) {
     const s = [];
-    for (let n = _.a8; n <= _.h1; n++) {
+    for (let n = v.a8; n <= v.h1; n++) {
       if (n & 136) {
         n += 7;
         continue;
@@ -3948,34 +3242,34 @@ class Gt {
       if (o === 0)
         continue;
       const c = o + 119;
-      if (Rt[c] & Ot[r.type]) {
-        if (r.type === A) {
-          if (o > 0 && r.color === O || o <= 0 && r.color === B) {
+      if (Ct[c] & kt[r.type]) {
+        if (r.type === T) {
+          if (o > 0 && r.color === R || o <= 0 && r.color === x) {
             if (!i)
               return !0;
-            s.push(D(n));
+            s.push(A(n));
           }
           continue;
         }
         if (r.type === "n" || r.type === "k") {
           if (!i)
             return !0;
-          s.push(D(n));
+          s.push(A(n));
           continue;
         }
-        const l = It[c];
-        let u = n + l, d = !1;
-        for (; u !== t; ) {
-          if (this._board[u] != null) {
+        const h = Mt[c];
+        let l = n + h, d = !1;
+        for (; l !== t; ) {
+          if (this._board[l] != null) {
             d = !0;
             break;
           }
-          u += l;
+          l += h;
         }
         if (!d) {
           if (!i)
             return !0;
-          s.push(D(n));
+          s.push(A(n));
           continue;
         }
       }
@@ -3983,14 +3277,14 @@ class Gt {
     return i ? s : !1;
   }
   attackers(e, t) {
-    return t ? this._attacked(t, _[e], !0) : this._attacked(this._turn, _[e], !0);
+    return t ? this._attacked(t, v[e], !0) : this._attacked(this._turn, v[e], !0);
   }
   _isKingAttacked(e) {
     const t = this._kings[e];
-    return t === -1 ? !1 : this._attacked(le(e), t);
+    return t === -1 ? !1 : this._attacked(ae(e), t);
   }
   isAttacked(e, t) {
-    return this._attacked(t, _[e]);
+    return this._attacked(t, v[e]);
   }
   isCheck() {
     return this._isKingAttacked(this._turn);
@@ -4014,22 +3308,22 @@ class Gt {
       p: 0
     }, t = [];
     let i = 0, s = 0;
-    for (let n = _.a8; n <= _.h1; n++) {
+    for (let n = v.a8; n <= v.h1; n++) {
       if (s = (s + 1) % 2, n & 136) {
         n += 7;
         continue;
       }
       const r = this._board[n];
-      r && (e[r.type] = r.type in e ? e[r.type] + 1 : 1, r.type === be && t.push(s), i++);
+      r && (e[r.type] = r.type in e ? e[r.type] + 1 : 1, r.type === _e && t.push(s), i++);
     }
     if (i === 2)
       return !0;
     if (
       // k vs. kn .... or .... k vs. kb
-      i === 3 && (e[be] === 1 || e[Le] === 1)
+      i === 3 && (e[_e] === 1 || e[Le] === 1)
     )
       return !0;
-    if (i === e[be] + 2) {
+    if (i === e[_e] + 2) {
       let n = 0;
       const r = t.length;
       for (let o = 0; o < r; o++)
@@ -4057,60 +3351,60 @@ class Gt {
   }
   _moves({ legal: e = !0, piece: t = void 0, square: i = void 0 } = {}) {
     var m;
-    const s = i ? i.toLowerCase() : void 0, n = t == null ? void 0 : t.toLowerCase(), r = [], o = this._turn, c = le(o);
-    let l = _.a8, u = _.h1, d = !1;
+    const s = i ? i.toLowerCase() : void 0, n = t == null ? void 0 : t.toLowerCase(), r = [], o = this._turn, c = ae(o);
+    let h = v.a8, l = v.h1, d = !1;
     if (s) {
-      if (!(s in _))
+      if (!(s in v))
         return [];
-      l = u = _[s], d = !0;
+      h = l = v[s], d = !0;
     }
-    for (let f = l; f <= u; f++) {
+    for (let f = h; f <= l; f++) {
       if (f & 136) {
         f += 7;
         continue;
       }
       if (!this._board[f] || this._board[f].color === c)
         continue;
-      const { type: g } = this._board[f];
-      let S;
-      if (g === A) {
-        if (n && n !== g) continue;
-        S = f + Ie[o][0], this._board[S] || (K(r, o, f, S, A), S = f + Ie[o][1], xt[o] === Z(f) && !this._board[S] && K(r, o, f, S, A, void 0, b.BIG_PAWN));
-        for (let E = 2; E < 4; E++)
-          S = f + Ie[o][E], !(S & 136) && (((m = this._board[S]) == null ? void 0 : m.color) === c ? K(r, o, f, S, A, this._board[S].type, b.CAPTURE) : S === this._epSquare && K(r, o, f, S, A, A, b.EP_CAPTURE));
+      const { type: p } = this._board[f];
+      let b;
+      if (p === T) {
+        if (n && n !== p) continue;
+        b = f + Te[o][0], this._board[b] || (W(r, o, f, b, T), b = f + Te[o][1], qt[o] === X(f) && !this._board[b] && W(r, o, f, b, T, void 0, _.BIG_PAWN));
+        for (let w = 2; w < 4; w++)
+          b = f + Te[o][w], !(b & 136) && (((m = this._board[b]) == null ? void 0 : m.color) === c ? W(r, o, f, b, T, this._board[b].type, _.CAPTURE) : b === this._epSquare && W(r, o, f, b, T, T, _.EP_CAPTURE));
       } else {
-        if (n && n !== g) continue;
-        for (let E = 0, y = Xe[g].length; E < y; E++) {
-          const p = Xe[g][E];
-          for (S = f; S += p, !(S & 136); ) {
-            if (!this._board[S])
-              K(r, o, f, S, g);
+        if (n && n !== p) continue;
+        for (let w = 0, S = Qe[p].length; w < S; w++) {
+          const g = Qe[p][w];
+          for (b = f; b += g, !(b & 136); ) {
+            if (!this._board[b])
+              W(r, o, f, b, p);
             else {
-              if (this._board[S].color === o) break;
-              K(r, o, f, S, g, this._board[S].type, b.CAPTURE);
+              if (this._board[b].color === o) break;
+              W(r, o, f, b, p, this._board[b].type, _.CAPTURE);
               break;
             }
-            if (g === Le || g === M) break;
+            if (p === Le || p === M) break;
           }
         }
       }
     }
-    if ((n === void 0 || n === M) && (!d || u === this._kings[o])) {
-      if (this._castling[o] & b.KSIDE_CASTLE) {
-        const f = this._kings[o], g = f + 2;
-        !this._board[f + 1] && !this._board[g] && !this._attacked(c, this._kings[o]) && !this._attacked(c, f + 1) && !this._attacked(c, g) && K(r, o, this._kings[o], g, M, void 0, b.KSIDE_CASTLE);
+    if ((n === void 0 || n === M) && (!d || l === this._kings[o])) {
+      if (this._castling[o] & _.KSIDE_CASTLE) {
+        const f = this._kings[o], p = f + 2;
+        !this._board[f + 1] && !this._board[p] && !this._attacked(c, this._kings[o]) && !this._attacked(c, f + 1) && !this._attacked(c, p) && W(r, o, this._kings[o], p, M, void 0, _.KSIDE_CASTLE);
       }
-      if (this._castling[o] & b.QSIDE_CASTLE) {
-        const f = this._kings[o], g = f - 2;
-        !this._board[f - 1] && !this._board[f - 2] && !this._board[f - 3] && !this._attacked(c, this._kings[o]) && !this._attacked(c, f - 1) && !this._attacked(c, g) && K(r, o, this._kings[o], g, M, void 0, b.QSIDE_CASTLE);
+      if (this._castling[o] & _.QSIDE_CASTLE) {
+        const f = this._kings[o], p = f - 2;
+        !this._board[f - 1] && !this._board[f - 2] && !this._board[f - 3] && !this._attacked(c, this._kings[o]) && !this._attacked(c, f - 1) && !this._attacked(c, p) && W(r, o, this._kings[o], p, M, void 0, _.QSIDE_CASTLE);
       }
     }
     if (!e || this._kings[o] === -1)
       return r;
-    const h = [];
-    for (let f = 0, g = r.length; f < g; f++)
-      this._makeMove(r[f]), this._isKingAttacked(o) || h.push(r[f]), this._undoMove();
-    return h;
+    const u = [];
+    for (let f = 0, p = r.length; f < p; f++)
+      this._makeMove(r[f]), this._isKingAttacked(o) || u.push(r[f]), this._undoMove();
+    return u;
   }
   move(e, { strict: t = !1 } = {}) {
     let i = null;
@@ -4119,7 +3413,7 @@ class Gt {
     else if (typeof e == "object") {
       const n = this._moves();
       for (let r = 0, o = n.length; r < o; r++)
-        if (e.from === D(n[r].from) && e.to === D(n[r].to) && (!("promotion" in n[r]) || e.promotion === n[r].promotion)) {
+        if (e.from === A(n[r].from) && e.to === A(n[r].to) && (!("promotion" in n[r]) || e.promotion === n[r].promotion)) {
           i = n[r];
           break;
         }
@@ -4141,32 +3435,32 @@ class Gt {
     });
   }
   _makeMove(e) {
-    const t = this._turn, i = le(t);
-    if (this._push(e), this._board[e.to] = this._board[e.from], delete this._board[e.from], e.flags & b.EP_CAPTURE && (this._turn === B ? delete this._board[e.to - 16] : delete this._board[e.to + 16]), e.promotion && (this._board[e.to] = { type: e.promotion, color: t }), this._board[e.to].type === M) {
-      if (this._kings[t] = e.to, e.flags & b.KSIDE_CASTLE) {
+    const t = this._turn, i = ae(t);
+    if (this._push(e), this._board[e.to] = this._board[e.from], delete this._board[e.from], e.flags & _.EP_CAPTURE && (this._turn === x ? delete this._board[e.to - 16] : delete this._board[e.to + 16]), e.promotion && (this._board[e.to] = { type: e.promotion, color: t }), this._board[e.to].type === M) {
+      if (this._kings[t] = e.to, e.flags & _.KSIDE_CASTLE) {
         const s = e.to - 1, n = e.to + 1;
         this._board[s] = this._board[n], delete this._board[n];
-      } else if (e.flags & b.QSIDE_CASTLE) {
+      } else if (e.flags & _.QSIDE_CASTLE) {
         const s = e.to + 1, n = e.to - 2;
         this._board[s] = this._board[n], delete this._board[n];
       }
       this._castling[t] = 0;
     }
     if (this._castling[t]) {
-      for (let s = 0, n = H[t].length; s < n; s++)
-        if (e.from === H[t][s].square && this._castling[t] & H[t][s].flag) {
-          this._castling[t] ^= H[t][s].flag;
+      for (let s = 0, n = K[t].length; s < n; s++)
+        if (e.from === K[t][s].square && this._castling[t] & K[t][s].flag) {
+          this._castling[t] ^= K[t][s].flag;
           break;
         }
     }
     if (this._castling[i]) {
-      for (let s = 0, n = H[i].length; s < n; s++)
-        if (e.to === H[i][s].square && this._castling[i] & H[i][s].flag) {
-          this._castling[i] ^= H[i][s].flag;
+      for (let s = 0, n = K[i].length; s < n; s++)
+        if (e.to === K[i][s].square && this._castling[i] & K[i][s].flag) {
+          this._castling[i] ^= K[i][s].flag;
           break;
         }
     }
-    e.flags & b.BIG_PAWN ? t === B ? this._epSquare = e.to - 16 : this._epSquare = e.to + 16 : this._epSquare = L, e.piece === A ? this._halfMoves = 0 : e.flags & (b.CAPTURE | b.EP_CAPTURE) ? this._halfMoves = 0 : this._halfMoves++, t === B && this._moveNumber++, this._turn = i;
+    e.flags & _.BIG_PAWN ? t === x ? this._epSquare = e.to - 16 : this._epSquare = e.to + 16 : this._epSquare = D, e.piece === T ? this._halfMoves = 0 : e.flags & (_.CAPTURE | _.EP_CAPTURE) ? this._halfMoves = 0 : this._halfMoves++, t === x && this._moveNumber++, this._turn = i;
   }
   undo() {
     const e = this._undoMove();
@@ -4182,16 +3476,16 @@ class Gt {
       return null;
     const t = e.move;
     this._kings = e.kings, this._turn = e.turn, this._castling = e.castling, this._epSquare = e.epSquare, this._halfMoves = e.halfMoves, this._moveNumber = e.moveNumber;
-    const i = this._turn, s = le(i);
+    const i = this._turn, s = ae(i);
     if (this._board[t.from] = this._board[t.to], this._board[t.from].type = t.piece, delete this._board[t.to], t.captured)
-      if (t.flags & b.EP_CAPTURE) {
+      if (t.flags & _.EP_CAPTURE) {
         let n;
-        i === B ? n = t.to - 16 : n = t.to + 16, this._board[n] = { type: A, color: s };
+        i === x ? n = t.to - 16 : n = t.to + 16, this._board[n] = { type: T, color: s };
       } else
         this._board[t.to] = { type: t.captured, color: s };
-    if (t.flags & (b.KSIDE_CASTLE | b.QSIDE_CASTLE)) {
+    if (t.flags & (_.KSIDE_CASTLE | _.QSIDE_CASTLE)) {
       let n, r;
-      t.flags & b.KSIDE_CASTLE ? (n = t.to + 1, r = t.to - 1) : (n = t.to - 2, r = t.to + 1), this._board[n] = this._board[r], delete this._board[r];
+      t.flags & _.KSIDE_CASTLE ? (n = t.to + 1, r = t.to - 1) : (n = t.to - 2, r = t.to + 1), this._board[n] = this._board[r], delete this._board[r];
     }
     return t;
   }
@@ -4199,16 +3493,16 @@ class Gt {
 `, maxWidth: t = 0 } = {}) {
     const i = [];
     let s = !1;
-    for (const h in this._header)
-      i.push(`[${h} "${this._header[h]}"]${e}`), s = !0;
+    for (const u in this._header)
+      i.push(`[${u} "${this._header[u]}"]${e}`), s = !0;
     s && this._history.length && i.push(e);
-    const n = (h) => {
+    const n = (u) => {
       const m = this._comments[this.fen()];
       if (typeof m < "u") {
-        const f = h.length > 0 ? " " : "";
-        h = `${h}${f}{${m}}`;
+        const f = u.length > 0 ? " " : "";
+        u = `${u}${f}{${m}}`;
       }
-      return h;
+      return u;
     }, r = [];
     for (; this._history.length > 0; )
       r.push(this._undoMove());
@@ -4216,38 +3510,38 @@ class Gt {
     let c = "";
     for (r.length === 0 && o.push(n("")); r.length > 0; ) {
       c = n(c);
-      const h = r.pop();
-      if (!h)
+      const u = r.pop();
+      if (!u)
         break;
-      if (!this._history.length && h.color === "b") {
+      if (!this._history.length && u.color === "b") {
         const m = `${this._moveNumber}. ...`;
         c = c ? `${c} ${m}` : m;
-      } else h.color === "w" && (c.length && o.push(c), c = `${this._moveNumber}.`);
-      c = `${c} ${this._moveToSan(h, this._moves({ legal: !0 }))}`, this._makeMove(h);
+      } else u.color === "w" && (c.length && o.push(c), c = `${this._moveNumber}.`);
+      c = `${c} ${this._moveToSan(u, this._moves({ legal: !0 }))}`, this._makeMove(u);
     }
     if (c.length && o.push(n(c)), typeof this._header.Result < "u" && o.push(this._header.Result), t === 0)
       return i.join("") + o.join(" ");
-    const l = function() {
+    const h = function() {
       return i.length > 0 && i[i.length - 1] === " " ? (i.pop(), !0) : !1;
-    }, u = function(h, m) {
+    }, l = function(u, m) {
       for (const f of m.split(" "))
         if (f) {
-          if (h + f.length > t) {
-            for (; l(); )
-              h--;
-            i.push(e), h = 0;
+          if (u + f.length > t) {
+            for (; h(); )
+              u--;
+            i.push(e), u = 0;
           }
-          i.push(f), h += f.length, i.push(" "), h++;
+          i.push(f), u += f.length, i.push(" "), u++;
         }
-      return l() && h--, h;
+      return h() && u--, u;
     };
     let d = 0;
-    for (let h = 0; h < o.length; h++) {
-      if (d + o[h].length > t && o[h].includes("{")) {
-        d = u(d, o[h]);
+    for (let u = 0; u < o.length; u++) {
+      if (d + o[u].length > t && o[u].includes("{")) {
+        d = l(d, o[u]);
         continue;
       }
-      d + o[h].length > t && h !== 0 ? (i[i.length - 1] === " " && i.pop(), i.push(e), d = 0) : h !== 0 && (i.push(" "), d++), i.push(o[h]), d += o[h].length;
+      d + o[u].length > t && u !== 0 ? (i[i.length - 1] === " " && i.pop(), i.push(e), d = 0) : u !== 0 && (i.push(" "), d++), i.push(o[u]), d += o[u].length;
     }
     return i.join("");
   }
@@ -4270,74 +3564,74 @@ class Gt {
   }
   loadPgn(e, { strict: t = !1, newlineChar: i = `\r?
 ` } = {}) {
-    function s(p) {
-      return p.replace(/\\/g, "\\");
+    function s(g) {
+      return g.replace(/\\/g, "\\");
     }
-    function n(p) {
-      const C = {}, T = p.split(new RegExp(s(i)));
-      let N = "", R = "";
-      for (let G = 0; G < T.length; G++) {
-        const Y = /^\s*\[\s*([A-Za-z]+)\s*"(.*)"\s*\]\s*$/;
-        N = T[G].replace(Y, "$1"), R = T[G].replace(Y, "$2"), N.trim().length > 0 && (C[N] = R);
+    function n(g) {
+      const E = {}, k = g.split(new RegExp(s(i)));
+      let L = "", N = "";
+      for (let F = 0; F < k.length; F++) {
+        const H = /^\s*\[\s*([A-Za-z]+)\s*"(.*)"\s*\]\s*$/;
+        L = k[F].replace(H, "$1"), N = k[F].replace(H, "$2"), L.trim().length > 0 && (E[L] = N);
       }
-      return C;
+      return E;
     }
     e = e.trim();
     const o = new RegExp(
       `^(\\[((?:${s(i)})|.)*\\])((?:\\s*${s(i)}){2}|(?:\\s*${s(i)})*$)`
     ).exec(e), c = o && o.length >= 2 ? o[1] : "";
     this.reset();
-    const l = n(c);
-    let u = "";
-    for (const p in l)
-      p.toLowerCase() === "fen" && (u = l[p]), this.header(p, l[p]);
+    const h = n(c);
+    let l = "";
+    for (const g in h)
+      g.toLowerCase() === "fen" && (l = h[g]), this.header(g, h[g]);
     if (!t)
-      u && this.load(u, { preserveHeaders: !0 });
-    else if (l.SetUp === "1") {
-      if (!("FEN" in l))
+      l && this.load(l, { preserveHeaders: !0 });
+    else if (h.SetUp === "1") {
+      if (!("FEN" in h))
         throw new Error("Invalid PGN: FEN tag must be supplied with SetUp tag");
-      this.load(l.FEN, { preserveHeaders: !0 });
+      this.load(h.FEN, { preserveHeaders: !0 });
     }
-    function d(p) {
-      return Array.from(p).map((C) => C.charCodeAt(0) < 128 ? C.charCodeAt(0).toString(16) : encodeURIComponent(C).replace(/%/g, "").toLowerCase()).join("");
+    function d(g) {
+      return Array.from(g).map((E) => E.charCodeAt(0) < 128 ? E.charCodeAt(0).toString(16) : encodeURIComponent(E).replace(/%/g, "").toLowerCase()).join("");
     }
-    function h(p) {
-      return p.length === 0 ? "" : decodeURIComponent(`%${(p.match(/.{1,2}/g) || []).join("%")}`);
+    function u(g) {
+      return g.length === 0 ? "" : decodeURIComponent(`%${(g.match(/.{1,2}/g) || []).join("%")}`);
     }
-    const m = function(p) {
-      return p = p.replace(new RegExp(s(i), "g"), " "), `{${d(p.slice(1, p.length - 1))}}`;
-    }, f = function(p) {
-      if (p.startsWith("{") && p.endsWith("}"))
-        return h(p.slice(1, p.length - 1));
+    const m = function(g) {
+      return g = g.replace(new RegExp(s(i), "g"), " "), `{${d(g.slice(1, g.length - 1))}}`;
+    }, f = function(g) {
+      if (g.startsWith("{") && g.endsWith("}"))
+        return u(g.slice(1, g.length - 1));
     };
-    let g = e.replace(c, "").replace(
+    let p = e.replace(c, "").replace(
       // encode comments so they don't get deleted below
       new RegExp(`({[^}]*})+?|;([^${s(i)}]*)`, "g"),
-      (p, C, T) => C !== void 0 ? m(C) : ` ${m(`{${T.slice(1)}}`)}`
+      (g, E, k) => E !== void 0 ? m(E) : ` ${m(`{${k.slice(1)}}`)}`
     ).replace(new RegExp(s(i), "g"), " ");
-    const S = /(\([^()]+\))+?/g;
-    for (; S.test(g); )
-      g = g.replace(S, "");
-    g = g.replace(/\d+\.(\.\.)?/g, ""), g = g.replace(/\.\.\./g, ""), g = g.replace(/\$\d+/g, "");
-    let E = g.trim().split(new RegExp(/\s+/));
-    E = E.filter((p) => p !== "");
-    let y = "";
-    for (let p = 0; p < E.length; p++) {
-      const C = f(E[p]);
-      if (C !== void 0) {
-        this._comments[this.fen()] = C;
+    const b = /(\([^()]+\))+?/g;
+    for (; b.test(p); )
+      p = p.replace(b, "");
+    p = p.replace(/\d+\.(\.\.)?/g, ""), p = p.replace(/\.\.\./g, ""), p = p.replace(/\$\d+/g, "");
+    let w = p.trim().split(new RegExp(/\s+/));
+    w = w.filter((g) => g !== "");
+    let S = "";
+    for (let g = 0; g < w.length; g++) {
+      const E = f(w[g]);
+      if (E !== void 0) {
+        this._comments[this.fen()] = E;
         continue;
       }
-      const T = this._moveFromSan(E[p], t);
-      if (T == null)
-        if (Bt.indexOf(E[p]) > -1)
-          y = E[p];
+      const k = this._moveFromSan(w[g], t);
+      if (k == null)
+        if (Dt.indexOf(w[g]) > -1)
+          S = w[g];
         else
-          throw new Error(`Invalid move in PGN: ${E[p]}`);
+          throw new Error(`Invalid move in PGN: ${w[g]}`);
       else
-        y = "", this._makeMove(T), this._incPositionCount(this.fen());
+        S = "", this._makeMove(k), this._incPositionCount(this.fen());
     }
-    y && Object.keys(this._header).length && !this._header.Result && this.header("Result", y);
+    S && Object.keys(this._header).length && !this._header.Result && this.header("Result", S);
   }
   /*
    * Convert a move from 0x88 coordinates to Standard Algebraic Notation
@@ -4352,53 +3646,53 @@ class Gt {
    */
   _moveToSan(e, t) {
     let i = "";
-    if (e.flags & b.KSIDE_CASTLE)
+    if (e.flags & _.KSIDE_CASTLE)
       i = "O-O";
-    else if (e.flags & b.QSIDE_CASTLE)
+    else if (e.flags & _.QSIDE_CASTLE)
       i = "O-O-O";
     else {
-      if (e.piece !== A) {
-        const s = Ft(e, t);
+      if (e.piece !== T) {
+        const s = Lt(e, t);
         i += e.piece.toUpperCase() + s;
       }
-      e.flags & (b.CAPTURE | b.EP_CAPTURE) && (e.piece === A && (i += D(e.from)[0]), i += "x"), i += D(e.to), e.promotion && (i += `=${e.promotion.toUpperCase()}`);
+      e.flags & (_.CAPTURE | _.EP_CAPTURE) && (e.piece === T && (i += A(e.from)[0]), i += "x"), i += A(e.to), e.promotion && (i += `=${e.promotion.toUpperCase()}`);
     }
     return this._makeMove(e), this.isCheck() && (this.isCheckmate() ? i += "#" : i += "+"), this._undoMove(), i;
   }
   // convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
   _moveFromSan(e, t = !1) {
-    const i = Oe(e);
-    let s = et(i), n = this._moves({ legal: !0, piece: s });
-    for (let h = 0, m = n.length; h < m; h++)
-      if (i === Oe(this._moveToSan(n[h], n)))
-        return n[h];
+    const i = Ie(e);
+    let s = Je(i), n = this._moves({ legal: !0, piece: s });
+    for (let u = 0, m = n.length; u < m; u++)
+      if (i === Ie(this._moveToSan(n[u], n)))
+        return n[u];
     if (t)
       return null;
-    let r, o, c, l, u, d = !1;
-    if (o = i.match(/([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/), o ? (r = o[1], c = o[2], l = o[3], u = o[4], c.length === 1 && (d = !0)) : (o = i.match(/([pnbrqkPNBRQK])?([a-h]?[1-8]?)x?-?([a-h][1-8])([qrbnQRBN])?/), o && (r = o[1], c = o[2], l = o[3], u = o[4], c.length === 1 && (d = !0))), s = et(i), n = this._moves({
+    let r, o, c, h, l, d = !1;
+    if (o = i.match(/([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/), o ? (r = o[1], c = o[2], h = o[3], l = o[4], c.length === 1 && (d = !0)) : (o = i.match(/([pnbrqkPNBRQK])?([a-h]?[1-8]?)x?-?([a-h][1-8])([qrbnQRBN])?/), o && (r = o[1], c = o[2], h = o[3], l = o[4], c.length === 1 && (d = !0))), s = Je(i), n = this._moves({
       legal: !0,
       piece: r || s
-    }), !l)
+    }), !h)
       return null;
-    for (let h = 0, m = n.length; h < m; h++)
+    for (let u = 0, m = n.length; u < m; u++)
       if (c) {
-        if ((!r || r.toLowerCase() === n[h].piece) && _[c] === n[h].from && _[l] === n[h].to && (!u || u.toLowerCase() === n[h].promotion))
-          return n[h];
+        if ((!r || r.toLowerCase() === n[u].piece) && v[c] === n[u].from && v[h] === n[u].to && (!l || l.toLowerCase() === n[u].promotion))
+          return n[u];
         if (d) {
-          const f = D(n[h].from);
-          if ((!r || r.toLowerCase() === n[h].piece) && _[l] === n[h].to && (c === f[0] || c === f[1]) && (!u || u.toLowerCase() === n[h].promotion))
-            return n[h];
+          const f = A(n[u].from);
+          if ((!r || r.toLowerCase() === n[u].piece) && v[h] === n[u].to && (c === f[0] || c === f[1]) && (!l || l.toLowerCase() === n[u].promotion))
+            return n[u];
         }
-      } else if (i === Oe(this._moveToSan(n[h], n)).replace("x", ""))
-        return n[h];
+      } else if (i === Ie(this._moveToSan(n[u], n)).replace("x", ""))
+        return n[u];
     return null;
   }
   ascii() {
     let e = `   +------------------------+
 `;
-    for (let t = _.a8; t <= _.h1; t++) {
-      if (de(t) === 0 && (e += ` ${"87654321"[Z(t)]} |`), this._board[t]) {
-        const i = this._board[t].type, n = this._board[t].color === O ? i.toUpperCase() : i.toLowerCase();
+    for (let t = v.a8; t <= v.h1; t++) {
+      if (le(t) === 0 && (e += ` ${"87654321"[X(t)]} |`), this._board[t]) {
+        const i = this._board[t].type, n = this._board[t].color === R ? i.toUpperCase() : i.toLowerCase();
         e += ` ${n} `;
       } else
         e += " . ";
@@ -4422,18 +3716,18 @@ class Gt {
   board() {
     const e = [];
     let t = [];
-    for (let i = _.a8; i <= _.h1; i++)
+    for (let i = v.a8; i <= v.h1; i++)
       this._board[i] == null ? t.push(null) : t.push({
-        square: D(i),
+        square: A(i),
         type: this._board[i].type,
         color: this._board[i].color
       }), i + 1 & 136 && (e.push(t), t = [], i += 8);
     return e;
   }
   squareColor(e) {
-    if (e in _) {
-      const t = _[e];
-      return (Z(t) + de(t)) % 2 === 0 ? "light" : "dark";
+    if (e in v) {
+      const t = v[e];
+      return (X(t) + le(t)) % 2 === 0 ? "light" : "dark";
     }
     return null;
   }
@@ -4456,15 +3750,15 @@ class Gt {
    * removing old positions from the record if their counts are reduced to 0.
    */
   _getPositionCount(e) {
-    const t = De(e);
+    const t = Re(e);
     return this._positionCount[t] || 0;
   }
   _incPositionCount(e) {
-    const t = De(e);
+    const t = Re(e);
     this._positionCount[t] === void 0 && (this._positionCount[t] = 0), this._positionCount[t] += 1;
   }
   _decPositionCount(e) {
-    const t = De(e);
+    const t = Re(e);
     this._positionCount[t] === 1 ? delete this._positionCount[t] : this._positionCount[t] -= 1;
   }
   _pruneComments() {
@@ -4513,23 +3807,23 @@ class Gt {
     });
   }
   setCastlingRights(e, t) {
-    for (const s of [M, W])
+    for (const s of [M, Q])
       t[s] !== void 0 && (t[s] ? this._castling[e] |= pe[s] : this._castling[e] &= ~pe[s]);
     this._updateCastlingRights();
     const i = this.getCastlingRights(e);
-    return (t[M] === void 0 || t[M] === i[M]) && (t[W] === void 0 || t[W] === i[W]);
+    return (t[M] === void 0 || t[M] === i[M]) && (t[Q] === void 0 || t[Q] === i[Q]);
   }
   getCastlingRights(e) {
     return {
       [M]: (this._castling[e] & pe[M]) !== 0,
-      [W]: (this._castling[e] & pe[W]) !== 0
+      [Q]: (this._castling[e] & pe[Q]) !== 0
     };
   }
   moveNumber() {
     return this._moveNumber;
   }
 }
-class jt {
+class Bt {
   /**
    * Creates a new PositionService instance
    * @param {ChessboardConfig} config - Board configuration
@@ -4548,7 +3842,7 @@ class jt {
       return this._convertStringPosition(e);
     if (typeof e == "object" && e !== null)
       return this._convertObjectPosition(e);
-    throw new k(P.invalid_position + e, "position", e);
+    throw new C(P.invalid_position + e, "position", e);
   }
   /**
    * Converts string position to FEN
@@ -4558,12 +3852,12 @@ class jt {
    */
   _convertStringPosition(e) {
     if (e === "start")
-      return gt;
+      return ut;
     if (this.validateFen(e))
       return e;
-    if (Ue[e])
-      return Ue[e];
-    throw new k(P.invalid_position + e, "position", e);
+    if (Ve[e])
+      return Ve[e];
+    throw new C(P.invalid_position + e, "position", e);
   }
   /**
    * Converts object position to FEN
@@ -4580,8 +3874,8 @@ class jt {
         const o = this._getSquareID(i, r), c = e[o];
         if (c) {
           n > 0 && (s.push(n), n = 0);
-          const l = c[1] === "w" ? c[0].toUpperCase() : c[0].toLowerCase();
-          s.push(l);
+          const h = c[1] === "w" ? c[0].toUpperCase() : c[0].toLowerCase();
+          s.push(h);
         } else
           n++;
       }
@@ -4596,7 +3890,7 @@ class jt {
    */
   setGame(e, t = {}) {
     const i = this.convertFen(e);
-    this.game ? this.game.load(i, t) : this.game = new Gt(i);
+    this.game ? this.game.load(i, t) : this.game = new Nt(i);
   }
   /**
    * Gets the current game instance
@@ -4611,7 +3905,7 @@ class jt {
    * @returns {boolean} True if valid, false otherwise
    */
   validateFen(e) {
-    return rt(e);
+    return it(e);
   }
   /**
    * Gets piece information for a specific square
@@ -4745,13 +4039,184 @@ class jt {
     this.game = null;
   }
 }
-class fe {
+class st {
+  /**
+   * Creates a new PerformanceMonitor instance
+   */
+  constructor() {
+    this.metrics = /* @__PURE__ */ new Map(), this.observers = /* @__PURE__ */ new Map(), this.isEnabled = typeof performance < "u" && performance.mark, this.isEnabled && this._setupObservers();
+  }
+  /**
+   * Sets up performance observers for automatic metrics collection
+   * @private
+   */
+  _setupObservers() {
+    try {
+      if (typeof PerformanceObserver < "u") {
+        const e = new PerformanceObserver((t) => {
+          for (const i of t.getEntries())
+            this.recordMetric(i.name, i.startTime);
+        });
+        e.observe({ entryTypes: ["paint"] }), this.observers.set("paint", e);
+      }
+    } catch (e) {
+      console.warn("Performance observers not available:", e.message);
+    }
+  }
+  /**
+   * Starts measuring performance for a given operation
+   * @param {string} name - Name of the operation
+   */
+  startMeasure(e) {
+    if (this.isEnabled)
+      try {
+        performance.mark(`${e}-start`);
+      } catch (t) {
+        console.warn(`Failed to start performance measure for ${e}:`, t.message);
+      }
+  }
+  /**
+   * Ends measuring performance for a given operation
+   * @param {string} name - Name of the operation
+   * @returns {number} Duration in milliseconds
+   */
+  endMeasure(e) {
+    if (!this.isEnabled) return 0;
+    try {
+      performance.mark(`${e}-end`);
+      const t = performance.measure(e, `${e}-start`, `${e}-end`);
+      return this.recordMetric(e, t.duration), performance.clearMarks(`${e}-start`), performance.clearMarks(`${e}-end`), performance.clearMeasures(e), t.duration;
+    } catch (t) {
+      return console.warn(`Failed to end performance measure for ${e}:`, t.message), 0;
+    }
+  }
+  /**
+   * Records a metric value
+   * @param {string} name - Metric name
+   * @param {number} value - Metric value
+   */
+  recordMetric(e, t) {
+    this.metrics.has(e) || this.metrics.set(e, {
+      count: 0,
+      total: 0,
+      min: 1 / 0,
+      max: -1 / 0,
+      values: []
+    });
+    const i = this.metrics.get(e);
+    i.count++, i.total += t, i.min = Math.min(i.min, t), i.max = Math.max(i.max, t), i.values.push(t), i.values.length > 100 && i.values.shift();
+  }
+  /**
+   * Gets metrics summary
+   * @returns {Object} Metrics summary
+   */
+  getMetrics() {
+    const e = {};
+    for (const [t, i] of this.metrics)
+      e[t] = {
+        count: i.count,
+        average: i.total / i.count,
+        min: i.min,
+        max: i.max,
+        total: i.total,
+        p95: this._calculatePercentile(i.values, 95),
+        p99: this._calculatePercentile(i.values, 99)
+      };
+    return e;
+  }
+  /**
+   * Calculates percentile for a set of values
+   * @private
+   * @param {Array<number>} values - Array of values
+   * @param {number} percentile - Percentile to calculate (0-100)
+   * @returns {number} Percentile value
+   */
+  _calculatePercentile(e, t) {
+    if (e.length === 0) return 0;
+    const i = [...e].sort((n, r) => n - r), s = Math.ceil(t / 100 * i.length) - 1;
+    return i[Math.max(0, s)];
+  }
+  /**
+   * Clears all metrics
+   */
+  clearMetrics() {
+    this.metrics.clear();
+  }
+  /**
+   * Destroys the performance monitor and cleans up resources
+   */
+  destroy() {
+    for (const e of this.observers.values())
+      e && typeof e.disconnect == "function" && e.disconnect();
+    this.observers.clear(), this.metrics.clear();
+  }
+}
+function oi(a, e) {
+  let t;
+  return function(...i) {
+    t || (a.apply(this, i), t = !0, setTimeout(() => {
+      t = !1;
+    }, e));
+  };
+}
+function ai(a, e) {
+  let t;
+  const i = function(...s) {
+    clearTimeout(t), t = setTimeout(() => a.apply(i.context, s), e);
+  };
+  return function(...s) {
+    return i.context = this, i(...s);
+  };
+}
+function ci(a) {
+  let e = !1;
+  const t = function(...i) {
+    e || (e = !0, requestAnimationFrame(() => {
+      a.apply(t.context, i), e = !1;
+    }));
+  };
+  return function(...i) {
+    return t.context = this, t(...i);
+  };
+}
+function hi(a, e, t, i = 1) {
+  !a || !a.style || (a.style.transform = `translate3d(${e}px, ${t}px, 0) scale(${i})`, a.style.willChange = "transform");
+}
+function li(a) {
+  !a || !a.style || (a.style.transform = "", a.style.left = "", a.style.top = "", a.style.willChange = "");
+}
+function ui(a) {
+  return new Promise((e) => {
+    requestAnimationFrame(() => {
+      const t = a();
+      e(t);
+    });
+  });
+}
+function di(a) {
+  if (!a || !a.getBoundingClientRect) return !1;
+  const e = a.getBoundingClientRect();
+  return e.width > 0 && e.height > 0 && e.bottom > 0 && e.right > 0 && e.top < (window.innerHeight || document.documentElement.clientHeight) && e.left < (window.innerWidth || document.documentElement.clientWidth);
+}
+function fi() {
+  return typeof performance < "u" && performance.memory ? {
+    used: performance.memory.usedJSHeapSize,
+    total: performance.memory.totalJSHeapSize,
+    limit: performance.memory.jsHeapSizeLimit
+  } : {
+    used: 0,
+    total: 0,
+    limit: 0,
+    supported: !1
+  };
+}
+class ue {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    * @param {ModeConfig} [config={}] - Mode configuration
    */
   constructor(e, t = {}) {
-    if (new.target === fe)
+    if (new.target === ue)
       throw new Error("BaseMode is abstract and cannot be instantiated directly");
     this.chessboard = e, this.config = {
       name: "base",
@@ -4944,7 +4409,7 @@ class fe {
     e.moveHistory && (this.moveHistory = e.moveHistory), e.isActive && this.start();
   }
 }
-const Ce = class Ce extends fe {
+const we = class we extends ue {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    * @param {CreativeModeConfig} [config={}] - Mode configuration
@@ -4960,7 +4425,7 @@ const Ce = class Ce extends fe {
       detectGameEnd: !1,
       showPiecePalette: !0,
       allowIllegalPositions: !0,
-      availablePieces: Ce.DEFAULT_PIECES,
+      availablePieces: we.DEFAULT_PIECES,
       ...t
     }), this.selectedPiece = null, this.savedPositions = /* @__PURE__ */ new Map(), this.clipboard = null, this.undoStack = [], this.redoStack = [];
   }
@@ -5185,8 +4650,8 @@ const Ce = class Ce extends fe {
   validatePosition() {
     const e = this.chessboard.fen(), t = e.split(" ")[0], i = [];
     let s = 0, n = 0, r = 0, o = 0;
-    for (const l of t)
-      l === "K" && s++, l === "k" && n++;
+    for (const h of t)
+      h === "K" && s++, h === "k" && n++;
     const c = t.split("/");
     return c[0].includes("P") && o++, c[7].includes("p") && r++, s !== 1 && i.push(`White has ${s} kings (should be 1)`), n !== 1 && i.push(`Black has ${n} kings (should be 1)`), r > 0 && i.push("White pawns on 1st rank"), o > 0 && i.push("Black pawns on 8th rank"), {
       isValid: i.length === 0,
@@ -5287,9 +4752,9 @@ const Ce = class Ce extends fe {
  * Default pieces available in creative mode
  * @static
  */
-w(Ce, "DEFAULT_PIECES", ["wk", "wq", "wr", "wb", "wn", "wp", "bk", "bq", "br", "bb", "bn", "bp"]);
-let Ne = Ce;
-class zt extends fe {
+y(we, "DEFAULT_PIECES", ["wk", "wq", "wr", "wb", "wn", "wp", "bk", "bq", "br", "bb", "bn", "bp"]);
+let Ne = we;
+class xt extends ue {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    * @param {PvPModeConfig} [config={}] - Mode configuration
@@ -5369,7 +4834,7 @@ class zt extends fe {
     if (!this.chessboard.movePiece(`${e}${t}${i.promotion || ""}`))
       return this._emit("invalidMove", { reason: "Move failed", from: e, to: t }), !1;
     this.config.timeControl && this._updatePlayerTime(r);
-    const l = {
+    const h = {
       from: e,
       to: t,
       piece: s,
@@ -5377,7 +4842,7 @@ class zt extends fe {
       timestamp: Date.now(),
       ...i
     };
-    return this.moveHistory.push(l), this.moveNotations.push(o), this.pendingDrawOffer = null, this.pendingTakeback = null, this._emit("move", l), this.config.onMove && this.config.onMove(l), this._checkGameEnd(), this.config.onTurnChange && this.config.onTurnChange(this.getCurrentTurn()), !0;
+    return this.moveHistory.push(h), this.moveNotations.push(o), this.pendingDrawOffer = null, this.pendingTakeback = null, this._emit("move", h), this.config.onMove && this.config.onMove(h), this._checkGameEnd(), this.config.onTurnChange && this.config.onTurnChange(this.getCurrentTurn()), !0;
   }
   /**
    * Get move notation
@@ -5444,11 +4909,11 @@ class zt extends fe {
    * @private
    */
   _checkGameEnd() {
-    var n, r, o, c, l, u;
+    var n, r, o, c, h, l;
     const e = (n = this.chessboard.positionService) == null ? void 0 : n.getGame();
     if (!e) return;
     let t = null, i = null, s = "";
-    (r = e.isCheckmate) != null && r.call(e) ? (i = this.getCurrentTurn() === "w" ? "b" : "w", t = "checkmate", s = `Checkmate! ${this.players[i].name} wins`) : (o = e.isStalemate) != null && o.call(e) ? (t = "stalemate", s = "Stalemate - Draw") : (c = e.isThreefoldRepetition) != null && c.call(e) ? (t = "repetition", s = "Draw by threefold repetition") : (l = e.isInsufficientMaterial) != null && l.call(e) ? (t = "insufficient", s = "Draw by insufficient material") : (u = e.isDraw) != null && u.call(e) && (t = "draw", s = "Draw"), t && (this._stopTimer(), this._emit("gameEnd", { result: t, winner: i, reason: s }), this.config.onGameEnd && this.config.onGameEnd({ result: t, winner: i, reason: s }));
+    (r = e.isCheckmate) != null && r.call(e) ? (i = this.getCurrentTurn() === "w" ? "b" : "w", t = "checkmate", s = `Checkmate! ${this.players[i].name} wins`) : (o = e.isStalemate) != null && o.call(e) ? (t = "stalemate", s = "Stalemate - Draw") : (c = e.isThreefoldRepetition) != null && c.call(e) ? (t = "repetition", s = "Draw by threefold repetition") : (h = e.isInsufficientMaterial) != null && h.call(e) ? (t = "insufficient", s = "Draw by insufficient material") : (l = e.isDraw) != null && l.call(e) && (t = "draw", s = "Draw"), t && (this._stopTimer(), this._emit("gameEnd", { result: t, winner: i, reason: s }), this.config.onGameEnd && this.config.onGameEnd({ result: t, winner: i, reason: s }));
   }
   /**
    * Offer a draw
@@ -5608,14 +5073,14 @@ class zt extends fe {
     super.restore(e), e.players && (this.players = e.players), e.moveNotations && (this.moveNotations = e.moveNotations), e.pendingDrawOffer && (this.pendingDrawOffer = e.pendingDrawOffer), e.pendingTakeback && (this.pendingTakeback = e.pendingTakeback), e.gameStartTime && (this.gameStartTime = e.gameStartTime);
   }
 }
-const he = {
+const ce = {
   p: 100,
   n: 320,
   b: 330,
   r: 500,
   q: 900,
   k: 2e4
-}, Vt = {
+}, $t = {
   p: [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [50, 50, 50, 50, 50, 50, 50, 50],
@@ -5676,7 +5141,7 @@ const he = {
     [20, 20, 0, 0, 0, 0, 20, 20],
     [20, 30, 10, 0, 0, 10, 30, 20]
   ]
-}, Ut = {
+}, Ft = {
   // Starting position responses
   rnbqkbnr_pppppppp_8_8_8_8_PPPPPPPP_RNBQKBNR: ["e2e4", "d2d4", "c2c4", "g1f3"],
   // After 1.e4
@@ -5684,7 +5149,7 @@ const he = {
   // After 1.d4
   rnbqkbnr_pppppppp_8_8_3P4_8_PPP1PPPP_RNBQKBNR: ["d7d5", "g8f6", "e7e6"]
 };
-class qe {
+class Ae {
   /**
    * @param {Object} game - Chess.js game instance
    * @param {AIConfig} [config={}] - AI configuration
@@ -5750,7 +5215,7 @@ class qe {
    * @returns {Object|null}
    */
   _getBookMove() {
-    const e = this.game.fen().split(" ")[0].replace(/\//g, "_"), t = Ut[e];
+    const e = this.game.fen().split(" ")[0].replace(/\//g, "_"), t = Ft[e];
     if (t && t.length > 0) {
       const i = t[Math.floor(Math.random() * t.length)], s = i.substring(0, 2), n = i.substring(2, 4), r = i.length > 4 ? i[4] : void 0;
       return { from: s, to: n, promotion: r };
@@ -5822,8 +5287,8 @@ class qe {
     const n = 1 / 0, r = this.game.turn() === "w", o = this._sortMoves(e);
     for (const c of o) {
       this.game.move(c);
-      const l = -this._alphabeta(this.config.maxDepth - 1, -n, -s, !r);
-      if (this.game.undo(), (l > i || l === i && this.config.randomizeEquivalent && Math.random() < 0.3) && (i = l, t = c), s = Math.max(s, l), Date.now() - this.startTime > this.config.maxTime) break;
+      const h = -this._alphabeta(this.config.maxDepth - 1, -n, -s, !r);
+      if (this.game.undo(), (h > i || h === i && this.config.randomizeEquivalent && Math.random() < 0.3) && (i = h, t = c), s = Math.max(s, h), Date.now() - this.startTime > this.config.maxTime) break;
     }
     return t ? { from: t.from, to: t.to, promotion: t.promotion } : null;
   }
@@ -5888,8 +5353,8 @@ class qe {
       if (t.captured && !i.captured) return -1;
       if (!t.captured && i.captured) return 1;
       if (t.captured && i.captured) {
-        const c = he[t.captured] - he[t.piece];
-        return he[i.captured] - he[i.piece] - c;
+        const c = ce[t.captured] - ce[t.piece];
+        return ce[i.captured] - ce[i.piece] - c;
       }
       return t.promotion && !i.promotion ? -1 : !t.promotion && i.promotion ? 1 : (s = t.san) != null && s.includes("+") && !((n = i.san) != null && n.includes("+")) ? -1 : !((r = t.san) != null && r.includes("+")) && ((o = i.san) != null && o.includes("+")) ? 1 : 0;
     });
@@ -5906,8 +5371,8 @@ class qe {
       for (let n = 0; n < 8; n++) {
         const r = e[s][n];
         if (!r) continue;
-        const o = he[r.type] || 0, c = this._getPositionValue(r.type, s, n, r.color), l = o + c;
-        t += r.color === "w" ? l : -l;
+        const o = ce[r.type] || 0, c = this._getPositionValue(r.type, s, n, r.color), h = o + c;
+        t += r.color === "w" ? h : -h;
       }
     const i = this._evaluateMobility();
     return t += i, t;
@@ -5922,7 +5387,7 @@ class qe {
    * @returns {number}
    */
   _getPositionValue(e, t, i, s) {
-    const n = Vt[e];
+    const n = $t[e];
     if (!n) return 0;
     const r = s === "w" ? t : 7 - t;
     return n[r][i];
@@ -5949,7 +5414,7 @@ class qe {
     };
   }
 }
-const ie = class ie extends fe {
+const te = class te extends ue {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    * @param {VsBotModeConfig} [config={}] - Mode configuration
@@ -5982,7 +5447,7 @@ const ie = class ie extends fe {
       playerColor: this.config.playerColor,
       botColor: this.botColor,
       difficulty: this.config.botDifficulty,
-      difficultyName: ie.DIFFICULTY_NAMES[this.config.botDifficulty]
+      difficultyName: te.DIFFICULTY_NAMES[this.config.botDifficulty]
     }), this.botColor === "w" && this.config.autoMove && this._scheduleBotMove();
   }
   /**
@@ -6003,7 +5468,7 @@ const ie = class ie extends fe {
       console.error("[VsBotMode] Cannot initialize AI: no game instance");
       return;
     }
-    this.ai = new qe(e, {
+    this.ai = new Ae(e, {
       difficulty: this.config.botDifficulty
     });
   }
@@ -6014,7 +5479,7 @@ const ie = class ie extends fe {
   setDifficulty(e) {
     this.config.botDifficulty = Math.max(1, Math.min(10, e)), this.ai && this.ai.setDifficulty(this.config.botDifficulty), this._emit("difficultyChanged", {
       difficulty: this.config.botDifficulty,
-      difficultyName: ie.DIFFICULTY_NAMES[this.config.botDifficulty]
+      difficultyName: te.DIFFICULTY_NAMES[this.config.botDifficulty]
     });
   }
   /**
@@ -6022,7 +5487,7 @@ const ie = class ie extends fe {
    * @returns {string}
    */
   getDifficultyName() {
-    return ie.DIFFICULTY_NAMES[this.config.botDifficulty] || "Unknown";
+    return te.DIFFICULTY_NAMES[this.config.botDifficulty] || "Unknown";
   }
   /**
    * Set player color
@@ -6225,7 +5690,7 @@ const ie = class ie extends fe {
     if (!e) {
       const i = (t = this.chessboard.positionService) == null ? void 0 : t.getGame();
       if (!i) return null;
-      e = new qe(i, { difficulty: 8 }).getBestMove(), e && (e.source = "builtin");
+      e = new Ae(i, { difficulty: 8 }).getBestMove(), e && (e.source = "builtin");
     }
     return e && (this.hintsUsed++, this._emit("hintUsed", { hint: e, totalHints: this.hintsUsed })), e;
   }
@@ -6255,11 +5720,11 @@ const ie = class ie extends fe {
    * @returns {boolean}
    */
   _checkGameEnd() {
-    var n, r, o, c, l, u;
+    var n, r, o, c, h, l;
     const e = (n = this.chessboard.positionService) == null ? void 0 : n.getGame();
     if (!e) return !1;
     let t = null, i = null, s = "";
-    if ((r = e.isCheckmate) != null && r.call(e) ? (i = this.getCurrentTurn() === "w" ? "b" : "w", t = "checkmate", s = `Checkmate! ${i === this.config.playerColor ? "Player" : "Bot"} wins`) : (o = e.isStalemate) != null && o.call(e) ? (t = "stalemate", s = "Stalemate - Draw") : (c = e.isThreefoldRepetition) != null && c.call(e) ? (t = "repetition", s = "Draw by threefold repetition") : (l = e.isInsufficientMaterial) != null && l.call(e) ? (t = "insufficient", s = "Draw by insufficient material") : (u = e.isDraw) != null && u.call(e) && (t = "draw", s = "Draw"), t) {
+    if ((r = e.isCheckmate) != null && r.call(e) ? (i = this.getCurrentTurn() === "w" ? "b" : "w", t = "checkmate", s = `Checkmate! ${i === this.config.playerColor ? "Player" : "Bot"} wins`) : (o = e.isStalemate) != null && o.call(e) ? (t = "stalemate", s = "Stalemate - Draw") : (c = e.isThreefoldRepetition) != null && c.call(e) ? (t = "repetition", s = "Draw by threefold repetition") : (h = e.isInsufficientMaterial) != null && h.call(e) ? (t = "insufficient", s = "Draw by insufficient material") : (l = e.isDraw) != null && l.call(e) && (t = "draw", s = "Draw"), t) {
       this._cancelBotMove();
       const d = i === this.config.playerColor;
       return this._emit("gameEnd", {
@@ -6284,30 +5749,30 @@ const ie = class ie extends fe {
       try {
         const c = this.chessboard.fen();
         await this.engine.setPosition(c);
-        const l = await this.engine.go({
+        const h = await this.engine.go({
           depth: this.config.engineDepth || 20,
           moveTime: this.config.engineMoveTime || 2e3
         });
-        if (l != null && l.bestMove) {
-          const u = l.bestMove;
+        if (h != null && h.bestMove) {
+          const l = h.bestMove;
           t = {
-            from: u.substring(0, 2),
-            to: u.substring(2, 4),
-            promotion: u.length > 4 ? u[4] : void 0
+            from: l.substring(0, 2),
+            to: l.substring(2, 4),
+            promotion: l.length > 4 ? l[4] : void 0
           }, i = {
-            score: l.score,
-            depth: l.depth,
-            nodes: l.nodes,
-            nps: l.nps,
-            pv: l.pv,
-            time: l.time
+            score: h.score,
+            depth: h.depth,
+            nodes: h.nodes,
+            nps: h.nps,
+            pv: h.pv,
+            time: h.time
           }, s = "engine";
         }
       } catch (c) {
         console.warn("[VsBotMode] Engine analysis failed:", c);
       }
     if (!t && this.ai) {
-      const c = new qe(e, { difficulty: 10 });
+      const c = new Ae(e, { difficulty: 10 });
       t = c.getBestMove(), i = c.getStats();
     }
     const n = e.moves({ verbose: !0 });
@@ -6377,7 +5842,7 @@ const ie = class ie extends fe {
  * Difficulty level descriptions
  * @static
  */
-w(ie, "DIFFICULTY_NAMES", {
+y(te, "DIFFICULTY_NAMES", {
   1: "Beginner",
   2: "Easy",
   3: "Easy+",
@@ -6389,8 +5854,8 @@ w(ie, "DIFFICULTY_NAMES", {
   9: "Expert",
   10: "Master"
 });
-let xe = ie;
-const Ee = class Ee {
+let Be = te;
+const Pe = class Pe {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    */
@@ -6402,7 +5867,7 @@ const Ee = class Ee {
    * @private
    */
   _initializeDefaultModes() {
-    Object.entries(Ee.MODES).forEach(([e, t]) => {
+    Object.entries(Pe.MODES).forEach(([e, t]) => {
       this.registerMode(e, t);
     });
   }
@@ -6588,12 +6053,12 @@ const Ee = class Ee {
  * Available mode constructors
  * @static
  */
-w(Ee, "MODES", {
+y(Pe, "MODES", {
   creative: Ne,
-  pvp: zt,
-  vsBot: xe
+  pvp: xt,
+  vsBot: Be
 });
-let Be = Ee, Pe = class {
+let xe = Pe, ye = class {
   /**
    * Creates a new Chessboard instance
    * @param {Object} config - Configuration object
@@ -6615,9 +6080,9 @@ let Be = Ee, Pe = class {
    */
   _validateAndInitializeConfig(e) {
     if (!e || typeof e != "object")
-      throw new q("Configuration must be an object", "config", e);
-    if (this.config = new it(e), !this.config.id_div)
-      throw new q(
+      throw new O("Configuration must be an object", "config", e);
+    if (this.config = new et(e), !this.config.id_div)
+      throw new O(
         "Configuration must include id_div",
         "id_div",
         this.config.id_div
@@ -6646,13 +6111,13 @@ let Be = Ee, Pe = class {
    * @private
    */
   _initializeServices() {
-    this.validationService = new je(), this.coordinateService = new Ct(this.config), this.positionService = new jt(this.config), this.boardService = new Pt(this.config), this.pieceService = new At(this.config), this.animationService = new wt(this.config), this.moveService = new Tt(this.config, this.positionService), this.eventService = new Mt(
+    this.validationService = new Ge(), this.coordinateService = new St(this.config), this.positionService = new Bt(this.config), this.boardService = new bt(this.config), this.pieceService = new Et(this.config), this.animationService = new _t(this.config), this.moveService = new Pt(this.config, this.positionService), this.eventService = new wt(
       this.config,
       this.boardService,
       this.moveService,
       this.coordinateService,
       this
-    ), this._updateTimeout = null, this._isAnimating = !1, this.modeManager = new Be(this), this._boundUpdateBoardPieces = this._updateBoardPieces.bind(this), this._boundOnSquareClick = this._onSquareClick.bind(this), this._boundOnPieceHover = this._onPieceHover.bind(this), this._boundOnPieceLeave = this._onPieceLeave.bind(this);
+    ), this._updateTimeout = null, this._isAnimating = !1, this.modeManager = new xe(this), this._boundUpdateBoardPieces = this._updateBoardPieces.bind(this), this._boundOnSquareClick = this._onSquareClick.bind(this), this._boundOnPieceHover = this._onPieceHover.bind(this), this._boundOnPieceLeave = this._onPieceLeave.bind(this);
   }
   /**
    * Initializes the board
@@ -6751,7 +6216,7 @@ let Be = Ee, Pe = class {
    * @returns {boolean} True if move was successful
    */
   _onMove(e, t, i = null, s = !0) {
-    const n = new Q(e, t, i);
+    const n = new Z(e, t, i);
     return !n.check() || this.config.onlyLegalMoves && !n.isLegal(this.positionService.getGame()) ? (this._clearVisualState(), !1) : !n.hasPromotion() && this._requiresPromotion(n) ? !1 : this.config.onMove(n) ? (this._executeMove(n, s), !0) : (this._clearVisualState(), !1);
   }
   /**
@@ -6974,12 +6439,12 @@ let Be = Ee, Pe = class {
     Object.values(e).forEach((r) => {
       s[r.id] = this.positionService.getGamePieceId(r.id);
     }), Object.values(e).forEach((r) => {
-      const o = s[r.id], c = r.piece, l = c ? c.getId() : null;
-      if (l !== o && (c && l !== o && this.pieceService.removePieceFromSquare(r, i), o && l !== o)) {
-        const u = this.pieceService.convertPiece(o);
+      const o = s[r.id], c = r.piece, h = c ? c.getId() : null;
+      if (h !== o && (c && h !== o && this.pieceService.removePieceFromSquare(r, i), o && h !== o)) {
+        const l = this.pieceService.convertPiece(o);
         this.pieceService.addPieceOnSquare(
           r,
-          u,
+          l,
           i,
           this._createDragFunction.bind(this)
         );
@@ -6998,9 +6463,9 @@ let Be = Ee, Pe = class {
   _doSimultaneousUpdate(e, t, i = !1) {
     const s = {}, n = {};
     Object.values(e).forEach((d) => {
-      const h = d.piece, m = this.positionService.getGamePieceId(d.id);
-      if (h) {
-        const f = (h.color + h.type).toLowerCase();
+      const u = d.piece, m = this.positionService.getGamePieceId(d.id);
+      if (u) {
+        const f = (u.color + u.type).toLowerCase();
         s[f] || (s[f] = []), s[f].push({ square: d, id: d.id });
       }
       if (m) {
@@ -7010,7 +6475,7 @@ let Be = Ee, Pe = class {
     });
     let r = 0, o = 0;
     const c = i ? 0 : this.config.simultaneousAnimationDelay;
-    let l = 0;
+    let h = 0;
     if (Object.keys(n).forEach((d) => {
       o += Math.max((s[d] || []).length, n[d].length);
     }), o === 0) {
@@ -7019,7 +6484,7 @@ let Be = Ee, Pe = class {
       t !== d && this.config.onChange(d);
       return;
     }
-    const u = () => {
+    const l = () => {
       if (r++, r === o) {
         this._addListeners();
         const d = this.positionService.getGame().fen();
@@ -7027,55 +6492,55 @@ let Be = Ee, Pe = class {
       }
     };
     Object.keys(n).forEach((d) => {
-      const h = (s[d] || []).slice(), m = n[d].slice(), f = [];
-      for (let y = 0; y < h.length; y++) {
-        f[y] = [];
-        for (let p = 0; p < m.length; p++)
-          f[y][p] = Math.abs(h[y].square.row - m[p].square.row) + Math.abs(h[y].square.col - m[p].square.col);
+      const u = (s[d] || []).slice(), m = n[d].slice(), f = [];
+      for (let S = 0; S < u.length; S++) {
+        f[S] = [];
+        for (let g = 0; g < m.length; g++)
+          f[S][g] = Math.abs(u[S].square.row - m[g].square.row) + Math.abs(u[S].square.col - m[g].square.col);
       }
-      const g = new Array(h.length).fill(!1), S = new Array(m.length).fill(!1), E = [];
+      const p = new Array(u.length).fill(!1), b = new Array(m.length).fill(!1), w = [];
       for (; ; ) {
-        let y = 1 / 0, p = -1, C = -1;
-        for (let T = 0; T < h.length; T++)
-          if (!g[T])
-            for (let N = 0; N < m.length; N++)
-              S[N] || f[T][N] < y && (y = f[T][N], p = T, C = N);
-        if (p === -1 || C === -1) break;
-        if (h[p].square === m[C].square) {
-          g[p] = !0, S[C] = !0;
+        let S = 1 / 0, g = -1, E = -1;
+        for (let k = 0; k < u.length; k++)
+          if (!p[k])
+            for (let L = 0; L < m.length; L++)
+              b[L] || f[k][L] < S && (S = f[k][L], g = k, E = L);
+        if (g === -1 || E === -1) break;
+        if (u[g].square === m[E].square) {
+          p[g] = !0, b[E] = !0;
           continue;
         }
-        E.push({
-          from: h[p].square,
-          to: m[C].square,
-          piece: h[p].square.piece
-        }), g[p] = !0, S[C] = !0;
+        w.push({
+          from: u[g].square,
+          to: m[E].square,
+          piece: u[g].square.piece
+        }), p[g] = !0, b[E] = !0;
       }
-      for (let y = 0; y < h.length; y++)
-        g[y] || (setTimeout(() => {
-          this.pieceService.removePieceFromSquare(h[y].square, !0, u);
-        }, l * c), l++);
-      for (let y = 0; y < m.length; y++)
-        S[y] || (setTimeout(() => {
-          const p = this.pieceService.convertPiece(d);
+      for (let S = 0; S < u.length; S++)
+        p[S] || (setTimeout(() => {
+          this.pieceService.removePieceFromSquare(u[S].square, !0, l);
+        }, h * c), h++);
+      for (let S = 0; S < m.length; S++)
+        b[S] || (setTimeout(() => {
+          const g = this.pieceService.convertPiece(d);
           this.pieceService.addPieceOnSquare(
-            m[y].square,
-            p,
+            m[S].square,
+            g,
             !0,
             this._createDragFunction.bind(this),
-            u
+            l
           );
-        }, l * c), l++);
-      E.forEach((y) => {
+        }, h * c), h++);
+      w.forEach((S) => {
         setTimeout(() => {
           this.pieceService.translatePiece(
-            y,
+            S,
             !1,
             !0,
             this._createDragFunction.bind(this),
-            u
+            l
           );
-        }, l * c), l++;
+        }, h * c), h++;
       });
     });
   }
@@ -7087,43 +6552,43 @@ let Be = Ee, Pe = class {
    */
   _analyzePositionChanges(e) {
     const t = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map();
-    Object.values(e).forEach((l) => {
-      const u = l.piece, d = this.positionService.getGamePieceId(l.id);
-      u && t.set(l.id, u.getId()), d && i.set(l.id, d);
+    Object.values(e).forEach((h) => {
+      const l = h.piece, d = this.positionService.getGamePieceId(h.id);
+      l && t.set(h.id, l.getId()), d && i.set(h.id, d);
     });
     const s = [], n = [], r = [], o = [], c = /* @__PURE__ */ new Set();
-    return t.forEach((l, u) => {
-      const d = i.get(u);
-      l === d && (o.push({
-        piece: l,
-        square: u
-      }), c.add(u));
-    }), t.forEach((l, u) => {
-      if (c.has(u))
+    return t.forEach((h, l) => {
+      const d = i.get(l);
+      h === d && (o.push({
+        piece: h,
+        square: l
+      }), c.add(l));
+    }), t.forEach((h, l) => {
+      if (c.has(l))
         return;
       const d = Array.from(i.entries()).find(
-        ([h, m]) => m === l && !c.has(h)
+        ([u, m]) => m === h && !c.has(u)
       );
       if (d) {
-        const [h] = d;
+        const [u] = d;
         s.push({
-          piece: l,
-          from: u,
-          to: h,
-          fromSquare: e[u],
-          toSquare: e[h]
-        }), c.add(h);
+          piece: h,
+          from: l,
+          to: u,
+          fromSquare: e[l],
+          toSquare: e[u]
+        }), c.add(u);
       } else
         n.push({
-          piece: l,
-          square: u,
-          squareObj: e[u]
+          piece: h,
+          square: l,
+          squareObj: e[l]
         });
-    }), i.forEach((l, u) => {
-      c.has(u) || r.push({
-        piece: l,
-        square: u,
-        squareObj: e[u]
+    }), i.forEach((h, l) => {
+      c.has(l) || r.push({
+        piece: h,
+        square: l,
+        squareObj: e[l]
       });
     }), {
       moves: s,
@@ -7146,32 +6611,32 @@ let Be = Ee, Pe = class {
     const c = s.length + n.length + r.length;
     if (c === 0) {
       this._addListeners();
-      const h = this.positionService.getGame().fen();
-      t !== h && this.config.onChange(h);
+      const u = this.positionService.getGame().fen();
+      t !== u && this.config.onChange(u);
       return;
     }
-    const l = () => {
+    const h = () => {
       if (o++, o === c) {
         this._addListeners();
-        const h = this.positionService.getGame().fen();
-        t !== h && this.config.onChange(h);
+        const u = this.positionService.getGame().fen();
+        t !== u && this.config.onChange(u);
       }
-    }, u = i ? 0 : this.config.simultaneousAnimationDelay;
+    }, l = i ? 0 : this.config.simultaneousAnimationDelay;
     let d = 0;
-    s.forEach((h) => {
-      const m = d * u;
+    s.forEach((u) => {
+      const m = d * l;
       setTimeout(() => {
-        this._animatePieceMove(h, l);
+        this._animatePieceMove(u, h);
       }, m), d++;
-    }), n.forEach((h) => {
-      const m = d * u;
+    }), n.forEach((u) => {
+      const m = d * l;
       setTimeout(() => {
-        this._animatePieceRemoval(h, l);
+        this._animatePieceRemoval(u, h);
       }, m), d++;
-    }), r.forEach((h) => {
-      const m = d * u;
+    }), r.forEach((u) => {
+      const m = d * l;
       setTimeout(() => {
-        this._animatePieceAddition(h, l);
+        this._animatePieceAddition(u, h);
       }, m), d++;
     });
   }
@@ -7367,10 +6832,10 @@ let Be = Ee, Pe = class {
     if (typeof e == "object" && e.type && e.color)
       n = (e.color + e.type).toLowerCase();
     else if (typeof e == "string" && e.length === 2) {
-      const m = e[0].toLowerCase(), f = e[1].toLowerCase(), g = "kqrbnp", S = "wb";
-      if (g.includes(m) && S.includes(f))
+      const m = e[0].toLowerCase(), f = e[1].toLowerCase(), p = "kqrbnp", b = "wb";
+      if (p.includes(m) && b.includes(f))
         n = f + m;
-      else if (S.includes(m) && g.includes(f))
+      else if (b.includes(m) && p.includes(f))
         n = m + f;
       else
         throw new Error(`[putPiece] Invalid piece: ${e}`);
@@ -7380,11 +6845,11 @@ let Be = Ee, Pe = class {
     if (!o) throw new Error(`[putPiece] Invalid piece: ${n}`);
     if (!this.positionService || !this.positionService.getGame())
       throw new Error("[putPiece] No positionService or game");
-    const c = this.pieceService.convertPiece(n), l = this.boardService.getSquare(t);
-    if (!l) throw new Error(`[putPiece] Square not found: ${t}`);
-    l.piece = c;
-    const u = { type: c.type, color: c.color };
-    if (!this.positionService.getGame().put(u, t)) throw new Error(`[putPiece] Game.put failed for ${n} on ${t}`);
+    const c = this.pieceService.convertPiece(n), h = this.boardService.getSquare(t);
+    if (!h) throw new Error(`[putPiece] Square not found: ${t}`);
+    h.piece = c;
+    const l = { type: c.type, color: c.color };
+    if (!this.positionService.getGame().put(l, t)) throw new Error(`[putPiece] Game.put failed for ${n} on ${t}`);
     return this._updateBoardPieces(s), !0;
   }
   /**
@@ -7757,7 +7222,7 @@ let Be = Ee, Pe = class {
     const t = typeof e == "string" ? this.moveService.parseMove(e) : e;
     if (!t) return !1;
     const i = this.boardService.getSquare(t.from), s = this.boardService.getSquare(t.to);
-    return !i || !s ? !1 : new Q(i, s, t.promotion).isLegal(this.positionService.getGame());
+    return !i || !s ? !1 : new Z(i, s, t.promotion).isLegal(this.positionService.getGame());
   }
   /**
    * Checks if the current player is in check
@@ -7917,30 +7382,26 @@ let Be = Ee, Pe = class {
     return this.setPosition(e, { ...t, animate: i });
   }
   put(e, t, i = !0) {
-    console.debug("[put] called with:", { pieceId: e, squareId: t, animation: i });
     let s = null;
     function n(o) {
       if (typeof o != "string" || o.length !== 2) return null;
-      const c = o[0].toLowerCase(), l = o[1].toLowerCase(), u = "kqrbnp", d = "wb";
-      return u.includes(c) && d.includes(l) ? { type: c, color: l } : d.includes(c) && u.includes(l) ? { type: l, color: c } : null;
+      const c = o[0].toLowerCase(), h = o[1].toLowerCase(), l = "kqrbnp", d = "wb";
+      return l.includes(c) && d.includes(h) ? { type: c, color: h } : d.includes(c) && l.includes(h) ? { type: h, color: c } : null;
     }
     if (typeof e == "string") {
-      if (s = n(e), console.debug("[put] parsed piece string:", s), !s)
+      if (s = n(e), !s)
         return console.error(`[put] Invalid piece string: '${e}'. Use e.g. 'wQ', 'Qw', 'bK', 'kb'`), !1;
     } else if (typeof e == "object" && e.type && e.color) {
       const o = String(e.type).toLowerCase(), c = String(e.color).toLowerCase();
       if ("kqrbnp".includes(o) && "wb".includes(c))
-        s = { type: o, color: c }, console.debug("[put] normalized piece object:", s);
+        s = { type: o, color: c };
       else
         return console.error(
           `[put] Invalid piece object: {type: '${e.type}', color: '${e.color}'}`
         ), !1;
     } else
       return console.error("[put] Invalid pieceId:", e), !1;
-    if (typeof t != "string" || t.length !== 2)
-      return console.error("[put] Invalid squareId:", t), !1;
-    const r = this.putPiece(s, t, { animate: i });
-    return console.debug("[put] putPiece result:", r), r;
+    return typeof t != "string" || t.length !== 2 ? (console.error("[put] Invalid squareId:", t), !1) : this.putPiece(s, t, { animate: i });
   }
   remove(e, t = !0) {
     return this.removePiece(e, { animate: t });
@@ -7974,12 +7435,272 @@ let Be = Ee, Pe = class {
     return this.dehighlight(e);
   }
 };
-class ot {
+const ee = Object.freeze({
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3,
+  NONE: 4
+}), Gt = Object.freeze({
+  level: ee.INFO,
+  enableColors: !0,
+  enableTimestamp: !0,
+  enableStackTrace: !0,
+  maxLogSize: 1e3,
+  enableConsole: !0,
+  enableStorage: !1,
+  storageKey: "chessboard-logs"
+}), Ze = Object.freeze({
+  DEBUG: "\x1B[36m",
+  // Cyan
+  INFO: "\x1B[32m",
+  // Green
+  WARN: "\x1B[33m",
+  // Yellow
+  ERROR: "\x1B[31m",
+  // Red
+  RESET: "\x1B[0m"
+  // Reset
+});
+class Ee {
+  /**
+   * Creates a new Logger instance
+   * @param {Object} [config] - Logger configuration
+   * @param {string} [name] - Logger name/namespace
+   */
+  constructor(e = {}, t = "Chessboard") {
+    this.config = { ...Gt, ...e }, this.name = t, this.logs = [], this.startTime = Date.now(), this.debug = this._createLogMethod("DEBUG"), this.info = this._createLogMethod("INFO"), this.warn = this._createLogMethod("WARN"), this.error = this._createLogMethod("ERROR"), this.performances = /* @__PURE__ */ new Map(), this.config.enableStorage && this._initStorage();
+  }
+  /**
+   * Creates a log method for a specific level
+   * @private
+   * @param {string} level - Log level
+   * @returns {Function} Log method
+   */
+  _createLogMethod(e) {
+    return (t, i = {}, s = null) => {
+      this._log(e, t, i, s);
+    };
+  }
+  /**
+   * Core logging method
+   * @private
+   * @param {string} level - Log level
+   * @param {string} message - Log message
+   * @param {Object} data - Additional data
+   * @param {Error} error - Error object
+   */
+  _log(e, t, i, s) {
+    if (ee[e] < this.config.level)
+      return;
+    const r = this._createLogEntry(e, t, i, s);
+    this._storeLogEntry(r), this.config.enableConsole && this._outputToConsole(r), this.config.enableStorage && this._storeInStorage(r);
+  }
+  /**
+   * Creates a structured log entry
+   * @private
+   * @param {string} level - Log level
+   * @param {string} message - Log message
+   * @param {Object} data - Additional data
+   * @param {Error} error - Error object
+   * @returns {Object} Log entry
+   */
+  _createLogEntry(e, t, i, s) {
+    const n = {
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      level: e,
+      logger: this.name,
+      message: t,
+      data: { ...i },
+      runtime: Date.now() - this.startTime
+    };
+    return s && (n.error = {
+      name: s.name,
+      message: s.message,
+      stack: this.config.enableStackTrace ? s.stack : null
+    }), typeof performance < "u" && performance.memory && (n.memory = {
+      used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
+      total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024)
+    }), n;
+  }
+  /**
+   * Stores log entry in memory
+   * @private
+   * @param {Object} entry - Log entry
+   */
+  _storeLogEntry(e) {
+    this.logs.push(e), this.logs.length > this.config.maxLogSize && this.logs.shift();
+  }
+  /**
+   * Outputs log entry to console
+   * @private
+   * @param {Object} entry - Log entry
+   */
+  _outputToConsole(e) {
+    const t = this.config.enableColors ? Ze[e.level] : "", i = this.config.enableColors ? Ze.RESET : "", s = this.config.enableTimestamp ? `[${new Date(e.timestamp).toLocaleTimeString()}] ` : "", r = `${`${t}${s}[${e.logger}:${e.level}]${i}`} ${e.message}`, o = this._getConsoleMethod(e.level);
+    Object.keys(e.data).length > 0 || e.error ? o(r, {
+      data: e.data,
+      error: e.error,
+      runtime: `${e.runtime}ms`
+    }) : o(r);
+  }
+  /**
+   * Gets appropriate console method for log level
+   * @private
+   * @param {string} level - Log level
+   * @returns {Function} Console method
+   */
+  _getConsoleMethod(e) {
+    switch (e) {
+      case "DEBUG":
+        return console.debug || console.log;
+      case "INFO":
+        return console.info || console.log;
+      case "WARN":
+        return console.warn || console.log;
+      case "ERROR":
+        return console.error || console.log;
+      default:
+        return console.log;
+    }
+  }
+  /**
+   * Initializes localStorage for log storage
+   * @private
+   */
+  _initStorage() {
+    if (typeof localStorage > "u") {
+      this.config.enableStorage = !1;
+      return;
+    }
+    try {
+      localStorage.setItem("test", "test"), localStorage.removeItem("test");
+    } catch {
+      this.config.enableStorage = !1, console.warn("localStorage not available, disabling log storage");
+    }
+  }
+  /**
+   * Stores log entry in localStorage
+   * @private
+   * @param {Object} entry - Log entry
+   */
+  _storeInStorage(e) {
+    if (this.config.enableStorage)
+      try {
+        const t = JSON.parse(localStorage.getItem(this.config.storageKey) || "[]");
+        t.push(e), t.length > this.config.maxLogSize && t.shift(), localStorage.setItem(this.config.storageKey, JSON.stringify(t));
+      } catch (t) {
+        console.warn("Failed to store log entry:", t);
+      }
+  }
+  /**
+   * Starts performance measurement
+   * @param {string} name - Performance measurement name
+   */
+  startPerformance(e) {
+    this.performances.set(e, {
+      start: performance.now(),
+      measurements: []
+    }), this.debug(`Started performance measurement: ${e}`);
+  }
+  /**
+   * Ends performance measurement
+   * @param {string} name - Performance measurement name
+   * @returns {number} Duration in milliseconds
+   */
+  endPerformance(e) {
+    const t = this.performances.get(e);
+    if (!t)
+      return this.warn(`Performance measurement not found: ${e}`), 0;
+    const i = performance.now() - t.start;
+    return t.measurements.push(i), this.debug(`Performance measurement completed: ${e}`, {
+      duration: `${i.toFixed(2)}ms`,
+      measurements: t.measurements.length
+    }), i;
+  }
+  /**
+   * Gets performance statistics
+   * @param {string} name - Performance measurement name
+   * @returns {Object} Performance statistics
+   */
+  getPerformanceStats(e) {
+    const t = this.performances.get(e);
+    if (!t || t.measurements.length === 0)
+      return null;
+    const i = t.measurements, s = i.reduce((c, h) => c + h, 0), n = s / i.length, r = Math.min(...i), o = Math.max(...i);
+    return {
+      name: e,
+      count: i.length,
+      total: s.toFixed(2),
+      average: n.toFixed(2),
+      min: r.toFixed(2),
+      max: o.toFixed(2)
+    };
+  }
+  /**
+   * Creates a child logger with a specific namespace
+   * @param {string} namespace - Child logger namespace
+   * @returns {Logger} Child logger instance
+   */
+  child(e) {
+    return new Ee(this.config, `${this.name}:${e}`);
+  }
+  /**
+   * Sets log level
+   * @param {string} level - Log level
+   */
+  setLevel(e) {
+    ee[e] !== void 0 && (this.config.level = ee[e]);
+  }
+  /**
+   * Gets current log level
+   * @returns {string} Current log level
+   */
+  getLevel() {
+    return Object.keys(ee).find((e) => ee[e] === this.config.level);
+  }
+  /**
+   * Gets all stored logs
+   * @returns {Array} Array of log entries
+   */
+  getLogs() {
+    return [...this.logs];
+  }
+  /**
+   * Clears all stored logs
+   */
+  clearLogs() {
+    if (this.logs = [], this.config.enableStorage)
+      try {
+        localStorage.removeItem(this.config.storageKey);
+      } catch (e) {
+        console.warn("Failed to clear stored logs:", e);
+      }
+  }
+  /**
+   * Exports logs as JSON
+   * @returns {string} JSON string of logs
+   */
+  exportLogs() {
+    return JSON.stringify(this.logs, null, 2);
+  }
+  /**
+   * Cleans up resources
+   */
+  destroy() {
+    this.clearLogs(), this.performances.clear();
+  }
+}
+const je = new Ee();
+function gi(a, e) {
+  return new Ee(a, e);
+}
+class nt {
   /**
    * Creates a new ChessboardFactory instance
    */
   constructor() {
-    this.instances = /* @__PURE__ */ new Map(), this.validationService = new je(), this.performanceMonitor = new st(), this.logger = v.child("ChessboardFactory"), this.templates = /* @__PURE__ */ new Map(), this._initializeDefaultTemplates();
+    this.instances = /* @__PURE__ */ new Map(), this.validationService = new Ge(), this.performanceMonitor = new st(), this.logger = je.child("ChessboardFactory"), this.templates = /* @__PURE__ */ new Map(), this._initializeDefaultTemplates();
   }
   /**
    * Initializes default configuration templates
@@ -8038,14 +7759,14 @@ class ot {
     this.performanceMonitor.startMeasure("chessboard-creation");
     try {
       if (!e || typeof e != "string")
-        throw new q(
+        throw new O(
           "Container ID must be a non-empty string",
           "containerId",
           e
         );
       const s = document.getElementById(e);
       if (!s)
-        throw new q(
+        throw new O(
           `Container element not found: ${e}`,
           "containerId",
           e
@@ -8056,7 +7777,7 @@ class ot {
         o ? (n = { ...o, ...t }, this.logger.info(`Using template "${i}" for chessboard creation`)) : this.logger.warn(`Template "${i}" not found, using default configuration`);
       }
       n.id = e, this.validationService.validateConfig(n);
-      const r = new Pe(n);
+      const r = new ye(n);
       return this.instances.set(e, {
         instance: r,
         config: n,
@@ -8146,9 +7867,9 @@ class ot {
    */
   registerTemplate(e, t) {
     if (!e || typeof e != "string")
-      throw new q("Template name must be a non-empty string", "name", e);
+      throw new O("Template name must be a non-empty string", "name", e);
     if (!t || typeof t != "object")
-      throw new q("Template configuration must be an object", "config", t);
+      throw new O("Template configuration must be an object", "config", t);
     this.validationService.validateConfig(t), this.templates.set(e, { ...t }), this.logger.info(`Registered template: ${e}`, { configKeys: Object.keys(t) });
   }
   /**
@@ -8213,36 +7934,36 @@ class ot {
     this.destroyAll(), this.validationService.destroy(), this.performanceMonitor.destroy(), this.templates.clear();
   }
 }
-const F = new ot();
-function Ht(a, e = {}, t = null) {
-  return F.create(a, e, t);
+const $ = new nt();
+function jt(a, e = {}, t = null) {
+  return $.create(a, e, t);
 }
-function Kt(a, e, t = {}) {
-  return F.createFromTemplate(a, e, t);
+function zt(a, e, t = {}) {
+  return $.createFromTemplate(a, e, t);
 }
-function $(a, e = {}) {
-  const t = v.child("ChessboardFactory");
+function q(a, e = {}) {
+  const t = je.child("ChessboardFactory");
   try {
     if (typeof a == "object" && a !== null)
-      return t.debug("Creating chessboard with config object"), new Pe(a);
+      return t.debug("Creating chessboard with config object"), new ye(a);
     if (typeof a == "string") {
       t.debug("Creating chessboard with element ID", { elementId: a });
       const i = { ...e, id: a };
-      return new Pe(i);
+      return new ye(i);
     }
     throw new Error("Invalid parameters: first parameter must be string or object");
   } catch (i) {
     throw t.error("Failed to create chessboard instance", { error: i }), i;
   }
 }
-class at extends Pe {
+class rt extends ye {
   /**
    * Creates a new ChessboardWrapper instance
    * @param {string|Object} containerElm - Container element ID or configuration object
    * @param {Object} [config={}] - Configuration options
    */
   constructor(e, t = {}) {
-    const i = v.child("ChessboardWrapper");
+    const i = je.child("ChessboardWrapper");
     try {
       if (typeof e == "object" && e !== null)
         i.debug("Initializing with config object"), super(e);
@@ -8257,51 +7978,51 @@ class at extends Pe {
     }
   }
 }
-$.create = Ht;
-$.fromTemplate = Kt;
-$.factory = F;
-$.getInstance = (a) => F.getInstance(a);
-$.destroyInstance = (a) => F.destroy(a);
-$.destroyAll = () => F.destroyAll();
-$.listInstances = () => F.listInstances();
-$.registerTemplate = (a, e) => F.registerTemplate(a, e);
-$.removeTemplate = (a) => F.removeTemplate(a);
-$.getTemplate = (a) => F.getTemplate(a);
-$.listTemplates = () => F.listTemplates();
-$.getStats = () => F.getStats();
-$.Class = at;
-$.Chessboard = at;
-$.Config = it;
-$.Factory = ot;
-function Wt(a) {
+q.create = jt;
+q.fromTemplate = zt;
+q.factory = $;
+q.getInstance = (a) => $.getInstance(a);
+q.destroyInstance = (a) => $.destroy(a);
+q.destroyAll = () => $.destroyAll();
+q.listInstances = () => $.listInstances();
+q.registerTemplate = (a, e) => $.registerTemplate(a, e);
+q.removeTemplate = (a) => $.removeTemplate(a);
+q.getTemplate = (a) => $.getTemplate(a);
+q.listTemplates = () => $.listTemplates();
+q.getStats = () => $.getStats();
+q.Class = rt;
+q.Chessboard = rt;
+q.Config = et;
+q.Factory = nt;
+function Vt(a) {
   const e = a.charCodeAt(0) - 97;
   return { row: 7 - (parseInt(a[1]) - 1), col: e };
 }
-function bi(a, e) {
+function pi(a, e) {
   const t = String.fromCharCode(97 + e), i = (8 - a).toString();
   return t + i;
 }
-function Si(a) {
-  const { row: e, col: t } = Wt(a);
+function vi(a) {
+  const { row: e, col: t } = Vt(a);
   return (e + t) % 2 === 0 ? "dark" : "light";
 }
-function yi(a, e) {
+function _i(a, e) {
   return a >= 0 && a <= 7 && e >= 0 && e <= 7;
 }
-function Qt(a) {
+function Ut(a) {
   if (typeof a != "string" || a.length !== 2) return !1;
   const e = a[0], t = a[1];
   return e >= "a" && e <= "h" && t >= "1" && t <= "8";
 }
-const ze = Qt, V = /* @__PURE__ */ new Map(), ct = 1e3;
+const ze = Ut, V = /* @__PURE__ */ new Map(), ot = 1e3;
 function j(a, e) {
-  if (V.size >= ct) {
+  if (V.size >= ot) {
     const t = V.keys().next().value;
     V.delete(t);
   }
   V.set(a, e);
 }
-function lt(a) {
+function at(a) {
   if (typeof a != "string" || a.length !== 2)
     return !1;
   const e = `piece:${a}`;
@@ -8310,7 +8031,7 @@ function lt(a) {
   const t = a[0], i = a[1], s = ["w", "b"].includes(t) && ["P", "R", "N", "B", "Q", "K"].includes(i);
   return j(e, s), s;
 }
-function ht(a) {
+function ct(a) {
   if (typeof a != "object" || a === null)
     return !1;
   try {
@@ -8319,11 +8040,11 @@ function ht(a) {
     return !1;
   }
   for (const [e, t] of Object.entries(a))
-    if (!ze(e) || !lt(t))
+    if (!ze(e) || !at(t))
       return !1;
-  return Yt(a);
+  return Ht(a);
 }
-function Yt(a) {
+function Ht(a) {
   const e = Object.values(a), t = e.filter((r) => r === "wK").length, i = e.filter((r) => r === "bK").length;
   if (t !== 1 || i !== 1)
     return !1;
@@ -8338,7 +8059,7 @@ function Yt(a) {
     }
   return !0;
 }
-function Jt(a) {
+function Kt(a) {
   if (typeof a != "string")
     return { success: !1, error: "FEN must be a string" };
   const e = `fen:${a}`;
@@ -8355,10 +8076,10 @@ function Jt(a) {
     return j(e, o), o;
   }
   for (let o = 0; o < i.length; o++) {
-    const c = Xt(i[o]);
+    const c = Wt(i[o]);
     if (!c.success) {
-      const l = { success: !1, error: `Invalid rank ${o + 1}: ${c.error}` };
-      return j(e, l), l;
+      const h = { success: !1, error: `Invalid rank ${o + 1}: ${c.error}` };
+      return j(e, h), h;
     }
   }
   if (!["w", "b"].includes(t[1])) {
@@ -8386,7 +8107,7 @@ function Jt(a) {
   const r = { success: !0 };
   return j(e, r), r;
 }
-function Xt(a) {
+function Wt(a) {
   if (typeof a != "string")
     return { success: !1, error: "Rank must be a string" };
   let e = 0;
@@ -8401,17 +8122,17 @@ function Xt(a) {
   }
   return e !== 8 ? { success: !1, error: `Rank must represent exactly 8 squares, got ${e}` } : { success: !0 };
 }
-function Zt(a) {
+function Qt(a) {
   if (typeof a != "string")
     return { success: !1, error: "Move must be a string" };
   const e = a.trim();
   return e.length === 0 ? { success: !1, error: "Move cannot be empty" } : e === "O-O" || e === "O-O-O" ? { success: !0, type: "castling" } : /^[a-h][1-8][a-h][1-8][qrnbQRNB]?$/.test(e) ? { success: !0, type: "coordinate" } : /^[PRNBQK]?[a-h]?[1-8]?x?[a-h][1-8](\+|#)?$/.test(e) ? { success: !0, type: "algebraic" } : { success: !1, error: "Invalid move format" };
 }
-function ei(a) {
+function Yt(a) {
   const e = [];
   if (!a || typeof a != "object")
     return { success: !1, errors: ["Configuration must be an object"] };
-  !a.id && !a.id_div && e.push('Configuration must include "id" or "id_div"'), a.orientation && !["white", "black", "w", "b"].includes(a.orientation) && e.push('Invalid orientation. Must be "white", "black", "w", or "b"'), a.position && a.position !== "start" && typeof a.position != "object" && e.push('Invalid position. Must be "start" or a position object'), a.position && typeof a.position == "object" && !ht(a.position) && e.push("Invalid position object format"), a.size && !ti(a.size) && e.push('Invalid size. Must be "auto", a positive number, or a valid CSS size'), a.movableColors && !["white", "black", "w", "b", "both", "none"].includes(a.movableColors) && e.push('Invalid movableColors. Must be "white", "black", "w", "b", "both", or "none"'), a.dropOffBoard && !["snapback", "trash"].includes(a.dropOffBoard) && e.push('Invalid dropOffBoard. Must be "snapback" or "trash"');
+  !a.id && !a.id_div && e.push('Configuration must include "id" or "id_div"'), a.orientation && !["white", "black", "w", "b"].includes(a.orientation) && e.push('Invalid orientation. Must be "white", "black", "w", or "b"'), a.position && a.position !== "start" && typeof a.position != "object" && e.push('Invalid position. Must be "start" or a position object'), a.position && typeof a.position == "object" && !ct(a.position) && e.push("Invalid position object format"), a.size && !Jt(a.size) && e.push('Invalid size. Must be "auto", a positive number, or a valid CSS size'), a.movableColors && !["white", "black", "w", "b", "both", "none"].includes(a.movableColors) && e.push('Invalid movableColors. Must be "white", "black", "w", "b", "both", or "none"'), a.dropOffBoard && !["snapback", "trash"].includes(a.dropOffBoard) && e.push('Invalid dropOffBoard. Must be "snapback" or "trash"');
   const t = [
     "onMove",
     "onMoveEnd",
@@ -8425,16 +8146,16 @@ function ei(a) {
     a[s] && typeof a[s] != "function" && e.push(`Invalid ${s}. Must be a function`);
   const i = ["whiteSquare", "blackSquare", "highlight", "hintColor"];
   for (const s of i)
-    a[s] && !ii(a[s]) && e.push(`Invalid ${s}. Must be a valid CSS color`);
-  return a.moveAnimation && !si(a.moveAnimation) && e.push("Invalid moveAnimation. Must be a valid easing function"), a.animationStyle && !["sequential", "simultaneous"].includes(a.animationStyle) && e.push('Invalid animationStyle. Must be "sequential" or "simultaneous"'), {
+    a[s] && !Zt(a[s]) && e.push(`Invalid ${s}. Must be a valid CSS color`);
+  return a.moveAnimation && !Xt(a.moveAnimation) && e.push("Invalid moveAnimation. Must be a valid easing function"), a.animationStyle && !["sequential", "simultaneous"].includes(a.animationStyle) && e.push('Invalid animationStyle. Must be "sequential" or "simultaneous"'), {
     success: e.length === 0,
     errors: e
   };
 }
-function ti(a) {
+function Jt(a) {
   return a === "auto" ? !0 : typeof a == "number" ? a > 0 && a <= 5e3 : typeof a == "string" ? /^\d+(px|em|rem|%|vh|vw)$/.test(a) : !1;
 }
-function ii(a) {
+function Zt(a) {
   return typeof a != "string" ? !1 : /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(a) || /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[0-1](\.\d+)?)?\s*\)$/.test(a) || /^hsla?\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*(,\s*[0-1](\.\d+)?)?\s*\)$/.test(a) ? !0 : [
     "white",
     "black",
@@ -8453,29 +8174,29 @@ function ii(a) {
     "pink"
   ].includes(a.toLowerCase());
 }
-function si(a) {
+function Xt(a) {
   return ["linear", "ease", "ease-in", "ease-out", "ease-in-out", "cubic-bezier"].includes(a) || /^cubic-bezier\(\s*[\d.-]+\s*,\s*[\d.-]+\s*,\s*[\d.-]+\s*,\s*[\d.-]+\s*\)$/.test(a);
 }
-function wi(a) {
+function bi(a) {
   return a.map((e) => {
     const { type: t, value: i } = e;
     switch (t) {
       case "piece":
-        return { ...e, valid: lt(i) };
+        return { ...e, valid: at(i) };
       case "square":
         return { ...e, valid: ze(i) };
       case "position":
-        return { ...e, valid: ht(i) };
+        return { ...e, valid: ct(i) };
       case "fen": {
-        const s = Jt(i);
+        const s = Kt(i);
         return { ...e, valid: s.success, error: s.error };
       }
       case "move": {
-        const s = Zt(i);
+        const s = Qt(i);
         return { ...e, valid: s.success, error: s.error };
       }
       case "config": {
-        const s = ei(i);
+        const s = Yt(i);
         return { ...e, valid: s.success, errors: s.errors };
       }
       default:
@@ -8483,16 +8204,16 @@ function wi(a) {
     }
   });
 }
-function Pi() {
+function Si() {
   V.clear();
 }
-function Ci() {
+function yi() {
   return {
     size: V.size,
-    maxSize: ct
+    maxSize: ot
   };
 }
-function Ei(a) {
+function wi(a) {
   if (typeof a == "number") return a;
   switch (a) {
     case "fast":
@@ -8503,18 +8224,18 @@ function Ei(a) {
       return 200;
   }
 }
-function ki(a) {
+function Pi(a) {
   return ["ease", "ease-in", "ease-out", "ease-in-out", "linear"].includes(a) ? a : "ease";
 }
-function Mi(a) {
+function Ei(a) {
   return new Promise((e) => setTimeout(e, a));
 }
-class me {
+class de {
   /**
    * @param {EngineConfig} [config={}] - Engine configuration
    */
   constructor(e = {}) {
-    if (new.target === me)
+    if (new.target === de)
       throw new Error("BaseEngine is abstract and cannot be instantiated directly");
     this.config = {
       depth: 20,
@@ -8743,7 +8464,7 @@ class me {
     };
   }
 }
-const se = class se extends me {
+const ie = class ie extends de {
   /**
    * @param {StockfishConfig} [config={}] - Engine configuration
    */
@@ -8784,10 +8505,10 @@ const se = class se extends me {
    */
   async init() {
     if (this.isReady) return !0;
-    if (!se.supportsWasm())
+    if (!ie.supportsWasm())
       throw new Error("WebAssembly is not supported in this environment");
     try {
-      const e = this.wasmPath || se.CDN_URLS.stockfish16;
+      const e = this.wasmPath || ie.CDN_URLS.stockfish16;
       return this.worker = new Worker(e), this.worker.onmessage = (t) => this._handleMessage(t.data), this.worker.onerror = (t) => this._handleError(t), await this._sendAndWait("uci", "uciok"), await this._configureEngine(), await this._sendAndWait("isready", "readyok"), this.isReady = !0, this._emit("ready", this.info), !0;
     } catch (e) {
       throw this._emit("error", e), e;
@@ -8817,7 +8538,7 @@ const se = class se extends me {
    * @private
    */
   async _configureEngine() {
-    se.supportsThreads() && this.config.threads > 1 && await this._send(`setoption name Threads value ${this.config.threads}`), await this._send(`setoption name Hash value ${this.config.hashSize}`), this.config.useNNUE && (await this._send("setoption name Use NNUE value true"), this.nnuePath && await this._send(`setoption name EvalFile value ${this.nnuePath}`));
+    ie.supportsThreads() && this.config.threads > 1 && await this._send(`setoption name Threads value ${this.config.threads}`), await this._send(`setoption name Hash value ${this.config.hashSize}`), this.config.useNNUE && (await this._send("setoption name Use NNUE value true"), this.nnuePath && await this._send(`setoption name EvalFile value ${this.nnuePath}`));
   }
   /**
    * Shutdown the engine
@@ -9041,7 +8762,7 @@ const se = class se extends me {
 /**
  * CDN URLs for Stockfish.js
  */
-w(se, "CDN_URLS", {
+y(ie, "CDN_URLS", {
   // Stockfish.js official releases
   stockfish16: "https://cdn.jsdelivr.net/npm/stockfish.js@16/stockfish.js",
   stockfish15: "https://cdn.jsdelivr.net/npm/stockfish.js@15/stockfish.js",
@@ -9049,8 +8770,8 @@ w(se, "CDN_URLS", {
   // Alternative CDNs
   unpkg: "https://unpkg.com/stockfish.js/stockfish.js"
 });
-let Fe = se;
-class ni extends me {
+let $e = ie;
+class ei extends de {
   /**
    * @param {UCIConfig} config - Engine configuration
    */
@@ -9335,7 +9056,7 @@ class ni extends me {
     await this._send("ucinewgame"), await this._sendAndWait("isready", "readyok");
   }
 }
-const X = class X extends me {
+const J = class J extends de {
   /**
    * @param {CloudConfig} [config={}] - Engine configuration
    */
@@ -9479,7 +9200,7 @@ const X = class X extends me {
    * @returns {Promise<EngineAnalysis>}
    */
   async _fetchLichessAnalysis(e, t = {}) {
-    const i = t.multiPv || this.multiPv, s = new URL(X.PROVIDERS.lichess.analysis);
+    const i = t.multiPv || this.multiPv, s = new URL(J.PROVIDERS.lichess.analysis);
     s.searchParams.set("fen", e), s.searchParams.set("multiPv", i.toString());
     const n = {};
     this.apiKey && (n.Authorization = `Bearer ${this.apiKey}`);
@@ -9527,7 +9248,7 @@ const X = class X extends me {
    * @returns {Promise<EngineAnalysis>}
    */
   async _fetchChesscomAnalysis(e, t = {}) {
-    const i = new URL(X.PROVIDERS.chesscom.analysis);
+    const i = new URL(J.PROVIDERS.chesscom.analysis);
     i.searchParams.set("fen", e);
     const s = await fetch(i.toString());
     if (!s.ok)
@@ -9614,7 +9335,7 @@ const X = class X extends me {
     var n, r, o;
     if (this.provider !== "lichess")
       throw new Error("Tablebase probe only available with Lichess provider");
-    const t = new URL(X.PROVIDERS.lichess.tablebase);
+    const t = new URL(J.PROVIDERS.lichess.tablebase);
     t.searchParams.set("fen", e);
     const i = await fetch(t.toString());
     if (!i.ok)
@@ -9646,7 +9367,7 @@ const X = class X extends me {
     var r;
     if (this.provider !== "lichess")
       throw new Error("Opening explorer only available with Lichess provider");
-    const i = new URL(X.PROVIDERS.lichess.opening);
+    const i = new URL(J.PROVIDERS.lichess.opening);
     i.searchParams.set("fen", e), t.speeds && i.searchParams.set("speeds", t.speeds.join(",")), t.ratings && i.searchParams.set("ratings", t.ratings.join(","));
     const s = await fetch(i.toString());
     if (!s.ok)
@@ -9686,7 +9407,7 @@ const X = class X extends me {
 /**
  * API endpoints for different providers
  */
-w(X, "PROVIDERS", {
+y(J, "PROVIDERS", {
   lichess: {
     analysis: "https://lichess.org/api/cloud-eval",
     tablebase: "https://tablebase.lichess.ovh/standard",
@@ -9696,7 +9417,7 @@ w(X, "PROVIDERS", {
     analysis: "https://api.chess.com/pub/analysis"
   }
 });
-let Ge = X;
+let Fe = J;
 const z = class z {
   /**
    * @param {Object} chessboard - Chessboard instance
@@ -9933,14 +9654,14 @@ const z = class z {
 /**
  * Available engine types
  */
-w(z, "ENGINE_TYPES", {
-  stockfish: Fe,
-  uci: ni,
-  cloud: Ge
+y(z, "ENGINE_TYPES", {
+  stockfish: $e,
+  uci: ei,
+  cloud: Fe
 }), /**
  * Pre-configured engine presets
  */
-w(z, "PRESETS", {
+y(z, "PRESETS", {
   stockfish: {
     type: "stockfish",
     config: { depth: 20 }
@@ -9962,7 +9683,7 @@ w(z, "PRESETS", {
     config: { provider: "lichess", useTablebase: !0 }
   }
 });
-let tt = z;
+let Xe = z;
 /**
  * Chessboard.js - A beautiful, customizable chessboard widget
  * Main entry point for the library
@@ -9971,93 +9692,93 @@ let tt = z;
  * @author alepot55
  * @license ISC
  */
-const ri = "3.2.0", oi = "dev", ai = (/* @__PURE__ */ new Date()).toISOString(), Ti = {
+const ti = "3.2.0", ii = "dev", si = (/* @__PURE__ */ new Date()).toISOString(), Ci = {
   name: "Chessboard.js",
-  version: ri,
-  build: oi,
-  buildDate: ai,
+  version: ti,
+  build: ii,
+  buildDate: si,
   author: "alepot55",
   license: "ISC",
   repository: "https://github.com/alepot55/Chessboardjs",
   homepage: "https://chessboardjs.com"
 };
 export {
-  wt as AnimationService,
+  _t as AnimationService,
   ve as BOARD_LETTERS,
-  He as BOARD_SIZE,
-  me as BaseEngine,
-  fe as BaseMode,
-  Pt as BoardService,
-  Gt as Chess,
-  qe as ChessAI,
-  $ as Chessboard,
-  it as ChessboardConfig,
+  Ue as BOARD_SIZE,
+  de as BaseEngine,
+  ue as BaseMode,
+  bt as BoardService,
+  Nt as Chess,
+  Ae as ChessAI,
+  q as Chessboard,
+  et as ChessboardConfig,
   U as ChessboardError,
-  ot as ChessboardFactory,
-  Ge as CloudEngine,
-  q as ConfigurationError,
-  Ct as CoordinateService,
+  nt as ChessboardFactory,
+  Fe as CloudEngine,
+  O as ConfigurationError,
+  St as CoordinateService,
   Ne as CreativeMode,
-  gt as DEFAULT_STARTING_POSITION,
-  vt as DOMError,
-  tt as EngineManager,
-  Mt as EventService,
-  te as LOG_LEVELS,
-  ke as Logger,
-  Be as ModeManager,
-  Q as Move,
-  Ke as MoveError,
-  Tt as MoveService,
-  ye as PIECE_COLORS,
-  Se as PIECE_TYPES,
-  pt as PROMOTION_PIECES,
+  ut as DEFAULT_STARTING_POSITION,
+  ft as DOMError,
+  Xe as EngineManager,
+  wt as EventService,
+  ee as LOG_LEVELS,
+  Ee as Logger,
+  xe as ModeManager,
+  Z as Move,
+  He as MoveError,
+  Pt as MoveService,
+  Se as PIECE_COLORS,
+  be as PIECE_TYPES,
+  dt as PROMOTION_PIECES,
   st as PerformanceMonitor,
-  we as Piece,
-  Te as PieceError,
-  At as PieceService,
-  jt as PositionService,
-  zt as PvPMode,
-  Ue as STANDARD_POSITIONS,
-  $e as Square,
-  Fe as StockfishEngine,
-  ni as UCIEngine,
-  k as ValidationError,
-  je as ValidationService,
-  xe as VsBotMode,
-  Wt as algebraicToCoords,
-  Mi as animationPromise,
-  mi as batchDOMOperations,
-  wi as batchValidate,
-  oi as build,
-  ai as buildDate,
-  F as chessboardFactory,
-  Pi as clearValidationCache,
-  bi as coordsToAlgebraic,
-  Ht as createChessboard,
-  Kt as createChessboardFromTemplate,
-  vi as createLogger,
-  ui as debounce,
-  $ as default,
-  pi as getMemoryUsage,
-  Si as getSquareColor,
-  Ci as getValidationCacheStats,
-  Ti as info,
-  gi as isElementVisible,
-  yi as isValidCoords,
-  lt as isValidPiece,
-  ht as isValidPosition,
-  Qt as isValidSquare,
-  v as logger,
-  ki as parseAnimation,
-  Ei as parseTime,
-  Ye as rafThrottle,
-  fi as resetTransform,
-  di as setTransform,
-  hi as throttle,
-  ei as validateConfig,
-  rt as validateFen,
-  Jt as validateFenFormat,
-  Zt as validateMove,
-  ri as version
+  Oe as Piece,
+  Ce as PieceError,
+  Et as PieceService,
+  Bt as PositionService,
+  xt as PvPMode,
+  Ve as STANDARD_POSITIONS,
+  qe as Square,
+  $e as StockfishEngine,
+  ei as UCIEngine,
+  C as ValidationError,
+  Ge as ValidationService,
+  Be as VsBotMode,
+  Vt as algebraicToCoords,
+  Ei as animationPromise,
+  ui as batchDOMOperations,
+  bi as batchValidate,
+  ii as build,
+  si as buildDate,
+  $ as chessboardFactory,
+  Si as clearValidationCache,
+  pi as coordsToAlgebraic,
+  jt as createChessboard,
+  zt as createChessboardFromTemplate,
+  gi as createLogger,
+  ai as debounce,
+  q as default,
+  fi as getMemoryUsage,
+  vi as getSquareColor,
+  yi as getValidationCacheStats,
+  Ci as info,
+  di as isElementVisible,
+  _i as isValidCoords,
+  at as isValidPiece,
+  ct as isValidPosition,
+  Ut as isValidSquare,
+  je as logger,
+  Pi as parseAnimation,
+  wi as parseTime,
+  ci as rafThrottle,
+  li as resetTransform,
+  hi as setTransform,
+  oi as throttle,
+  Yt as validateConfig,
+  it as validateFen,
+  Kt as validateFenFormat,
+  Qt as validateMove,
+  ti as version
 };
 //# sourceMappingURL=chessboard.esm.js.map

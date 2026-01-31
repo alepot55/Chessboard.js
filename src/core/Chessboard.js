@@ -2108,7 +2108,6 @@ class Chessboard {
     return this.setPosition(fen, { ...options, animate: animation });
   }
   put(pieceId, squareId, animation = true) {
-    console.debug('[put] called with:', { pieceId, squareId, animation });
     let pieceObj = null;
     // Helper to normalize string like 'wQ', 'Qw', 'Wq', 'qw', etc.
     function parsePieceString(str) {
@@ -2126,7 +2125,6 @@ class Chessboard {
     }
     if (typeof pieceId === 'string') {
       pieceObj = parsePieceString(pieceId);
-      console.debug('[put] parsed piece string:', pieceObj);
       if (!pieceObj) {
         console.error(`[put] Invalid piece string: '${pieceId}'. Use e.g. 'wQ', 'Qw', 'bK', 'kb'`);
         return false;
@@ -2136,7 +2134,6 @@ class Chessboard {
       const color = String(pieceId.color).toLowerCase();
       if ('kqrbnp'.includes(type) && 'wb'.includes(color)) {
         pieceObj = { type, color };
-        console.debug('[put] normalized piece object:', pieceObj);
       } else {
         console.error(
           `[put] Invalid piece object: {type: '${pieceId.type}', color: '${pieceId.color}'}`
@@ -2153,7 +2150,6 @@ class Chessboard {
     }
     // Call the internal putPiece method
     const result = this.putPiece(pieceObj, squareId, { animate: animation });
-    console.debug('[put] putPiece result:', result);
     return result;
   }
   remove(squareId, animation = true) {

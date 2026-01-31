@@ -1,131 +1,134 @@
 :root {
-    --dimBoard: 600px;
-    --pieceRatio: 0.9;
-    --square-size: calc(var(--dimBoard) / 8);
+  --dimBoard: 600px;
+  --pieceRatio: 0.9;
+  --square-size: calc(var(--dimBoard) / 8);
 
-    --blackSquare: #b58863;
-    --whiteSquare: #f0d9b5;
-    --highlightSquare: yellow;
-    --selectedSquareWhite: #ababaa;
-    --selectedSquareBlack: #ababaa;
-    --movedSquareBlack: #e9e981;
-    --movedSquareWhite: #f1f1a0;
-    --choiceSquare: white;
-    --coverSquare: black;
-    --hintColor: #ababaa;
+  --blackSquare: #b58863;
+  --whiteSquare: #f0d9b5;
+  --highlightSquare: yellow;
+  --selectedSquareWhite: #ababaa;
+  --selectedSquareBlack: #ababaa;
+  --movedSquareBlack: #e9e981;
+  --movedSquareWhite: #f1f1a0;
+  --choiceSquare: white;
+  --coverSquare: black;
+  --hintColor: #ababaa;
 }
 
 .board {
-    display: grid;
-    grid-template: repeat(8, 1fr) / repeat(8, 1fr);
-    width: var(--dimBoard);
-    height: var(--dimBoard);
-    /* Enable hardware acceleration for better performance */
-    transform: translateZ(0);
-    will-change: auto;
+  display: grid;
+  grid-template: repeat(8, 1fr) / repeat(8, 1fr);
+  width: var(--dimBoard);
+  height: var(--dimBoard);
+  /* Enable hardware acceleration for better performance */
+  transform: translateZ(0);
+  will-change: auto;
 }
 
 .square {
-    width: var(--square-size);
-    height: var(--square-size);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  width: var(--square-size);
+  height: var(--square-size);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .piece {
-    position: absolute;
-    z-index: 10;
-    width: calc(var(--square-size) * var(--pieceRatio));
-    height: calc(var(--square-size) * var(--pieceRatio));
+  position: absolute;
+  z-index: 10;
+  width: calc(var(--square-size) * var(--pieceRatio));
+  height: calc(var(--square-size) * var(--pieceRatio));
 
-    /* No selection */
-    -webkit-user-select: none;
-    /* Safari */
-    -moz-user-select: none;
-    /* Firefox */
-    -ms-user-select: none;
-    /* IE10+/Edge */
-    user-select: none;
-    /* Standard */
+  /* No selection */
+  -webkit-user-select: none;
+  /* Safari */
+  -moz-user-select: none;
+  /* Firefox */
+  -ms-user-select: none;
+  /* IE10+/Edge */
+  user-select: none;
+  /* Standard */
 }
 
 .choicable {
-    z-index: 50;
+  z-index: 50;
 }
 
 .hint {
-    background: var(--hintColor);
-    width: calc(calc(var(--dimBoard) / 8) / 3.5);
-    height: calc(calc(var(--dimBoard) / 8) / 3.5);
-    position: absolute;
-    z-index: 5;
-    border-radius: 50%;
-    opacity: 0.8;
+  background: var(--hintColor);
+  width: calc(calc(var(--dimBoard) / 8) / 3.5);
+  height: calc(calc(var(--dimBoard) / 8) / 3.5);
+  position: absolute;
+  z-index: 5;
+  border-radius: 50%;
+  opacity: 0.8;
 }
 
 .catchable {
-    width: calc(calc(var(--dimBoard) / 8) * 0.9);
-    height: calc(calc(var(--dimBoard) / 8) * 0.9);
+  width: calc(calc(var(--dimBoard) / 8) * 0.9);
+  height: calc(calc(var(--dimBoard) / 8) * 0.9);
 }
 
 .blackSquare {
-    background: var(--blackSquare);
+  background: var(--blackSquare);
 }
 
 .whiteSquare {
-    background: var(--whiteSquare);
+  background: var(--whiteSquare);
 }
 
 .selectedSquareWhite {
-    background: var(--selectedSquareWhite);
+  background: var(--selectedSquareWhite);
 }
 
 .selectedSquareBlack {
-    background: var(--selectedSquareBlack);
+  background: var(--selectedSquareBlack);
 }
 
 .movedSquareBlack {
-    background: var(--movedSquareBlack);
+  background: var(--movedSquareBlack);
 }
 
 .movedSquareWhite {
-    background: var(--movedSquareWhite);
+  background: var(--movedSquareWhite);
 }
 
 .choice {
-    background: var(--choiceSquare);
-    z-index: 30;
-    position: absolute;
-    cursor: pointer;
-    border: 2px solid #333;
-    box-sizing: border-box;
-    transition: background-color 0.15s ease, transform 0.15s ease;
+  background: var(--choiceSquare);
+  z-index: 30;
+  position: absolute;
+  cursor: pointer;
+  border: 2px solid #333;
+  box-sizing: border-box;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .choice:hover {
-    background: #e0e0e0;
-    transform: scale(1.05);
+  background: #e0e0e0;
+  transform: scale(1.05);
 }
 
 .choice .piece {
-    position: relative;
-    width: 90%;
-    height: 90%;
-    margin: auto;
+  position: relative;
+  width: 90%;
+  height: 90%;
+  margin: auto;
 }
 
 .cover {
-    background: var(--coverSquare);
-    opacity: 0.5;
-    z-index: 25;
-    position: absolute;
-    cursor: pointer;
+  background: var(--coverSquare);
+  opacity: 0.5;
+  z-index: 25;
+  position: absolute;
+  cursor: pointer;
 }
 
 .highlighted {
-    box-shadow: inset 0 0 10px var(--highlightSquare);
-}/* Piece-specific styles */
+  box-shadow: inset 0 0 10px var(--highlightSquare);
+}
+/* Piece-specific styles */
 .piece {
   position: absolute;
   cursor: pointer;

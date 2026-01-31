@@ -86,7 +86,6 @@ export class PieceService {
    * @param {Function} [callback] - Callback when animation completes
    */
   addPieceOnSquare(square, piece, fade = true, dragFunction, callback) {
-    console.debug(`[PieceService] addPieceOnSquare: ${piece.id} to ${square.id}`);
     square.putPiece(piece);
 
     if (dragFunction) {
@@ -116,7 +115,6 @@ export class PieceService {
    * @throws {PieceError} When square has no piece to remove
    */
   removePieceFromSquare(square, fade = true, callback) {
-    console.debug(`[PieceService] removePieceFromSquare: ${square.id}`);
     square.check();
 
     const piece = square.piece;
@@ -148,9 +146,7 @@ export class PieceService {
    * @param {Function} [callback] - Callback function when animation completes
    */
   movePiece(piece, targetSquare, duration, callback) {
-    console.debug(`[PieceService] movePiece: ${piece.id} to ${targetSquare.id}`);
     if (!piece) {
-      console.warn('PieceService.movePiece: piece is null, skipping animation');
       if (callback) callback();
       return;
     }
@@ -173,11 +169,7 @@ export class PieceService {
    * @param {Function} [callback] - Callback function when complete
    */
   translatePiece(move, removeTarget, animate, dragFunction = null, callback = null) {
-    console.debug(
-      `[PieceService] translatePiece: ${move.piece.id} from ${move.from.id} to ${move.to.id}`
-    );
     if (!move.piece) {
-      console.warn('PieceService.translatePiece: move.piece is null, skipping translation');
       if (callback) callback();
       return;
     }
@@ -232,7 +224,6 @@ export class PieceService {
     }
     const piece = square.piece;
     const duration = animate ? this.config.snapbackTime : 0;
-    console.debug(`[PieceService] snapbackPiece: ${piece.id} on ${square.id}`);
     piece.translate(
       square,
       duration,
@@ -252,7 +243,6 @@ export class PieceService {
     }
     const piece = square.piece;
     const duration = animate ? this.config.dropCenterTime : 0;
-    console.debug(`[PieceService] centerPiece: ${piece.id} on ${square.id}`);
     piece.translate(
       square,
       duration,

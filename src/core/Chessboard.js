@@ -442,30 +442,50 @@ class Chessboard {
     const isEnPassant = this.moveService.isEnPassant(gameMove);
 
     if (animate && move.from.piece) {
-      this.pieceService.translatePiece(
-        move,
-        !!move.to.piece, // was there a capture?
-        animate,
-        this._createDragFunction.bind(this),
-        () => {
-          // After the main piece animation completes...
-          if (isCastle) {
-            this._handleSpecialMoveAnimation(gameMove);
-          } else if (isEnPassant) {
-            this._handleSpecialMoveAnimation(gameMove);
+      // For castling, we need to animate king and rook simultaneously
+      if (isCastle) {
+        // Start king animation
+        this.pieceService.translatePiece(
+          move,
+          !!move.to.piece,
+          animate,
+          this._createDragFunction.bind(this),
+          () => {
+            // King animation done - update state after both complete
+            this._updateBoardPieces(false);
+            this.config.onMoveEnd(gameMove);
           }
-          // Notify user that the move is fully complete
-          this.config.onMoveEnd(gameMove);
-          // A final sync to ensure board is perfect
-          this._updateBoardPieces(false);
-        }
-      );
+        );
 
-      // For simultaneous castle, animate the rook alongside the king
-      if (isCastle && this.config.animationStyle === 'simultaneous') {
+        // Start rook animation simultaneously (small delay for visual effect)
         setTimeout(() => {
-          this._handleCastleMove(gameMove, true);
-        }, this.config.simultaneousAnimationDelay);
+          this._handleCastleMove(gameMove, true, false); // Don't update board yet
+        }, 20);
+      } else if (isEnPassant) {
+        // For en passant, animate the piece first, then handle captured pawn
+        this.pieceService.translatePiece(
+          move,
+          false, // Don't remove target - en passant captures on different square
+          animate,
+          this._createDragFunction.bind(this),
+          () => {
+            this._handleEnPassantMove(gameMove, true);
+            this.config.onMoveEnd(gameMove);
+            this._updateBoardPieces(false);
+          }
+        );
+      } else {
+        // Normal move
+        this.pieceService.translatePiece(
+          move,
+          !!move.to.piece,
+          animate,
+          this._createDragFunction.bind(this),
+          () => {
+            this.config.onMoveEnd(gameMove);
+            this._updateBoardPieces(false);
+          }
+        );
       }
     } else {
       // If not animating, handle special moves immediately and update the board
@@ -510,35 +530,44 @@ class Chessboard {
    * @private
    * @param {Object} gameMove - Game move object
    * @param {boolean} animate - Whether to animate
+   * @param {boolean} [updateBoard=true] - Whether to update board after animation
    */
-  _handleCastleMove(gameMove, animate) {
+  _handleCastleMove(gameMove, animate, updateBoard = true) {
     const rookMove = this.moveService.getCastleRookMove(gameMove);
     if (!rookMove) return;
 
     const rookFromSquare = this.boardService.getSquare(rookMove.from);
     const rookToSquare = this.boardService.getSquare(rookMove.to);
 
-    if (!rookFromSquare || !rookToSquare || !rookFromSquare.piece) {
-      console.warn('Castle rook move failed - squares or piece not found');
+    if (!rookFromSquare || !rookToSquare) {
+      console.warn('Castle rook move failed - squares not found');
+      return;
+    }
+
+    // Get the rook piece - it should be visually on the from square
+    const rookPiece = rookFromSquare.piece;
+    if (!rookPiece) {
+      console.warn('Castle rook move failed - rook piece not found on', rookMove.from);
+      // The piece might already have been moved, just update
+      if (updateBoard) this._updateBoardPieces(false);
       return;
     }
 
     if (animate) {
-      // Always use translatePiece for smooth sliding animation
-      const rookPiece = rookFromSquare.piece;
+      // Animate rook sliding to new position
       this.pieceService.translatePiece(
         { from: rookFromSquare, to: rookToSquare, piece: rookPiece },
         false, // No capture for rook in castle
-        animate,
+        true,
         this._createDragFunction.bind(this),
         () => {
-          // After rook animation, update board state
-          this._updateBoardPieces(false);
+          // After rook animation completes
+          if (updateBoard) this._updateBoardPieces(false);
         }
       );
     } else {
       // Just update the board state
-      this._updateBoardPieces(false);
+      if (updateBoard) this._updateBoardPieces(false);
     }
   }
 
@@ -1356,7 +1385,8 @@ class Chessboard {
     if (this._buildBoard) this._buildBoard();
     if (this._buildSquares) this._buildSquares();
     if (this._addListeners) this._addListeners();
-    if (this._updateBoardPieces) this._updateBoardPieces(opts.animate !== false);
+    // Use instant update for flip - pieces reappear in new positions immediately
+    if (this._updateBoardPieces) this._updateBoardPieces(false, true);
   }
   /**
    * Set the board orientation
@@ -1646,6 +1676,14 @@ class Chessboard {
    */
   getMode() {
     return this.modeManager.getCurrentMode();
+  }
+
+  /**
+   * Alias for getMode (for backward compatibility)
+   * @returns {Object|null} - Current mode instance
+   */
+  getCurrentMode() {
+    return this.getMode();
   }
 
   /**

@@ -173,6 +173,7 @@ export class Chessboard {
      * @private
      * @param {Object} gameMove - Game move object
      * @param {boolean} animate - Whether to animate
+     * @param {boolean} [updateBoard=true] - Whether to update board after animation
      */
     private _handleCastleMove;
     /**
@@ -490,6 +491,11 @@ export class Chessboard {
      * @returns {Object|null} - Current mode instance
      */
     getMode(): Object | null;
+    /**
+     * Alias for getMode (for backward compatibility)
+     * @returns {Object|null} - Current mode instance
+     */
+    getCurrentMode(): Object | null;
     /**
      * Get the current mode name
      * @returns {string|null} - Mode name ('creative', 'pvp', 'vsBot')

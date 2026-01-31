@@ -6825,18 +6825,34 @@ let Be = Ee, Pe = class {
     }
     this.boardService.applyToAllSquares("unmoved"), e.from.moved(), e.to.moved();
     const n = this.moveService.isCastle(s), r = this.moveService.isEnPassant(s);
-    t && e.from.piece ? (this.pieceService.translatePiece(
+    t && e.from.piece ? n ? (this.pieceService.translatePiece(
       e,
       !!e.to.piece,
-      // was there a capture?
       t,
       this._createDragFunction.bind(this),
       () => {
-        n ? this._handleSpecialMoveAnimation(s) : r && this._handleSpecialMoveAnimation(s), this.config.onMoveEnd(s), this._updateBoardPieces(!1);
+        this._updateBoardPieces(!1), this.config.onMoveEnd(s);
       }
-    ), n && this.config.animationStyle === "simultaneous" && setTimeout(() => {
-      this._handleCastleMove(s, !0);
-    }, this.config.simultaneousAnimationDelay)) : (n ? this._handleSpecialMove(s) : r && this._handleSpecialMove(s), this._updateBoardPieces(!1), this.config.onMoveEnd(s));
+    ), setTimeout(() => {
+      this._handleCastleMove(s, !0, !1);
+    }, 20)) : r ? this.pieceService.translatePiece(
+      e,
+      !1,
+      // Don't remove target - en passant captures on different square
+      t,
+      this._createDragFunction.bind(this),
+      () => {
+        this._handleEnPassantMove(s, !0), this.config.onMoveEnd(s), this._updateBoardPieces(!1);
+      }
+    ) : this.pieceService.translatePiece(
+      e,
+      !!e.to.piece,
+      t,
+      this._createDragFunction.bind(this),
+      () => {
+        this.config.onMoveEnd(s), this._updateBoardPieces(!1);
+      }
+    ) : (n ? this._handleSpecialMove(s) : r && this._handleSpecialMove(s), this._updateBoardPieces(!1), this.config.onMoveEnd(s));
   }
   /**
    * Handles special moves (castle, en passant) without animation
@@ -6859,29 +6875,31 @@ let Be = Ee, Pe = class {
    * @private
    * @param {Object} gameMove - Game move object
    * @param {boolean} animate - Whether to animate
+   * @param {boolean} [updateBoard=true] - Whether to update board after animation
    */
-  _handleCastleMove(e, t) {
-    const i = this.moveService.getCastleRookMove(e);
-    if (!i) return;
-    const s = this.boardService.getSquare(i.from), n = this.boardService.getSquare(i.to);
-    if (!s || !n || !s.piece) {
-      console.warn("Castle rook move failed - squares or piece not found");
+  _handleCastleMove(e, t, i = !0) {
+    const s = this.moveService.getCastleRookMove(e);
+    if (!s) return;
+    const n = this.boardService.getSquare(s.from), r = this.boardService.getSquare(s.to);
+    if (!n || !r) {
+      console.warn("Castle rook move failed - squares not found");
       return;
     }
-    if (t) {
-      const r = s.piece;
-      this.pieceService.translatePiece(
-        { from: s, to: n, piece: r },
-        !1,
-        // No capture for rook in castle
-        t,
-        this._createDragFunction.bind(this),
-        () => {
-          this._updateBoardPieces(!1);
-        }
-      );
-    } else
-      this._updateBoardPieces(!1);
+    const o = n.piece;
+    if (!o) {
+      console.warn("Castle rook move failed - rook piece not found on", s.from), i && this._updateBoardPieces(!1);
+      return;
+    }
+    t ? this.pieceService.translatePiece(
+      { from: n, to: r, piece: o },
+      !1,
+      // No capture for rook in castle
+      !0,
+      this._createDragFunction.bind(this),
+      () => {
+        i && this._updateBoardPieces(!1);
+      }
+    ) : i && this._updateBoardPieces(!1);
   }
   /**
    * Handles en passant move by removing the captured pawn
@@ -7390,7 +7408,7 @@ let Be = Ee, Pe = class {
    * @param {boolean} [opts.animate=true]
    */
   flipBoard(e = {}) {
-    this.coordinateService && this.coordinateService.flipOrientation && this.coordinateService.flipOrientation(), this._buildBoard && this._buildBoard(), this._buildSquares && this._buildSquares(), this._addListeners && this._addListeners(), this._updateBoardPieces && this._updateBoardPieces(e.animate !== !1);
+    this.coordinateService && this.coordinateService.flipOrientation && this.coordinateService.flipOrientation(), this._buildBoard && this._buildBoard(), this._buildSquares && this._buildSquares(), this._addListeners && this._addListeners(), this._updateBoardPieces && this._updateBoardPieces(!1, !0);
   }
   /**
    * Set the board orientation
@@ -7565,6 +7583,13 @@ let Be = Ee, Pe = class {
    */
   getMode() {
     return this.modeManager.getCurrentMode();
+  }
+  /**
+   * Alias for getMode (for backward compatibility)
+   * @returns {Object|null} - Current mode instance
+   */
+  getCurrentMode() {
+    return this.getMode();
   }
   /**
    * Get the current mode name

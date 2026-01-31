@@ -270,36 +270,47 @@
 
       const history = board.getHistory();
       if (history && history.length > 0) {
-        document.getElementById('history').textContent = history.map((m, i) =>
-          `${Math.floor(i/2) + 1}${i % 2 === 0 ? '.' : '...'} ${m.san || m.from + m.to}`
-        ).join(' ');
+        // Format moves - history returns an array of SAN strings
+        const formatted = history.map((m, i) => {
+          const moveNum = Math.floor(i/2) + 1;
+          const suffix = i % 2 === 0 ? '.' : '...';
+          const moveStr = typeof m === 'string' ? m : (m.san || m.from + m.to);
+          return `${moveNum}${suffix} ${moveStr}`;
+        }).join(' ');
+        document.getElementById('history').textContent = formatted;
       } else {
         document.getElementById('history').textContent = '-';
       }
     }
 
     function makeRandomMove() {
-      const moves = board.getLegalMoves();
+      // Get all legal moves for current turn
+      const game = board.game();
+      const moves = game.moves({ verbose: true });
       if (moves && moves.length > 0) {
         const randomMove = moves[Math.floor(Math.random() * moves.length)];
-        board.movePiece(randomMove);
+        const moveStr = randomMove.from + randomMove.to + (randomMove.promotion || '');
+        board.movePiece(moveStr);
+        updateInfo();
       }
     }
 
     function showLegalMoves() {
-      const turn = board.turn();
-      const pieces = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-      const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+      const game = board.game();
+      const moves = game.moves({ verbose: true });
+
+      // Group moves by source square
+      const movesBySquare = {};
+      moves.forEach(move => {
+        if (!movesBySquare[move.from]) {
+          movesBySquare[move.from] = [];
+        }
+        movesBySquare[move.from].push(move.san);
+      });
 
       let allMoves = [];
-      pieces.forEach(file => {
-        ranks.forEach(rank => {
-          const square = file + rank;
-          const moves = board.getLegalMoves(square);
-          if (moves && moves.length > 0) {
-            allMoves.push(`${square}: ${moves.join(', ')}`);
-          }
-        });
+      Object.keys(movesBySquare).sort().forEach(square => {
+        allMoves.push(`${square}: ${movesBySquare[square].join(', ')}`);
       });
 
       if (allMoves.length > 0) {

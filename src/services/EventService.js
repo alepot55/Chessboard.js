@@ -289,13 +289,9 @@ export class EventService {
    * @private
    */
   _handlePromotion(fromSquare, toSquare, piece, onMove, onSnapback, cleanup) {
-    // Reset piece position first so it appears at fromSquare (not at cursor)
-    // This prevents visual artifacts during promotion UI
-    if (piece && piece.element) {
-      this._resetPiecePosition(piece.element);
-    }
-
     // Show promotion UI
+    // Note: Don't reset piece position here - keep 'dragging' class so translatePiece
+    // uses instant mode and _updateBoardPieces is called synchronously
     this.moveService.setupPromotion(
       new Move(fromSquare, toSquare),
       this.boardService.squares,
@@ -307,16 +303,16 @@ export class EventService {
         const success = onMove(fromSquare, toSquare, selectedPiece, true);
 
         if (!success) {
+          this._resetPiecePosition(piece.element);
           onSnapback(fromSquare, piece);
         }
-        // Note: _updateBoardPieces (called within onMove) handles replacing
-        // the pawn with the promoted piece, so no need to call _updatePromotedPiece
         cleanup();
       },
       () => {
         // Promotion cancelled
         this.boardService.applyToAllSquares('removePromotion');
         this.boardService.applyToAllSquares('removeCover');
+        this._resetPiecePosition(piece.element);
         onSnapback(fromSquare, piece);
         cleanup();
       }

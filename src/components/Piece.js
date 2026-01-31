@@ -15,7 +15,7 @@ class Piece {
   }
 
   getId() {
-    return this.type + this.color;
+    return this.color + this.type;
   }
 
   createElement(src, opacity = 1) {

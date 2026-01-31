@@ -892,7 +892,7 @@ class qe {
     this.color = e, this.type = t, this.id = this.getId(), this.src = i, this.element = this.createElement(i, s), this._currentAnimation = null, this.check();
   }
   getId() {
-    return this.type + this.color;
+    return this.color + this.type;
   }
   createElement(e, t = 1) {
     const i = document.createElement("img");
@@ -1742,14 +1742,14 @@ class wt {
    * @private
    */
   _handlePromotion(e, t, i, s, n, r) {
-    i && i.element && this._resetPiecePosition(i.element), this.moveService.setupPromotion(
+    this.moveService.setupPromotion(
       new Z(e, t),
       this.boardService.squares,
       (o) => {
-        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(e, t, o, !0) || n(e, i), r();
+        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), s(e, t, o, !0) || (this._resetPiecePosition(i.element), n(e, i)), r();
       },
       () => {
-        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), n(e, i), r();
+        this.boardService.applyToAllSquares("removePromotion"), this.boardService.applyToAllSquares("removeCover"), this._resetPiecePosition(i.element), n(e, i), r();
       }
     );
   }

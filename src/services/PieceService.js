@@ -200,12 +200,26 @@ export class PieceService {
     };
 
     // Check if piece is currently being dragged
-    const isDragging = move.piece.element.classList.contains('dragging');
+    const isDragging = move.piece.element && move.piece.element.classList.contains('dragging');
 
     if (isDragging) {
-      // If piece is being dragged, don't animate - just move it immediately
-      // The piece is already visually in the correct position from the drag
+      // If piece is being dragged, move it immediately then reset styles
       changeSquareCallback();
+
+      // Reset all inline styles that were set during drag
+      // This ensures the piece uses CSS grid positioning
+      if (move.piece.element) {
+        const el = move.piece.element;
+        el.style.position = '';
+        el.style.left = '';
+        el.style.top = '';
+        el.style.transform = '';
+        el.style.zIndex = '';
+        el.style.width = '';
+        el.style.height = '';
+        el.classList.remove('dragging');
+        DragOptimizations.cleanupAfterDrag(el);
+      }
     } else {
       // Normal animation
       const duration = animate ? this.config.moveTime : 0;

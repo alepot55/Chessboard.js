@@ -375,9 +375,7 @@ export class Chessboard {
      * @param {Object} [opts]
      * @param {boolean} [opts.animate=true]
      */
-    flipBoard(opts?: {
-        animate?: boolean | undefined;
-    }): void;
+    flipBoard(_opts?: {}): void;
     /**
      * Set the board orientation
      * @param {'w'|'b'} color

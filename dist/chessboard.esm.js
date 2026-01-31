@@ -5,7 +5,7 @@ const Ve = {
   start: "start",
   default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   empty: "8/8/8/8/8/8/8/8 w - - 0 1"
-}, ut = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", be = ["p", "r", "n", "b", "q", "k"], Se = ["w", "b"], dt = ["q", "r", "b", "n"], ve = "abcdefgh", Ue = {
+}, ut = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", Se = ["p", "r", "n", "b", "q", "k"], ye = ["w", "b"], dt = ["q", "r", "b", "n"], _e = "abcdefgh", Ue = {
   ROWS: 8,
   COLS: 8,
   TOTAL_SQUARES: 64
@@ -172,7 +172,7 @@ class ft extends U {
     super(e, A.DOM_ERROR, { elementId: t }), this.name = "DOMError", this.elementId = t;
   }
 }
-class Ce extends U {
+class Me extends U {
   /**
    * Creates a new PieceError instance
    * @param {string} message - Error message
@@ -234,7 +234,7 @@ class Ge {
     const t = `piece:${e}`;
     if (this._validationCache.has(t))
       return this._validationCache.get(t);
-    const [i, s] = e.split(""), n = be.includes(i.toLowerCase()) && Se.includes(s), r = Se.includes(i) && be.includes(s.toLowerCase()), o = n || r;
+    const [i, s] = e.split(""), n = Se.includes(i.toLowerCase()) && ye.includes(s), r = ye.includes(i) && Se.includes(s.toLowerCase()), o = n || r;
     return this._cacheValidationResult(t, o), o;
   }
   /**
@@ -597,7 +597,7 @@ const Ke = Object.freeze({
   none: !1,
   1: !0,
   0: !1
-}), Me = Object.freeze({
+}), ke = Object.freeze({
   ease: "ease",
   linear: "linear",
   "ease-in": "ease-in",
@@ -828,9 +828,9 @@ class et {
    */
   _setTransitionFunction(e) {
     if (typeof e == "boolean")
-      return e ? Me.ease : null;
-    if (typeof e == "string" && e in Me)
-      return Me[e];
+      return e ? ke.ease : null;
+    if (typeof e == "string" && e in ke)
+      return ke[e];
     if (e == null)
       return null;
     throw new O("Invalid transition function", "transitionFunction", e);
@@ -887,7 +887,7 @@ class et {
     this._validationService && (this._validationService.destroy(), this._validationService = null);
   }
 }
-class Oe {
+class De {
   constructor(e, t, i, s = 1) {
     this.color = e, this.type = t, this.id = this.getId(), this.src = i, this.element = this.createElement(i, s), this._currentAnimation = null, this.check();
   }
@@ -1003,10 +1003,7 @@ class Oe {
       return;
     }
     const l = this.element.animate(
-      [
-        { transform: "translate(0, 0)" },
-        { transform: `translate(${c}px, ${h}px)` }
-      ],
+      [{ transform: "translate(0, 0)" }, { transform: `translate(${c}px, ${h}px)` }],
       {
         duration: t,
         easing: "cubic-bezier(0.25, 0.1, 0.25, 1)",
@@ -1029,12 +1026,12 @@ class Oe {
   }
   check() {
     if (!["p", "r", "n", "b", "q", "k"].includes(this.type))
-      throw new Error("Invalid piece type: " + this.type);
+      throw new Error(`Invalid piece type: ${this.type}`);
     if (!["w", "b"].includes(this.color))
-      throw new Error("Invalid piece color: " + this.color);
+      throw new Error(`Invalid piece color: ${this.color}`);
   }
 }
-class De {
+class qe {
   constructor(e, t) {
     this.row = e, this.col = t, this.id = this.getId(), this.element = this.createElement(), this.piece = null;
   }
@@ -1167,7 +1164,7 @@ let Z = class {
     this.promotion = e;
   }
   check() {
-    return !(this.piece === null || !(this.piece instanceof Oe) || ["q", "r", "b", "n", null].indexOf(this.promotion) === -1 || !(this.from instanceof De) || !(this.to instanceof De) || !this.to || !this.from || this.from === this.to);
+    return !(this.piece === null || !(this.piece instanceof De) || ["q", "r", "b", "n", null].indexOf(this.promotion) === -1 || !(this.from instanceof qe) || !(this.to instanceof qe) || !this.to || !this.from || this.from === this.to);
   }
   isLegal(e) {
     return e.moves({ square: this.from.id, verbose: !0 }).map((i) => i.to).indexOf(this.to.id) !== -1;
@@ -1331,7 +1328,7 @@ class bt {
   buildSquares(e) {
     for (let t = 0; t < Ue.ROWS; t++)
       for (let i = 0; i < Ue.COLS; i++) {
-        const [s, n] = e(t, i), r = new De(s, n);
+        const [s, n] = e(t, i), r = new qe(s, n);
         this.squares[r.getId()] = r, this.element.appendChild(r.element);
       }
   }
@@ -1438,7 +1435,7 @@ class St {
         "coordinates",
         { row: e, col: t }
       );
-    return ve[t - 1] + e;
+    return _e[t - 1] + e;
   }
   /**
    * Converts square ID to board coordinates
@@ -1448,7 +1445,7 @@ class St {
   getCoordinatesFromSquareID(e) {
     if (typeof e != "string" || e.length !== 2)
       throw new C(P.invalid_square + e, "squareId", e);
-    const t = e[0], i = parseInt(e[1]), s = ve.indexOf(t);
+    const t = e[0], i = parseInt(e[1]), s = _e.indexOf(t);
     if (s === -1)
       throw new C(P.invalid_square + e, "squareId", e);
     if (i < 1 || i > 8)
@@ -1592,7 +1589,7 @@ class St {
    * @returns {Array<string>} Array of square IDs in the file
    */
   getSquaresByFile(e) {
-    const t = ve.indexOf(e);
+    const t = _e.indexOf(e);
     if (t === -1)
       throw new C(`Invalid file: ${e}`, "file", e);
     const i = [];
@@ -1612,7 +1609,7 @@ function yt() {
     userAgent: a
   };
 }
-const qe = {
+const le = {
   /**
    * Apply browser-specific optimizations to an element
    * @param {HTMLElement} element - Element to optimize
@@ -1680,8 +1677,8 @@ class wt {
       const l = t.element, d = h.clientX || ((E = (m = h.touches) == null ? void 0 : m[0]) == null ? void 0 : E.clientX) || 0, u = h.clientY || ((L = (k = h.touches) == null ? void 0 : k[0]) == null ? void 0 : L.clientY) || 0;
       let g = !1, f = null, p = null;
       const b = (N, F) => {
-        const H = this.boardService.element, G = H.getBoundingClientRect(), se = G.width / 8, fe = N - G.left - se / 2, me = F - G.top - se / 2;
-        l.style.left = `${fe}px`, l.style.top = `${me}px`;
+        const H = this.boardService.element, G = H.getBoundingClientRect(), se = G.width / 8, me = N - G.left - se / 2, ge = F - G.top - se / 2;
+        l.style.left = `${me}px`, l.style.top = `${ge}px`;
         const ne = N - G.left, re = F - G.top;
         if (ne >= 0 && ne <= G.width && re >= 0 && re <= G.height) {
           const oe = this.coordinateService.pixelToSquareID(ne, re, H);
@@ -1690,14 +1687,14 @@ class wt {
           f = null;
         f !== p && (p == null || p.dehighlight(), f == null || f.highlight(), p = f);
       }, w = (N) => {
-        var G, se, fe, me;
-        const F = N.clientX || ((se = (G = N.touches) == null ? void 0 : G[0]) == null ? void 0 : se.clientX) || 0, H = N.clientY || ((me = (fe = N.touches) == null ? void 0 : fe[0]) == null ? void 0 : me.clientY) || 0;
+        var G, se, me, ge;
+        const F = N.clientX || ((se = (G = N.touches) == null ? void 0 : G[0]) == null ? void 0 : se.clientX) || 0, H = N.clientY || ((ge = (me = N.touches) == null ? void 0 : me[0]) == null ? void 0 : ge.clientY) || 0;
         if (!g) {
           const ne = Math.abs(F - d), re = Math.abs(H - u);
           if (ne > 3 || re > 3) {
             g = !0, this.isDragging = !0, e.select();
             const oe = window.getComputedStyle(l);
-            l.style.position = "absolute", l.style.zIndex = "100", l.style.width = oe.width, l.style.height = oe.height, l.classList.add("dragging"), qe.enableForDrag(l), i(e, t);
+            l.style.position = "absolute", l.style.zIndex = "100", l.style.width = oe.width, l.style.height = oe.height, l.classList.add("dragging"), le.enableForDrag(l), i(e, t);
           }
         }
         g && (b(F, H), s(e, f, t));
@@ -1706,10 +1703,10 @@ class wt {
           this.isDragging = !1;
           return;
         }
-        l.classList.remove("dragging"), l.style.zIndex = "20", l.style.willChange = "auto", qe.cleanupAfterDrag(l), this.isDragging = !1;
+        this.isDragging = !1;
         const N = n(e, f, t);
         if (!f) {
-          this.config.dropOffBoard === "trash" || N === "trash" ? (this._resetPiecePosition(l), c(e)) : (this._resetPiecePosition(l), r(e, t)), e.deselect(), this.boardService.applyToAllSquares("removeHint");
+          l.classList.remove("dragging"), l.style.zIndex = "", l.style.willChange = "auto", le.cleanupAfterDrag(l), this.config.dropOffBoard === "trash" || N === "trash" ? (this._resetPiecePosition(l), c(e)) : (this._resetPiecePosition(l), r(e, t)), e.deselect(), this.boardService.applyToAllSquares("removeHint");
           return;
         }
         this._handleMove(e, f, t, o, r);
@@ -1722,7 +1719,7 @@ class wt {
    * @private
    */
   _resetPiecePosition(e) {
-    e.style.position = "", e.style.left = "", e.style.top = "", e.style.transform = "", e.style.width = "", e.style.height = "";
+    e && (e.style.position = "", e.style.left = "", e.style.top = "", e.style.transform = "", e.style.width = "", e.style.height = "", e.style.zIndex = "", e.classList.remove("dragging"), le.cleanupAfterDrag(e));
   }
   /**
    * Handles a move attempt (from drag or click)
@@ -2119,21 +2116,21 @@ class Et {
    * @throws {PieceError} When piece format is invalid
    */
   convertPiece(e) {
-    if (e instanceof Oe)
+    if (e instanceof De)
       return e;
     if (typeof e == "string" && e.length === 2) {
       const [t, i] = e.split("");
       let s, n;
-      if (be.includes(t.toLowerCase()) && Se.includes(i))
+      if (Se.includes(t.toLowerCase()) && ye.includes(i))
         s = t.toLowerCase(), n = i;
-      else if (Se.includes(t) && be.includes(i.toLowerCase()))
+      else if (ye.includes(t) && Se.includes(i.toLowerCase()))
         n = t, s = i.toLowerCase();
       else
-        throw new Ce(P.invalid_piece + e, e);
+        throw new Me(P.invalid_piece + e, e);
       const r = this.getPiecePath(s + n);
-      return new Oe(n, s, r);
+      return new De(n, s, r);
     }
-    throw new Ce(P.invalid_piece + e, e);
+    throw new Me(P.invalid_piece + e, e);
   }
   /**
    * Adds a piece to a square with optional fade-in animation
@@ -2163,7 +2160,7 @@ class Et {
     e.check();
     const s = e.piece;
     if (!s)
-      throw i && i(), new Ce(P.square_no_piece, null, e.getId());
+      throw i && i(), new Me(P.square_no_piece, null, e.getId());
     return t && this.config.fadeTime > 0 ? s.fadeOut(
       this.config.fadeTime,
       this.config.fadeAnimation,
@@ -2208,9 +2205,12 @@ class Et {
     const r = () => {
       e.from.piece === e.piece && e.from.removePiece(!0), e.to.piece !== e.piece && (e.to.putPiece(e.piece), s && this.config.draggable && e.piece.element && e.piece.setDrag(s(e.to, e.piece))), n && n();
     };
-    if (e.piece.element.classList.contains("dragging"))
-      r();
-    else {
+    if (e.piece.element && e.piece.element.classList.contains("dragging")) {
+      if (r(), e.piece.element) {
+        const c = e.piece.element;
+        c.style.position = "", c.style.left = "", c.style.top = "", c.style.transform = "", c.style.zIndex = "", c.style.width = "", c.style.height = "", c.classList.remove("dragging"), le.cleanupAfterDrag(c);
+      }
+    } else {
       const c = i ? this.config.moveTime : 0;
       this.movePiece(e.piece, e.to, c, r);
     }
@@ -2246,7 +2246,7 @@ class Et {
       this._getTransitionTimingFunction(),
       this.config.dropCenterAnimation,
       () => {
-        i.element && (i.element.style.position = "", i.element.style.left = "", i.element.style.top = "", i.element.style.transform = "", i.element.style.zIndex = "", i.element.style.width = "", i.element.style.height = "", i.element.classList.remove("dragging"), qe.cleanupAfterDrag(i.element));
+        i.element && (i.element.style.position = "", i.element.style.left = "", i.element.style.top = "", i.element.style.transform = "", i.element.style.zIndex = "", i.element.style.width = "", i.element.style.height = "", i.element.classList.remove("dragging"), le.cleanupAfterDrag(i.element));
       }
     );
   }
@@ -2306,8 +2306,8 @@ class Et {
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-const I = "w", x = "b", T = "p", Le = "n", _e = "b", he = "r", Q = "q", M = "k", ke = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-class ge {
+const I = "w", x = "b", T = "p", Le = "n", be = "b", he = "r", Q = "q", M = "k", Te = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+class pe {
   constructor(e, t) {
     y(this, "color");
     y(this, "from");
@@ -2432,7 +2432,7 @@ const q = -1, Y = {
   f1: 117,
   g1: 118,
   h1: 119
-}, Te = {
+}, Ae = {
   b: [16, 32, 17, 15],
   w: [-16, -32, -17, -15]
 }, Qe = {
@@ -2921,7 +2921,7 @@ const q = -1, Y = {
   0,
   0,
   -17
-], kt = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 }, Tt = "pnbrqkPNBRQK", Ye = [Le, _e, he, Q], At = 7, It = 6, Rt = 1, Ot = 0, pe = {
+], kt = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 }, Tt = "pnbrqkPNBRQK", Ye = [Le, be, he, Q], At = 7, It = 6, Rt = 1, Ot = 0, ve = {
   [M]: _.KSIDE_CASTLE,
   [Q]: _.QSIDE_CASTLE
 }, K = {
@@ -2937,14 +2937,14 @@ const q = -1, Y = {
 function X(a) {
   return a >> 4;
 }
-function le(a) {
+function ue(a) {
   return a & 15;
 }
 function tt(a) {
   return "0123456789".indexOf(a) !== -1;
 }
 function R(a) {
-  const e = le(a), t = X(a);
+  const e = ue(a), t = X(a);
   return "abcdefgh".substring(e, e + 1) + "87654321".substring(t, t + 1);
 }
 function ae(a) {
@@ -3027,7 +3027,7 @@ function Lt(a, e) {
   let n = 0, r = 0, o = 0;
   for (let c = 0, h = e.length; c < h; c++) {
     const l = e[c].from, d = e[c].to, u = e[c].piece;
-    s === u && t !== l && i === d && (n++, X(t) === X(l) && r++, le(t) === le(l) && o++);
+    s === u && t !== l && i === d && (n++, X(t) === X(l) && r++, ue(t) === ue(l) && o++);
   }
   return n > 0 ? r > 0 && o > 0 ? R(t) : o > 0 ? R(t).charAt(1) : R(t).charAt(0) : "";
 }
@@ -3060,14 +3060,14 @@ function Je(a) {
   let e = a.charAt(0);
   return e >= "a" && e <= "h" ? a.match(/[a-h]\d.*[a-h]\d/) ? void 0 : T : (e = e.toLowerCase(), e === "o" ? M : e);
 }
-function Ae(a) {
+function Ie(a) {
   return a.replace(/=/, "").replace(/[+#]?[?!]*$/, "");
 }
-function Ie(a) {
+function Re(a) {
   return a.split(" ").slice(0, 4).join(" ");
 }
 class Nt {
-  constructor(e = ke) {
+  constructor(e = Te) {
     y(this, "_board", new Array(128));
     y(this, "_turn", I);
     y(this, "_header", {});
@@ -3159,10 +3159,10 @@ class Nt {
    * is only updated if history.length is zero, ie moves haven't been made.
    */
   _updateSetup(e) {
-    this._history.length > 0 || (e !== ke ? (this._header.SetUp = "1", this._header.FEN = e) : (delete this._header.SetUp, delete this._header.FEN));
+    this._history.length > 0 || (e !== Te ? (this._header.SetUp = "1", this._header.FEN = e) : (delete this._header.SetUp, delete this._header.FEN));
   }
   reset() {
-    this.load(ke);
+    this.load(Te);
   }
   get(e) {
     return this._board[v[e]];
@@ -3288,16 +3288,16 @@ class Nt {
         continue;
       }
       const r = this._board[n];
-      r && (e[r.type] = r.type in e ? e[r.type] + 1 : 1, r.type === _e && t.push(s), i++);
+      r && (e[r.type] = r.type in e ? e[r.type] + 1 : 1, r.type === be && t.push(s), i++);
     }
     if (i === 2)
       return !0;
     if (
       // k vs. kn .... or .... k vs. kb
-      i === 3 && (e[_e] === 1 || e[Le] === 1)
+      i === 3 && (e[be] === 1 || e[Le] === 1)
     )
       return !0;
-    if (i === e[_e] + 2) {
+    if (i === e[be] + 2) {
       let n = 0;
       const r = t.length;
       for (let o = 0; o < r; o++)
@@ -3321,7 +3321,7 @@ class Nt {
   }
   moves({ verbose: e = !1, square: t = void 0, piece: i = void 0 } = {}) {
     const s = this._moves({ square: t, piece: i });
-    return e ? s.map((n) => new ge(this, n)) : s.map((n) => this._moveToSan(n, s));
+    return e ? s.map((n) => new pe(this, n)) : s.map((n) => this._moveToSan(n, s));
   }
   _moves({ legal: e = !0, piece: t = void 0, square: i = void 0 } = {}) {
     var g;
@@ -3343,9 +3343,9 @@ class Nt {
       let b;
       if (p === T) {
         if (n && n !== p) continue;
-        b = f + Te[o][0], this._board[b] || (W(r, o, f, b, T), b = f + Te[o][1], Dt[o] === X(f) && !this._board[b] && W(r, o, f, b, T, void 0, _.BIG_PAWN));
+        b = f + Ae[o][0], this._board[b] || (W(r, o, f, b, T), b = f + Ae[o][1], Dt[o] === X(f) && !this._board[b] && W(r, o, f, b, T, void 0, _.BIG_PAWN));
         for (let w = 2; w < 4; w++)
-          b = f + Te[o][w], !(b & 136) && (((g = this._board[b]) == null ? void 0 : g.color) === c ? W(r, o, f, b, T, this._board[b].type, _.CAPTURE) : b === this._epSquare && W(r, o, f, b, T, T, _.EP_CAPTURE));
+          b = f + Ae[o][w], !(b & 136) && (((g = this._board[b]) == null ? void 0 : g.color) === c ? W(r, o, f, b, T, this._board[b].type, _.CAPTURE) : b === this._epSquare && W(r, o, f, b, T, T, _.EP_CAPTURE));
       } else {
         if (n && n !== p) continue;
         for (let w = 0, S = Qe[p].length; w < S; w++) {
@@ -3394,7 +3394,7 @@ class Nt {
     }
     if (!i)
       throw typeof e == "string" ? new Error(`Invalid move: ${e}`) : new Error(`Invalid move: ${JSON.stringify(e)}`);
-    const s = new ge(this, i);
+    const s = new pe(this, i);
     return this._makeMove(i), this._incPositionCount(s.after), s;
   }
   _push(e) {
@@ -3439,7 +3439,7 @@ class Nt {
   undo() {
     const e = this._undoMove();
     if (e) {
-      const t = new ge(this, e);
+      const t = new pe(this, e);
       return this._decPositionCount(t.after), t;
     }
     return null;
@@ -3635,10 +3635,10 @@ class Nt {
   }
   // convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
   _moveFromSan(e, t = !1) {
-    const i = Ae(e);
+    const i = Ie(e);
     let s = Je(i), n = this._moves({ legal: !0, piece: s });
     for (let u = 0, g = n.length; u < g; u++)
-      if (i === Ae(this._moveToSan(n[u], n)))
+      if (i === Ie(this._moveToSan(n[u], n)))
         return n[u];
     if (t)
       return null;
@@ -3657,7 +3657,7 @@ class Nt {
           if ((!r || r.toLowerCase() === n[u].piece) && v[h] === n[u].to && (c === f[0] || c === f[1]) && (!l || l.toLowerCase() === n[u].promotion))
             return n[u];
         }
-      } else if (i === Ae(this._moveToSan(n[u], n)).replace("x", ""))
+      } else if (i === Ie(this._moveToSan(n[u], n)).replace("x", ""))
         return n[u];
     return null;
   }
@@ -3665,7 +3665,7 @@ class Nt {
     let e = `   +------------------------+
 `;
     for (let t = v.a8; t <= v.h1; t++) {
-      if (le(t) === 0 && (e += ` ${"87654321"[X(t)]} |`), this._board[t]) {
+      if (ue(t) === 0 && (e += ` ${"87654321"[X(t)]} |`), this._board[t]) {
         const i = this._board[t].type, n = this._board[t].color === I ? i.toUpperCase() : i.toLowerCase();
         e += ` ${n} `;
       } else
@@ -3701,7 +3701,7 @@ class Nt {
   squareColor(e) {
     if (e in v) {
       const t = v[e];
-      return (X(t) + le(t)) % 2 === 0 ? "light" : "dark";
+      return (X(t) + ue(t)) % 2 === 0 ? "light" : "dark";
     }
     return null;
   }
@@ -3713,7 +3713,7 @@ class Nt {
       const s = t.pop();
       if (!s)
         break;
-      e ? i.push(new ge(this, s)) : i.push(this._moveToSan(s, this._moves())), this._makeMove(s);
+      e ? i.push(new pe(this, s)) : i.push(this._moveToSan(s, this._moves())), this._makeMove(s);
     }
     return i;
   }
@@ -3724,15 +3724,15 @@ class Nt {
    * removing old positions from the record if their counts are reduced to 0.
    */
   _getPositionCount(e) {
-    const t = Ie(e);
+    const t = Re(e);
     return this._positionCount[t] || 0;
   }
   _incPositionCount(e) {
-    const t = Ie(e);
+    const t = Re(e);
     this._positionCount[t] === void 0 && (this._positionCount[t] = 0), this._positionCount[t] += 1;
   }
   _decPositionCount(e) {
-    const t = Ie(e);
+    const t = Re(e);
     this._positionCount[t] === 1 ? delete this._positionCount[t] : this._positionCount[t] -= 1;
   }
   _pruneComments() {
@@ -3782,15 +3782,15 @@ class Nt {
   }
   setCastlingRights(e, t) {
     for (const s of [M, Q])
-      t[s] !== void 0 && (t[s] ? this._castling[e] |= pe[s] : this._castling[e] &= ~pe[s]);
+      t[s] !== void 0 && (t[s] ? this._castling[e] |= ve[s] : this._castling[e] &= ~ve[s]);
     this._updateCastlingRights();
     const i = this.getCastlingRights(e);
     return (t[M] === void 0 || t[M] === i[M]) && (t[Q] === void 0 || t[Q] === i[Q]);
   }
   getCastlingRights(e) {
     return {
-      [M]: (this._castling[e] & pe[M]) !== 0,
-      [Q]: (this._castling[e] & pe[Q]) !== 0
+      [M]: (this._castling[e] & ve[M]) !== 0,
+      [Q]: (this._castling[e] & ve[Q]) !== 0
     };
   }
   moveNumber() {
@@ -3908,7 +3908,7 @@ class Bt {
    * @returns {string} Square ID (e.g., 'e4')
    */
   _getSquareID(e, t) {
-    return e = parseInt(e), t = parseInt(t), this.config.orientation === "w" ? (e = 8 - e, t = t + 1) : (e = e + 1, t = 8 - t), ve[t - 1] + e;
+    return e = parseInt(e), t = parseInt(t), this.config.orientation === "w" ? (e = 8 - e, t = t + 1) : (e = e + 1, t = 8 - t), _e[t - 1] + e;
   }
   /**
    * Changes the turn in a FEN string
@@ -4184,13 +4184,13 @@ function fi() {
     supported: !1
   };
 }
-class ue {
+class de {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    * @param {ModeConfig} [config={}] - Mode configuration
    */
   constructor(e, t = {}) {
-    if (new.target === ue)
+    if (new.target === de)
       throw new Error("BaseMode is abstract and cannot be instantiated directly");
     this.chessboard = e, this.config = {
       name: "base",
@@ -4383,7 +4383,7 @@ class ue {
     e.moveHistory && (this.moveHistory = e.moveHistory), e.isActive && this.start();
   }
 }
-const we = class we extends ue {
+const Pe = class Pe extends de {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    * @param {CreativeModeConfig} [config={}] - Mode configuration
@@ -4399,7 +4399,7 @@ const we = class we extends ue {
       detectGameEnd: !1,
       showPiecePalette: !0,
       allowIllegalPositions: !0,
-      availablePieces: we.DEFAULT_PIECES,
+      availablePieces: Pe.DEFAULT_PIECES,
       ...t
     }), this.selectedPiece = null, this.savedPositions = /* @__PURE__ */ new Map(), this.clipboard = null, this.undoStack = [], this.redoStack = [];
   }
@@ -4726,9 +4726,9 @@ const we = class we extends ue {
  * Default pieces available in creative mode
  * @static
  */
-y(we, "DEFAULT_PIECES", ["wk", "wq", "wr", "wb", "wn", "wp", "bk", "bq", "br", "bb", "bn", "bp"]);
-let Ne = we;
-class xt extends ue {
+y(Pe, "DEFAULT_PIECES", ["wk", "wq", "wr", "wb", "wn", "wp", "bk", "bq", "br", "bb", "bn", "bp"]);
+let Ne = Pe;
+class xt extends de {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    * @param {PvPModeConfig} [config={}] - Mode configuration
@@ -5123,7 +5123,7 @@ const ce = {
   // After 1.d4
   rnbqkbnr_pppppppp_8_8_3P4_8_PPP1PPPP_RNBQKBNR: ["d7d5", "g8f6", "e7e6"]
 };
-class Re {
+class Oe {
   /**
    * @param {Object} game - Chess.js game instance
    * @param {AIConfig} [config={}] - AI configuration
@@ -5388,7 +5388,7 @@ class Re {
     };
   }
 }
-const te = class te extends ue {
+const te = class te extends de {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    * @param {VsBotModeConfig} [config={}] - Mode configuration
@@ -5442,7 +5442,7 @@ const te = class te extends ue {
       console.error("[VsBotMode] Cannot initialize AI: no game instance");
       return;
     }
-    this.ai = new Re(e, {
+    this.ai = new Oe(e, {
       difficulty: this.config.botDifficulty
     });
   }
@@ -5664,7 +5664,7 @@ const te = class te extends ue {
     if (!e) {
       const i = (t = this.chessboard.positionService) == null ? void 0 : t.getGame();
       if (!i) return null;
-      e = new Re(i, { difficulty: 8 }).getBestMove(), e && (e.source = "builtin");
+      e = new Oe(i, { difficulty: 8 }).getBestMove(), e && (e.source = "builtin");
     }
     return e && (this.hintsUsed++, this._emit("hintUsed", { hint: e, totalHints: this.hintsUsed })), e;
   }
@@ -5746,7 +5746,7 @@ const te = class te extends ue {
         console.warn("[VsBotMode] Engine analysis failed:", c);
       }
     if (!t && this.ai) {
-      const c = new Re(e, { difficulty: 10 });
+      const c = new Oe(e, { difficulty: 10 });
       t = c.getBestMove(), i = c.getStats();
     }
     const n = e.moves({ verbose: !0 });
@@ -5829,7 +5829,7 @@ y(te, "DIFFICULTY_NAMES", {
   10: "Master"
 });
 let Be = te;
-const Pe = class Pe {
+const Ee = class Ee {
   /**
    * @param {Object} chessboard - Reference to the chessboard instance
    */
@@ -5841,7 +5841,7 @@ const Pe = class Pe {
    * @private
    */
   _initializeDefaultModes() {
-    Object.entries(Pe.MODES).forEach(([e, t]) => {
+    Object.entries(Ee.MODES).forEach(([e, t]) => {
       this.registerMode(e, t);
     });
   }
@@ -6027,12 +6027,12 @@ const Pe = class Pe {
  * Available mode constructors
  * @static
  */
-y(Pe, "MODES", {
+y(Ee, "MODES", {
   creative: Ne,
   pvp: xt,
   vsBot: Be
 });
-let xe = Pe, ye = class {
+let xe = Ee, we = class {
   /**
    * Creates a new Chessboard instance
    * @param {Object} config - Configuration object
@@ -7448,7 +7448,7 @@ const ee = Object.freeze({
   RESET: "\x1B[0m"
   // Reset
 });
-class Ee {
+class Ce {
   /**
    * Creates a new Logger instance
    * @param {Object} [config] - Logger configuration
@@ -7629,7 +7629,7 @@ class Ee {
    * @returns {Logger} Child logger instance
    */
   child(e) {
-    return new Ee(this.config, `${this.name}:${e}`);
+    return new Ce(this.config, `${this.name}:${e}`);
   }
   /**
    * Sets log level
@@ -7677,9 +7677,9 @@ class Ee {
     this.clearLogs(), this.performances.clear();
   }
 }
-const je = new Ee();
+const je = new Ce();
 function gi(a, e) {
-  return new Ee(a, e);
+  return new Ce(a, e);
 }
 class nt {
   /**
@@ -7763,7 +7763,7 @@ class nt {
         o ? (n = { ...o, ...t }, this.logger.info(`Using template "${i}" for chessboard creation`)) : this.logger.warn(`Template "${i}" not found, using default configuration`);
       }
       n.id = e, this.validationService.validateConfig(n);
-      const r = new ye(n);
+      const r = new we(n);
       return this.instances.set(e, {
         instance: r,
         config: n,
@@ -7931,18 +7931,18 @@ function D(a, e = {}) {
   const t = je.child("ChessboardFactory");
   try {
     if (typeof a == "object" && a !== null)
-      return t.debug("Creating chessboard with config object"), new ye(a);
+      return t.debug("Creating chessboard with config object"), new we(a);
     if (typeof a == "string") {
       t.debug("Creating chessboard with element ID", { elementId: a });
       const i = { ...e, id: a };
-      return new ye(i);
+      return new we(i);
     }
     throw new Error("Invalid parameters: first parameter must be string or object");
   } catch (i) {
     throw t.error("Failed to create chessboard instance", { error: i }), i;
   }
 }
-class rt extends ye {
+class rt extends we {
   /**
    * Creates a new ChessboardWrapper instance
    * @param {string|Object} containerElm - Container element ID or configuration object
@@ -8216,12 +8216,12 @@ function Pi(a) {
 function Ei(a) {
   return new Promise((e) => setTimeout(e, a));
 }
-class de {
+class fe {
   /**
    * @param {EngineConfig} [config={}] - Engine configuration
    */
   constructor(e = {}) {
-    if (new.target === de)
+    if (new.target === fe)
       throw new Error("BaseEngine is abstract and cannot be instantiated directly");
     this.config = {
       depth: 20,
@@ -8450,7 +8450,7 @@ class de {
     };
   }
 }
-const ie = class ie extends de {
+const ie = class ie extends fe {
   /**
    * @param {StockfishConfig} [config={}] - Engine configuration
    */
@@ -8757,7 +8757,7 @@ y(ie, "CDN_URLS", {
   unpkg: "https://unpkg.com/stockfish.js/stockfish.js"
 });
 let $e = ie;
-class ei extends de {
+class ei extends fe {
   /**
    * @param {UCIConfig} config - Engine configuration
    */
@@ -9042,7 +9042,7 @@ class ei extends de {
     await this._send("ucinewgame"), await this._sendAndWait("isready", "readyok");
   }
 }
-const J = class J extends de {
+const J = class J extends fe {
   /**
    * @param {CloudConfig} [config={}] - Engine configuration
    */
@@ -9690,13 +9690,13 @@ const ti = "3.2.0", ii = "dev", si = (/* @__PURE__ */ new Date()).toISOString(),
 };
 export {
   _t as AnimationService,
-  ve as BOARD_LETTERS,
+  _e as BOARD_LETTERS,
   Ue as BOARD_SIZE,
-  de as BaseEngine,
-  ue as BaseMode,
+  fe as BaseEngine,
+  de as BaseMode,
   bt as BoardService,
   Nt as Chess,
-  Re as ChessAI,
+  Oe as ChessAI,
   D as Chessboard,
   et as ChessboardConfig,
   U as ChessboardError,
@@ -9710,22 +9710,22 @@ export {
   Xe as EngineManager,
   wt as EventService,
   ee as LOG_LEVELS,
-  Ee as Logger,
+  Ce as Logger,
   xe as ModeManager,
   Z as Move,
   He as MoveError,
   Pt as MoveService,
-  Se as PIECE_COLORS,
-  be as PIECE_TYPES,
+  ye as PIECE_COLORS,
+  Se as PIECE_TYPES,
   dt as PROMOTION_PIECES,
   st as PerformanceMonitor,
-  Oe as Piece,
-  Ce as PieceError,
+  De as Piece,
+  Me as PieceError,
   Et as PieceService,
   Bt as PositionService,
   xt as PvPMode,
   Ve as STANDARD_POSITIONS,
-  De as Square,
+  qe as Square,
   $e as StockfishEngine,
   ei as UCIEngine,
   C as ValidationError,

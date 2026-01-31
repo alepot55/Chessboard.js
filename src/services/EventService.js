@@ -7,7 +7,6 @@
 
 import { DragOptimizations } from '../utils/cross-browser.js';
 import Move from '../components/Move.js';
-import Piece from '../components/Piece.js';
 
 /**
  * Service responsible for event handling and user interactions
@@ -193,11 +192,9 @@ export class EventService {
           return; // Was just a click, let click handler deal with it
         }
 
-        // Reset piece styles
-        img.classList.remove('dragging');
-        img.style.zIndex = '20';
-        img.style.willChange = 'auto';
-        DragOptimizations.cleanupAfterDrag(img);
+        // Don't reset styles here - let PieceService.translatePiece handle it
+        // when it detects the piece is dragging. This ensures proper style cleanup
+        // after the piece is moved to its new position.
 
         this.isDragging = false;
 
@@ -205,7 +202,12 @@ export class EventService {
         const dropResult = onDrop(square, targetSquare, piece);
 
         if (!targetSquare) {
-          // Dropped outside board
+          // Dropped outside board - reset all styles immediately
+          img.classList.remove('dragging');
+          img.style.zIndex = '';
+          img.style.willChange = 'auto';
+          DragOptimizations.cleanupAfterDrag(img);
+
           if (this.config.dropOffBoard === 'trash' || dropResult === 'trash') {
             this._resetPiecePosition(img);
             onRemove(square);
@@ -218,7 +220,7 @@ export class EventService {
           return;
         }
 
-        // Try to make the move
+        // Try to make the move - PieceService will handle style cleanup
         this._handleMove(square, targetSquare, piece, onMove, onSnapback);
       };
 
@@ -235,12 +237,16 @@ export class EventService {
    * @private
    */
   _resetPiecePosition(img) {
+    if (!img) return;
     img.style.position = '';
     img.style.left = '';
     img.style.top = '';
     img.style.transform = '';
     img.style.width = '';
     img.style.height = '';
+    img.style.zIndex = '';
+    img.classList.remove('dragging');
+    DragOptimizations.cleanupAfterDrag(img);
   }
 
   /**

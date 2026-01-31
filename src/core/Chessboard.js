@@ -1390,7 +1390,7 @@ class Chessboard {
    * @param {Object} [opts]
    * @param {boolean} [opts.animate=true]
    */
-  flipBoard(opts = {}) {
+  flipBoard(_opts = {}) {
     if (this.coordinateService && this.coordinateService.flipOrientation) {
       this.coordinateService.flipOrientation();
     }

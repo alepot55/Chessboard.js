@@ -7,6 +7,9 @@
  * @license ISC
  */
 
+// Styles - bundled into chessboard.css
+import './styles/index.css';
+
 // Core components
 export {
   Chessboard,

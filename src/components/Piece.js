@@ -295,10 +295,10 @@ class Piece {
 
   check() {
     if (!['p', 'r', 'n', 'b', 'q', 'k'].includes(this.type)) {
-      throw new Error('Invalid piece type: ' + this.type);
+      throw new Error(`Invalid piece type: ${this.type}`);
     }
     if (!['w', 'b'].includes(this.color)) {
-      throw new Error('Invalid piece color: ' + this.color);
+      throw new Error(`Invalid piece color: ${this.color}`);
     }
   }
 }

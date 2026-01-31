@@ -50,11 +50,6 @@ export class EventService {
      */
     private _handlePromotion;
     /**
-     * Updates piece after promotion
-     * @private
-     */
-    private _updatePromotedPiece;
-    /**
      * Handles square click events
      */
     onClick(square: any, onMove: any, onSelect: any, onDeselect: any, animate?: boolean): boolean;

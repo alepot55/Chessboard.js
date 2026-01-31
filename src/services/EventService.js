@@ -289,6 +289,12 @@ export class EventService {
    * @private
    */
   _handlePromotion(fromSquare, toSquare, piece, onMove, onSnapback, cleanup) {
+    // Reset piece position first so it appears at fromSquare (not at cursor)
+    // This prevents visual artifacts during promotion UI
+    if (piece && piece.element) {
+      this._resetPiecePosition(piece.element);
+    }
+
     // Show promotion UI
     this.moveService.setupPromotion(
       new Move(fromSquare, toSquare),
@@ -300,47 +306,21 @@ export class EventService {
 
         const success = onMove(fromSquare, toSquare, selectedPiece, true);
 
-        if (success) {
-          // Update the piece visually after move
-          this._updatePromotedPiece(toSquare, selectedPiece);
-        } else {
-          this._resetPiecePosition(piece.element);
+        if (!success) {
           onSnapback(fromSquare, piece);
         }
+        // Note: _updateBoardPieces (called within onMove) handles replacing
+        // the pawn with the promoted piece, so no need to call _updatePromotedPiece
         cleanup();
       },
       () => {
         // Promotion cancelled
         this.boardService.applyToAllSquares('removePromotion');
         this.boardService.applyToAllSquares('removeCover');
-        this._resetPiecePosition(piece.element);
         onSnapback(fromSquare, piece);
         cleanup();
       }
     );
-  }
-
-  /**
-   * Updates piece after promotion
-   * @private
-   */
-  _updatePromotedPiece(square, promotionPiece) {
-    setTimeout(() => {
-      const targetSquare = this.boardService.getSquare(square.id);
-      if (!targetSquare?.piece) return;
-
-      const game = this.chessboard.positionService.getGame();
-      const gamePiece = game.get(square.id);
-      if (!gamePiece) return;
-
-      const pieceId = promotionPiece + gamePiece.color;
-      const piecePath = this.chessboard.pieceService.getPiecePath(pieceId);
-
-      targetSquare.piece.transformTo(promotionPiece, piecePath, 200, () => {
-        const dragFn = this.chessboard._createDragFunction.bind(this.chessboard);
-        targetSquare.piece.setDrag(dragFn(targetSquare, targetSquare.piece));
-      });
-    }, 100);
   }
 
   /**

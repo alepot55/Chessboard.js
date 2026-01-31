@@ -174,6 +174,7 @@ export class Chessboard {
      * @param {Object} gameMove - Game move object
      * @param {boolean} animate - Whether to animate
      * @param {boolean} [updateBoard=true] - Whether to update board after animation
+     * @param {Function} [onComplete] - Callback when animation completes
      */
     private _handleCastleMove;
     /**

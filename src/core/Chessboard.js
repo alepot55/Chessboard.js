@@ -444,6 +444,17 @@ class Chessboard {
     if (animate && move.from.piece) {
       // For castling, we need to animate king and rook simultaneously
       if (isCastle) {
+        let kingDone = false;
+        let rookDone = false;
+
+        const checkComplete = () => {
+          if (kingDone && rookDone) {
+            // Both animations complete - now sync board
+            this._updateBoardPieces(false);
+            this.config.onMoveEnd(gameMove);
+          }
+        };
+
         // Start king animation
         this.pieceService.translatePiece(
           move,
@@ -451,16 +462,16 @@ class Chessboard {
           animate,
           this._createDragFunction.bind(this),
           () => {
-            // King animation done - update state after both complete
-            this._updateBoardPieces(false);
-            this.config.onMoveEnd(gameMove);
+            kingDone = true;
+            checkComplete();
           }
         );
 
-        // Start rook animation simultaneously (small delay for visual effect)
-        setTimeout(() => {
-          this._handleCastleMove(gameMove, true, false); // Don't update board yet
-        }, 20);
+        // Start rook animation simultaneously
+        this._handleCastleMove(gameMove, true, false, () => {
+          rookDone = true;
+          checkComplete();
+        });
       } else if (isEnPassant) {
         // For en passant, animate the piece first, then handle captured pawn
         this.pieceService.translatePiece(
@@ -531,43 +542,44 @@ class Chessboard {
    * @param {Object} gameMove - Game move object
    * @param {boolean} animate - Whether to animate
    * @param {boolean} [updateBoard=true] - Whether to update board after animation
+   * @param {Function} [onComplete] - Callback when animation completes
    */
-  _handleCastleMove(gameMove, animate, updateBoard = true) {
+  _handleCastleMove(gameMove, animate, updateBoard = true, onComplete = null) {
     const rookMove = this.moveService.getCastleRookMove(gameMove);
-    if (!rookMove) return;
+    if (!rookMove) {
+      if (onComplete) onComplete();
+      return;
+    }
 
     const rookFromSquare = this.boardService.getSquare(rookMove.from);
     const rookToSquare = this.boardService.getSquare(rookMove.to);
 
     if (!rookFromSquare || !rookToSquare) {
-      console.warn('Castle rook move failed - squares not found');
+      if (onComplete) onComplete();
       return;
     }
 
-    // Get the rook piece - it should be visually on the from square
     const rookPiece = rookFromSquare.piece;
     if (!rookPiece) {
-      console.warn('Castle rook move failed - rook piece not found on', rookMove.from);
-      // The piece might already have been moved, just update
       if (updateBoard) this._updateBoardPieces(false);
+      if (onComplete) onComplete();
       return;
     }
 
     if (animate) {
-      // Animate rook sliding to new position
       this.pieceService.translatePiece(
         { from: rookFromSquare, to: rookToSquare, piece: rookPiece },
-        false, // No capture for rook in castle
+        false,
         true,
         this._createDragFunction.bind(this),
         () => {
-          // After rook animation completes
           if (updateBoard) this._updateBoardPieces(false);
+          if (onComplete) onComplete();
         }
       );
     } else {
-      // Just update the board state
       if (updateBoard) this._updateBoardPieces(false);
+      if (onComplete) onComplete();
     }
   }
 

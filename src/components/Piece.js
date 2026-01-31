@@ -1,3 +1,8 @@
+/**
+ * Chess piece component
+ * @module components/Piece
+ */
+
 class Piece {
   constructor(color, type, src, opacity = 1) {
     this.color = color;
@@ -5,6 +10,7 @@ class Piece {
     this.id = this.getId();
     this.src = src;
     this.element = this.createElement(src, opacity);
+    this._currentAnimation = null;
     this.check();
   }
 
@@ -18,8 +24,8 @@ class Piece {
     element.id = this.id;
     element.src = src || this.src;
     element.style.opacity = opacity;
+    element.draggable = false;
 
-    // Ensure the image loads properly
     element.onerror = () => {
       console.warn('Failed to load piece image:', element.src);
     };
@@ -39,10 +45,6 @@ class Piece {
     }
   }
 
-  /**
-   * Updates the piece image source
-   * @param {string} newSrc - New image source
-   */
   updateSrc(newSrc) {
     this.src = newSrc;
     if (this.element) {
@@ -52,281 +54,251 @@ class Piece {
 
   /**
    * Transforms the piece to a new type with smooth animation
-   * @param {string} newType - New piece type
-   * @param {string} newSrc - New image source
-   * @param {number} [duration=200] - Animation duration in milliseconds
-   * @param {Function} [callback] - Callback when transformation is complete
    */
   transformTo(newType, newSrc, duration = 200, callback = null) {
     if (!this.element) {
       if (callback) callback();
       return;
     }
+
     const element = this.element;
-
-    // Add transformation class to disable all transitions temporarily
     element.classList.add('transforming');
-
-    // Create a smooth scale animation for the transformation
-    const scaleDown = [
-      { transform: 'scale(1)', opacity: '1' },
-      { transform: 'scale(0.8)', opacity: '0.7' },
-    ];
-
-    const scaleUp = [
-      { transform: 'scale(0.8)', opacity: '0.7' },
-      { transform: 'scale(1)', opacity: '1' },
-    ];
 
     const halfDuration = duration / 2;
 
-    // First animation: scale down
-    if (element.animate) {
-      const scaleDownAnimation = element.animate(scaleDown, {
-        duration: halfDuration,
-        easing: 'ease-in',
-        fill: 'forwards',
-      });
+    // Scale down animation
+    const scaleDownAnim = element.animate(
+      [
+        { transform: 'scale(1)', opacity: 1 },
+        { transform: 'scale(0.7)', opacity: 0.5 },
+      ],
+      { duration: halfDuration, easing: 'ease-in', fill: 'forwards' }
+    );
 
-      scaleDownAnimation.onfinish = () => {
+    scaleDownAnim.onfinish = () => {
+      if (!this.element) {
+        if (callback) callback();
+        return;
+      }
+
+      // Update piece data
+      this.type = newType;
+      this.id = this.getId();
+      this.src = newSrc;
+      element.src = newSrc;
+      element.id = this.id;
+
+      // Scale up animation
+      const scaleUpAnim = element.animate(
+        [
+          { transform: 'scale(0.7)', opacity: 0.5 },
+          { transform: 'scale(1)', opacity: 1 },
+        ],
+        { duration: halfDuration, easing: 'ease-out', fill: 'forwards' }
+      );
+
+      scaleUpAnim.onfinish = () => {
         if (!this.element) {
           if (callback) callback();
           return;
         }
-        // Change the piece type and source at the smallest scale
-        this.type = newType;
-        this.id = this.getId();
-        this.src = newSrc;
-        element.src = newSrc;
-        element.id = this.id;
 
-        // Second animation: scale back up
-        const scaleUpAnimation = element.animate(scaleUp, {
-          duration: halfDuration,
-          easing: 'ease-out',
-          fill: 'forwards',
-        });
+        // Clean up
+        scaleDownAnim.cancel();
+        scaleUpAnim.cancel();
+        element.style.transform = '';
+        element.style.opacity = '';
+        element.classList.remove('transforming');
 
-        scaleUpAnimation.onfinish = () => {
-          if (!this.element) {
-            if (callback) callback();
-            return;
-          }
-          // Reset transform and remove transformation class
-          element.style.transform = '';
-          element.style.opacity = '';
-          element.classList.remove('transforming');
-
-          // Add a subtle bounce effect
-          element.classList.add('transform-complete');
-
-          // Remove bounce class after animation
-          setTimeout(() => {
-            if (!this.element) return;
-            element.classList.remove('transform-complete');
-          }, 400);
-
-          if (callback) callback();
-        };
+        if (callback) callback();
       };
-    } else {
-      // Fallback for browsers without Web Animations API
-      element.style.transition = `transform ${halfDuration}ms ease-in, opacity ${halfDuration}ms ease-in`;
-      element.style.transform = 'scale(0.8)';
-      element.style.opacity = '0.7';
-
-      setTimeout(() => {
-        if (!this.element) {
-          if (callback) callback();
-          return;
-        }
-        // Change the piece
-        this.type = newType;
-        this.id = this.getId();
-        this.src = newSrc;
-        element.src = newSrc;
-        element.id = this.id;
-
-        // Scale back up
-        element.style.transition = `transform ${halfDuration}ms ease-out, opacity ${halfDuration}ms ease-out`;
-        element.style.transform = 'scale(1)';
-        element.style.opacity = '1';
-
-        setTimeout(() => {
-          if (!this.element) {
-            if (callback) callback();
-            return;
-          }
-          // Clean up
-          element.style.transition = '';
-          element.style.transform = '';
-          element.style.opacity = '';
-          element.classList.remove('transforming');
-
-          // Add bounce effect
-          element.classList.add('transform-complete');
-          setTimeout(() => {
-            if (!this.element) return;
-            element.classList.remove('transform-complete');
-          }, 400);
-
-          if (callback) callback();
-        }, halfDuration);
-      }, halfDuration);
-    }
+    };
   }
 
   fadeIn(duration, speed, transition_f, callback) {
+    if (!this.element) {
+      if (callback) callback();
+      return;
+    }
+
     const start = performance.now();
-    let opacity = 0;
+
     const fade = () => {
       if (!this.element) {
-        if (callback) {
-          callback();
-        }
+        if (callback) callback();
         return;
       }
+
       const elapsed = performance.now() - start;
-      opacity = transition_f(elapsed, duration, speed);
-      this.element.style.opacity = opacity;
-      if (elapsed < duration) {
+      const progress = Math.min(elapsed / duration, 1);
+      this.element.style.opacity = progress;
+
+      if (progress < 1) {
         requestAnimationFrame(fade);
       } else {
-        if (!this.element) {
-          if (callback) {
-            callback();
-          }
-          return;
-        }
         this.element.style.opacity = 1;
-        if (callback) {
-          callback();
-        }
+        if (callback) callback();
       }
     };
+
     fade();
   }
 
   fadeOut(duration, speed, transition_f, callback) {
+    if (!this.element) {
+      if (callback) callback();
+      return;
+    }
+
     const start = performance.now();
-    let opacity = 1;
+
     const fade = () => {
       if (!this.element) {
-        if (callback) {
-          callback();
-        }
+        if (callback) callback();
         return;
       }
+
       const elapsed = performance.now() - start;
-      opacity = 1 - transition_f(elapsed, duration, speed);
-      this.element.style.opacity = opacity;
-      if (elapsed < duration) {
+      const progress = Math.min(elapsed / duration, 1);
+      this.element.style.opacity = 1 - progress;
+
+      if (progress < 1) {
         requestAnimationFrame(fade);
       } else {
-        if (!this.element) {
-          if (callback) {
-            callback();
-          }
-          return;
-        }
         this.element.style.opacity = 0;
-        if (callback) {
-          callback();
-        }
+        if (callback) callback();
       }
     };
+
     fade();
   }
 
   setDrag(f) {
-    if (!this.element) {
-      return;
-    }
+    if (!this.element) return;
 
-    // Remove any existing drag handlers first
+    // Remove existing handler
     if (this._dragHandler) {
       this.element.removeEventListener('mousedown', this._dragHandler);
+      this.element.removeEventListener('touchstart', this._dragHandler);
     }
 
-    this.element.ondragstart = (e) => {
-      e.preventDefault();
-    };
+    this.element.ondragstart = (e) => e.preventDefault();
 
-    // Use the drag function directly without timeout
     this._dragHandler = f;
     this.element.addEventListener('mousedown', this._dragHandler);
+    this.element.addEventListener('touchstart', this._dragHandler, { passive: false });
   }
 
   destroy() {
-    // Remove all event listeners
+    // Cancel any running animation
+    if (this._currentAnimation) {
+      this._currentAnimation.cancel();
+      this._currentAnimation = null;
+    }
+
     if (this.element) {
       if (this._dragHandler) {
         this.element.removeEventListener('mousedown', this._dragHandler);
+        this.element.removeEventListener('touchstart', this._dragHandler);
         this._dragHandler = null;
       }
 
       this.element.onmousedown = null;
       this.element.ondragstart = null;
 
-      // Remove from DOM
       if (this.element.parentNode) {
         this.element.parentNode.removeChild(this.element);
       }
 
-      // Clear references
       this.element = null;
     }
   }
 
-  translate(to, duration, transition_f, speed, callback = null) {
-    if (!this.element) {
+  /**
+   * Animate piece translation to target square
+   * Uses Web Animations API for smooth, precise animations
+   */
+  translate(targetSquare, duration, transition_f, speed, callback = null) {
+    if (!this.element || !targetSquare) {
       if (callback) callback();
       return;
     }
-    const sourceRect = this.element.getBoundingClientRect();
-    const targetRect = to.getBoundingClientRect();
-    const x_start = sourceRect.left + sourceRect.width / 2;
-    const y_start = sourceRect.top + sourceRect.height / 2;
-    const x_end = targetRect.left + targetRect.width / 2;
-    const y_end = targetRect.top + targetRect.height / 2;
-    const dx = x_end - x_start;
-    const dy = y_end - y_start;
 
-    const keyframes = [
-      { transform: 'translate(0, 0)' },
-      { transform: `translate(${dx}px, ${dy}px)` },
-    ];
-
-    if (this.element.animate) {
-      const animation = this.element.animate(keyframes, {
-        duration,
-        easing: 'ease',
-        fill: 'none',
-      });
-
-      animation.onfinish = () => {
-        if (!this.element) {
-          if (callback) callback();
-          return;
-        }
-        if (callback) callback();
-        if (this.element) this.element.style = '';
-      };
-    } else {
-      this.element.style.transition = `transform ${duration}ms ease`;
-      this.element.style.transform = `translate(${dx}px, ${dy}px)`;
-      if (callback) callback();
-      if (this.element) this.element.style = '';
+    // Cancel any existing animation
+    if (this._currentAnimation) {
+      this._currentAnimation.cancel();
+      this._currentAnimation = null;
     }
+
+    // If duration is 0, skip animation
+    if (duration <= 0) {
+      if (callback) callback();
+      return;
+    }
+
+    // Calculate translation distance
+    const sourceRect = this.element.getBoundingClientRect();
+    const targetRect = targetSquare.element
+      ? targetSquare.element.getBoundingClientRect()
+      : targetSquare.getBoundingClientRect();
+
+    const dx = targetRect.left + targetRect.width / 2 - (sourceRect.left + sourceRect.width / 2);
+    const dy = targetRect.top + targetRect.height / 2 - (sourceRect.top + sourceRect.height / 2);
+
+    // Skip animation if already at target (within 1px tolerance)
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
+      if (callback) callback();
+      return;
+    }
+
+    // Create animation with fill:forwards to maintain position until DOM update
+    const animation = this.element.animate(
+      [{ transform: 'translate(0, 0)' }, { transform: `translate(${dx}px, ${dy}px)` }],
+      {
+        duration,
+        easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)', // Smooth easing
+        fill: 'forwards', // Keep final position until we clean up
+      }
+    );
+
+    this._currentAnimation = animation;
+
+    animation.onfinish = () => {
+      if (!this.element) {
+        if (callback) callback();
+        return;
+      }
+
+      // First: call the callback which moves the piece in the DOM
+      // At this point, the animation is keeping the piece visually in place
+      if (callback) callback();
+
+      // Then: cancel the animation and reset transform
+      // The piece is now in the correct DOM position, so this won't cause a jump
+      requestAnimationFrame(() => {
+        if (this._currentAnimation === animation) {
+          animation.cancel();
+          this._currentAnimation = null;
+        }
+        if (this.element) {
+          this.element.style.transform = '';
+        }
+      });
+    };
+
+    animation.oncancel = () => {
+      if (this._currentAnimation === animation) {
+        this._currentAnimation = null;
+      }
+    };
   }
 
   check() {
-    if (['p', 'r', 'n', 'b', 'q', 'k'].indexOf(this.type) === -1) {
-      throw new Error('Invalid piece type');
+    if (!['p', 'r', 'n', 'b', 'q', 'k'].includes(this.type)) {
+      throw new Error('Invalid piece type: ' + this.type);
     }
-
-    if (['w', 'b'].indexOf(this.color) === -1) {
-      throw new Error('Invalid piece color');
+    if (!['w', 'b'].includes(this.color)) {
+      throw new Error('Invalid piece color: ' + this.color);
     }
   }
 }

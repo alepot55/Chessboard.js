@@ -9,7 +9,7 @@ const Ve = {
   ROWS: 8,
   COLS: 8,
   TOTAL_SQUARES: 64
-}, I = Object.freeze({
+}, A = Object.freeze({
   VALIDATION_ERROR: "VALIDATION_ERROR",
   CONFIG_ERROR: "CONFIG_ERROR",
   MOVE_ERROR: "MOVE_ERROR",
@@ -104,18 +104,18 @@ const Ve = {
   CRITICAL: "CRITICAL"
 });
 Object.freeze({
-  [I.VALIDATION_ERROR]: B.MEDIUM,
-  [I.CONFIG_ERROR]: B.HIGH,
-  [I.MOVE_ERROR]: B.LOW,
-  [I.DOM_ERROR]: B.HIGH,
-  [I.ANIMATION_ERROR]: B.LOW,
-  [I.PIECE_ERROR]: B.MEDIUM,
-  [I.INITIALIZATION_ERROR]: B.CRITICAL,
-  [I.POSITION_ERROR]: B.MEDIUM,
-  [I.FEN_ERROR]: B.MEDIUM,
-  [I.SQUARE_ERROR]: B.MEDIUM,
-  [I.THEME_ERROR]: B.LOW,
-  [I.NETWORK_ERROR]: B.MEDIUM
+  [A.VALIDATION_ERROR]: B.MEDIUM,
+  [A.CONFIG_ERROR]: B.HIGH,
+  [A.MOVE_ERROR]: B.LOW,
+  [A.DOM_ERROR]: B.HIGH,
+  [A.ANIMATION_ERROR]: B.LOW,
+  [A.PIECE_ERROR]: B.MEDIUM,
+  [A.INITIALIZATION_ERROR]: B.CRITICAL,
+  [A.POSITION_ERROR]: B.MEDIUM,
+  [A.FEN_ERROR]: B.MEDIUM,
+  [A.SQUARE_ERROR]: B.MEDIUM,
+  [A.THEME_ERROR]: B.LOW,
+  [A.NETWORK_ERROR]: B.MEDIUM
 });
 class U extends Error {
   /**
@@ -136,7 +136,7 @@ class C extends U {
    * @param {*} value - Value that failed validation
    */
   constructor(e, t, i) {
-    super(e, I.VALIDATION_ERROR, { field: t, value: i }), this.name = "ValidationError", this.field = t, this.value = i;
+    super(e, A.VALIDATION_ERROR, { field: t, value: i }), this.name = "ValidationError", this.field = t, this.value = i;
   }
 }
 class O extends U {
@@ -147,7 +147,7 @@ class O extends U {
    * @param {*} configValue - Configuration value that is invalid
    */
   constructor(e, t, i) {
-    super(e, I.CONFIG_ERROR, { configKey: t, configValue: i }), this.name = "ConfigurationError", this.configKey = t, this.configValue = i;
+    super(e, A.CONFIG_ERROR, { configKey: t, configValue: i }), this.name = "ConfigurationError", this.configKey = t, this.configValue = i;
   }
 }
 class He extends U {
@@ -159,7 +159,7 @@ class He extends U {
    * @param {string} [piece] - Piece being moved
    */
   constructor(e, t, i, s) {
-    super(e, I.MOVE_ERROR, { from: t, to: i, piece: s }), this.name = "MoveError", this.from = t, this.to = i, this.piece = s;
+    super(e, A.MOVE_ERROR, { from: t, to: i, piece: s }), this.name = "MoveError", this.from = t, this.to = i, this.piece = s;
   }
 }
 class ft extends U {
@@ -169,7 +169,7 @@ class ft extends U {
    * @param {string} elementId - Element ID that caused the error
    */
   constructor(e, t) {
-    super(e, I.DOM_ERROR, { elementId: t }), this.name = "DOMError", this.elementId = t;
+    super(e, A.DOM_ERROR, { elementId: t }), this.name = "DOMError", this.elementId = t;
   }
 }
 class Ce extends U {
@@ -180,7 +180,7 @@ class Ce extends U {
    * @param {string} [square] - Square where the error occurred
    */
   constructor(e, t, i) {
-    super(e, I.PIECE_ERROR, { pieceId: t, square: i }), this.name = "PieceError", this.pieceId = t, this.square = i;
+    super(e, A.PIECE_ERROR, { pieceId: t, square: i }), this.name = "PieceError", this.pieceId = t, this.square = i;
   }
 }
 const mt = Object.freeze({
@@ -889,14 +889,14 @@ class et {
 }
 class Oe {
   constructor(e, t, i, s = 1) {
-    this.color = e, this.type = t, this.id = this.getId(), this.src = i, this.element = this.createElement(i, s), this.check();
+    this.color = e, this.type = t, this.id = this.getId(), this.src = i, this.element = this.createElement(i, s), this._currentAnimation = null, this.check();
   }
   getId() {
     return this.type + this.color;
   }
   createElement(e, t = 1) {
     const i = document.createElement("img");
-    return i.classList.add("piece"), i.id = this.id, i.src = e || this.src, i.style.opacity = t, i.onerror = () => {
+    return i.classList.add("piece"), i.id = this.id, i.src = e || this.src, i.style.opacity = t, i.draggable = !1, i.onerror = () => {
       console.warn("Failed to load piece image:", i.src);
     }, i;
   }
@@ -906,19 +906,11 @@ class Oe {
   invisible() {
     this.element && (this.element.style.opacity = 0);
   }
-  /**
-   * Updates the piece image source
-   * @param {string} newSrc - New image source
-   */
   updateSrc(e) {
     this.src = e, this.element && (this.element.src = e);
   }
   /**
    * Transforms the piece to a new type with smooth animation
-   * @param {string} newType - New piece type
-   * @param {string} newSrc - New image source
-   * @param {number} [duration=200] - Animation duration in milliseconds
-   * @param {Function} [callback] - Callback when transformation is complete
    */
   transformTo(e, t, i = 200, s = null) {
     if (!this.element) {
@@ -927,140 +919,122 @@ class Oe {
     }
     const n = this.element;
     n.classList.add("transforming");
-    const r = [
-      { transform: "scale(1)", opacity: "1" },
-      { transform: "scale(0.8)", opacity: "0.7" }
-    ], o = [
-      { transform: "scale(0.8)", opacity: "0.7" },
-      { transform: "scale(1)", opacity: "1" }
-    ], c = i / 2;
-    if (n.animate) {
-      const h = n.animate(r, {
-        duration: c,
-        easing: "ease-in",
-        fill: "forwards"
-      });
-      h.onfinish = () => {
+    const r = i / 2, o = n.animate(
+      [
+        { transform: "scale(1)", opacity: 1 },
+        { transform: "scale(0.7)", opacity: 0.5 }
+      ],
+      { duration: r, easing: "ease-in", fill: "forwards" }
+    );
+    o.onfinish = () => {
+      if (!this.element) {
+        s && s();
+        return;
+      }
+      this.type = e, this.id = this.getId(), this.src = t, n.src = t, n.id = this.id;
+      const c = n.animate(
+        [
+          { transform: "scale(0.7)", opacity: 0.5 },
+          { transform: "scale(1)", opacity: 1 }
+        ],
+        { duration: r, easing: "ease-out", fill: "forwards" }
+      );
+      c.onfinish = () => {
         if (!this.element) {
           s && s();
           return;
         }
-        this.type = e, this.id = this.getId(), this.src = t, n.src = t, n.id = this.id;
-        const l = n.animate(o, {
-          duration: c,
-          easing: "ease-out",
-          fill: "forwards"
-        });
-        l.onfinish = () => {
-          if (!this.element) {
-            s && s();
-            return;
-          }
-          n.style.transform = "", n.style.opacity = "", n.classList.remove("transforming"), n.classList.add("transform-complete"), setTimeout(() => {
-            this.element && n.classList.remove("transform-complete");
-          }, 400), s && s();
-        };
+        o.cancel(), c.cancel(), n.style.transform = "", n.style.opacity = "", n.classList.remove("transforming"), s && s();
       };
-    } else
-      n.style.transition = `transform ${c}ms ease-in, opacity ${c}ms ease-in`, n.style.transform = "scale(0.8)", n.style.opacity = "0.7", setTimeout(() => {
-        if (!this.element) {
-          s && s();
-          return;
-        }
-        this.type = e, this.id = this.getId(), this.src = t, n.src = t, n.id = this.id, n.style.transition = `transform ${c}ms ease-out, opacity ${c}ms ease-out`, n.style.transform = "scale(1)", n.style.opacity = "1", setTimeout(() => {
-          if (!this.element) {
-            s && s();
-            return;
-          }
-          n.style.transition = "", n.style.transform = "", n.style.opacity = "", n.classList.remove("transforming"), n.classList.add("transform-complete"), setTimeout(() => {
-            this.element && n.classList.remove("transform-complete");
-          }, 400), s && s();
-        }, c);
-      }, c);
+    };
   }
   fadeIn(e, t, i, s) {
-    const n = performance.now();
-    let r = 0;
-    const o = () => {
+    if (!this.element) {
+      s && s();
+      return;
+    }
+    const n = performance.now(), r = () => {
       if (!this.element) {
         s && s();
         return;
       }
-      const c = performance.now() - n;
-      if (r = i(c, e, t), this.element.style.opacity = r, c < e)
-        requestAnimationFrame(o);
-      else {
-        if (!this.element) {
-          s && s();
-          return;
-        }
-        this.element.style.opacity = 1, s && s();
-      }
+      const o = performance.now() - n, c = Math.min(o / e, 1);
+      this.element.style.opacity = c, c < 1 ? requestAnimationFrame(r) : (this.element.style.opacity = 1, s && s());
     };
-    o();
+    r();
   }
   fadeOut(e, t, i, s) {
-    const n = performance.now();
-    let r = 1;
-    const o = () => {
+    if (!this.element) {
+      s && s();
+      return;
+    }
+    const n = performance.now(), r = () => {
       if (!this.element) {
         s && s();
         return;
       }
-      const c = performance.now() - n;
-      if (r = 1 - i(c, e, t), this.element.style.opacity = r, c < e)
-        requestAnimationFrame(o);
-      else {
-        if (!this.element) {
-          s && s();
-          return;
-        }
-        this.element.style.opacity = 0, s && s();
-      }
+      const o = performance.now() - n, c = Math.min(o / e, 1);
+      this.element.style.opacity = 1 - c, c < 1 ? requestAnimationFrame(r) : (this.element.style.opacity = 0, s && s());
     };
-    o();
+    r();
   }
   setDrag(e) {
-    this.element && (this._dragHandler && this.element.removeEventListener("mousedown", this._dragHandler), this.element.ondragstart = (t) => {
-      t.preventDefault();
-    }, this._dragHandler = e, this.element.addEventListener("mousedown", this._dragHandler));
+    this.element && (this._dragHandler && (this.element.removeEventListener("mousedown", this._dragHandler), this.element.removeEventListener("touchstart", this._dragHandler)), this.element.ondragstart = (t) => t.preventDefault(), this._dragHandler = e, this.element.addEventListener("mousedown", this._dragHandler), this.element.addEventListener("touchstart", this._dragHandler, { passive: !1 }));
   }
   destroy() {
-    this.element && (this._dragHandler && (this.element.removeEventListener("mousedown", this._dragHandler), this._dragHandler = null), this.element.onmousedown = null, this.element.ondragstart = null, this.element.parentNode && this.element.parentNode.removeChild(this.element), this.element = null);
+    this._currentAnimation && (this._currentAnimation.cancel(), this._currentAnimation = null), this.element && (this._dragHandler && (this.element.removeEventListener("mousedown", this._dragHandler), this.element.removeEventListener("touchstart", this._dragHandler), this._dragHandler = null), this.element.onmousedown = null, this.element.ondragstart = null, this.element.parentNode && this.element.parentNode.removeChild(this.element), this.element = null);
   }
+  /**
+   * Animate piece translation to target square
+   * Uses Web Animations API for smooth, precise animations
+   */
   translate(e, t, i, s, n = null) {
-    if (!this.element) {
+    if (!this.element || !e) {
       n && n();
       return;
     }
-    const r = this.element.getBoundingClientRect(), o = e.getBoundingClientRect(), c = r.left + r.width / 2, h = r.top + r.height / 2, l = o.left + o.width / 2, d = o.top + o.height / 2, u = l - c, m = d - h, f = [
-      { transform: "translate(0, 0)" },
-      { transform: `translate(${u}px, ${m}px)` }
-    ];
-    if (this.element.animate) {
-      const p = this.element.animate(f, {
+    if (this._currentAnimation && (this._currentAnimation.cancel(), this._currentAnimation = null), t <= 0) {
+      n && n();
+      return;
+    }
+    const r = this.element.getBoundingClientRect(), o = e.element ? e.element.getBoundingClientRect() : e.getBoundingClientRect(), c = o.left + o.width / 2 - (r.left + r.width / 2), h = o.top + o.height / 2 - (r.top + r.height / 2);
+    if (Math.abs(c) < 1 && Math.abs(h) < 1) {
+      n && n();
+      return;
+    }
+    const l = this.element.animate(
+      [
+        { transform: "translate(0, 0)" },
+        { transform: `translate(${c}px, ${h}px)` }
+      ],
+      {
         duration: t,
-        easing: "ease",
-        fill: "none"
+        easing: "cubic-bezier(0.25, 0.1, 0.25, 1)",
+        // Smooth easing
+        fill: "forwards"
+        // Keep final position until we clean up
+      }
+    );
+    this._currentAnimation = l, l.onfinish = () => {
+      if (!this.element) {
+        n && n();
+        return;
+      }
+      n && n(), requestAnimationFrame(() => {
+        this._currentAnimation === l && (l.cancel(), this._currentAnimation = null), this.element && (this.element.style.transform = "");
       });
-      p.onfinish = () => {
-        if (!this.element) {
-          n && n();
-          return;
-        }
-        n && n(), this.element && (this.element.style = "");
-      };
-    } else
-      this.element.style.transition = `transform ${t}ms ease`, this.element.style.transform = `translate(${u}px, ${m}px)`, n && n(), this.element && (this.element.style = "");
+    }, l.oncancel = () => {
+      this._currentAnimation === l && (this._currentAnimation = null);
+    };
   }
   check() {
-    if (["p", "r", "n", "b", "q", "k"].indexOf(this.type) === -1)
-      throw new Error("Invalid piece type");
-    if (["w", "b"].indexOf(this.color) === -1)
-      throw new Error("Invalid piece color");
+    if (!["p", "r", "n", "b", "q", "k"].includes(this.type))
+      throw new Error("Invalid piece type: " + this.type);
+    if (!["w", "b"].includes(this.color))
+      throw new Error("Invalid piece color: " + this.color);
   }
 }
-class qe {
+class De {
   constructor(e, t) {
     this.row = e, this.col = t, this.id = this.getId(), this.element = this.createElement(), this.piece = null;
   }
@@ -1193,7 +1167,7 @@ let Z = class {
     this.promotion = e;
   }
   check() {
-    return !(this.piece === null || !(this.piece instanceof Oe) || ["q", "r", "b", "n", null].indexOf(this.promotion) === -1 || !(this.from instanceof qe) || !(this.to instanceof qe) || !this.to || !this.from || this.from === this.to);
+    return !(this.piece === null || !(this.piece instanceof Oe) || ["q", "r", "b", "n", null].indexOf(this.promotion) === -1 || !(this.from instanceof De) || !(this.to instanceof De) || !this.to || !this.from || this.from === this.to);
   }
   isLegal(e) {
     return e.moves({ square: this.from.id, verbose: !0 }).map((i) => i.to).indexOf(this.to.id) !== -1;
@@ -1246,11 +1220,11 @@ class _t {
       h[d] = this._getInitialValue(e, d);
     });
     const l = (d) => {
-      const u = d - c, m = Math.min(u / i, 1), f = o(u, i);
+      const u = d - c, g = Math.min(u / i, 1), f = o(u, i);
       Object.keys(t).forEach((p) => {
         const b = h[p], w = t[p], S = this._interpolateValue(b, w, f);
         this._applyValue(e, p, S);
-      }), m < 1 && this.activeAnimations.has(r) ? requestAnimationFrame(l) : (this.activeAnimations.delete(r), n && n());
+      }), g < 1 && this.activeAnimations.has(r) ? requestAnimationFrame(l) : (this.activeAnimations.delete(r), n && n());
     };
     return this.activeAnimations.set(r, { element: e, animate: l, callback: n }), requestAnimationFrame(l), r;
   }
@@ -1357,7 +1331,7 @@ class bt {
   buildSquares(e) {
     for (let t = 0; t < Ue.ROWS; t++)
       for (let i = 0; i < Ue.COLS; i++) {
-        const [s, n] = e(t, i), r = new qe(s, n);
+        const [s, n] = e(t, i), r = new De(s, n);
         this.squares[r.getId()] = r, this.element.appendChild(r.element);
       }
   }
@@ -1638,7 +1612,7 @@ function yt() {
     userAgent: a
   };
 }
-const De = {
+const qe = {
   /**
    * Apply browser-specific optimizations to an element
    * @param {HTMLElement} element - Element to optimize
@@ -1700,11 +1674,11 @@ class wt {
    */
   createDragFunction(e, t, i, s, n, r, o, c) {
     return (h) => {
-      var g, E, k, L;
+      var m, E, k, L;
       if (h.preventDefault(), h.stopPropagation(), !this.config.draggable || !t || this.isProcessing || this.isDragging || !this.moveService.canMove(e))
         return;
-      const l = t.element, d = h.clientX || ((E = (g = h.touches) == null ? void 0 : g[0]) == null ? void 0 : E.clientX) || 0, u = h.clientY || ((L = (k = h.touches) == null ? void 0 : k[0]) == null ? void 0 : L.clientY) || 0;
-      let m = !1, f = null, p = null;
+      const l = t.element, d = h.clientX || ((E = (m = h.touches) == null ? void 0 : m[0]) == null ? void 0 : E.clientX) || 0, u = h.clientY || ((L = (k = h.touches) == null ? void 0 : k[0]) == null ? void 0 : L.clientY) || 0;
+      let g = !1, f = null, p = null;
       const b = (N, F) => {
         const H = this.boardService.element, G = H.getBoundingClientRect(), se = G.width / 8, fe = N - G.left - se / 2, me = F - G.top - se / 2;
         l.style.left = `${fe}px`, l.style.top = `${me}px`;
@@ -1718,21 +1692,21 @@ class wt {
       }, w = (N) => {
         var G, se, fe, me;
         const F = N.clientX || ((se = (G = N.touches) == null ? void 0 : G[0]) == null ? void 0 : se.clientX) || 0, H = N.clientY || ((me = (fe = N.touches) == null ? void 0 : fe[0]) == null ? void 0 : me.clientY) || 0;
-        if (!m) {
+        if (!g) {
           const ne = Math.abs(F - d), re = Math.abs(H - u);
           if (ne > 3 || re > 3) {
-            m = !0, this.isDragging = !0, e.select();
+            g = !0, this.isDragging = !0, e.select();
             const oe = window.getComputedStyle(l);
-            l.style.position = "absolute", l.style.zIndex = "100", l.style.width = oe.width, l.style.height = oe.height, l.classList.add("dragging"), De.enableForDrag(l), i(e, t);
+            l.style.position = "absolute", l.style.zIndex = "100", l.style.width = oe.width, l.style.height = oe.height, l.classList.add("dragging"), qe.enableForDrag(l), i(e, t);
           }
         }
-        m && (b(F, H), s(e, f, t));
+        g && (b(F, H), s(e, f, t));
       }, S = () => {
-        if (document.removeEventListener("mousemove", w), document.removeEventListener("touchmove", w), window.removeEventListener("mouseup", S), window.removeEventListener("touchend", S), p == null || p.dehighlight(), !m) {
+        if (document.removeEventListener("mousemove", w), document.removeEventListener("touchmove", w), window.removeEventListener("mouseup", S), window.removeEventListener("touchend", S), p == null || p.dehighlight(), !g) {
           this.isDragging = !1;
           return;
         }
-        l.classList.remove("dragging"), l.style.zIndex = "20", l.style.willChange = "auto", De.cleanupAfterDrag(l), this.isDragging = !1;
+        l.classList.remove("dragging"), l.style.zIndex = "20", l.style.willChange = "auto", qe.cleanupAfterDrag(l), this.isDragging = !1;
         const N = n(e, f, t);
         if (!f) {
           this.config.dropOffBoard === "trash" || N === "trash" ? (this._resetPiecePosition(l), c(e)) : (this._resetPiecePosition(l), r(e, t)), e.deselect(), this.boardService.applyToAllSquares("removeHint");
@@ -2272,7 +2246,7 @@ class Et {
       this._getTransitionTimingFunction(),
       this.config.dropCenterAnimation,
       () => {
-        i.element && (i.element.style.position = "", i.element.style.left = "", i.element.style.top = "", i.element.style.transform = "", i.element.style.zIndex = "", i.element.style.width = "", i.element.style.height = "", i.element.classList.remove("dragging"), De.cleanupAfterDrag(i.element));
+        i.element && (i.element.style.position = "", i.element.style.left = "", i.element.style.top = "", i.element.style.transform = "", i.element.style.zIndex = "", i.element.style.width = "", i.element.style.height = "", i.element.classList.remove("dragging"), qe.cleanupAfterDrag(i.element));
       }
     );
   }
@@ -2332,7 +2306,7 @@ class Et {
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-const R = "w", x = "b", T = "p", Le = "n", _e = "b", he = "r", Q = "q", M = "k", ke = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const I = "w", x = "b", T = "p", Le = "n", _e = "b", he = "r", Q = "q", M = "k", ke = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 class ge {
   constructor(e, t) {
     y(this, "color");
@@ -2352,7 +2326,7 @@ class ge {
     y(this, "lan");
     y(this, "before");
     y(this, "after");
-    const { color: i, piece: s, from: n, to: r, flags: o, captured: c, promotion: h } = t, l = A(n), d = A(r);
+    const { color: i, piece: s, from: n, to: r, flags: o, captured: c, promotion: h } = t, l = R(n), d = R(r);
     this.color = i, this.piece = s, this.from = l, this.to = d, this.san = e._moveToSan(t, e._moves({ legal: !0 })), this.lan = l + d, this.before = e.fen(), e._makeMove(t), this.after = e.fen(), e._undoMove(), this.flags = "";
     for (const u in _)
       _[u] & o && (this.flags += Y[u]);
@@ -2377,7 +2351,7 @@ class ge {
     return this.flags.indexOf(Y.BIG_PAWN) > -1;
   }
 }
-const D = -1, Y = {
+const q = -1, Y = {
   NORMAL: "n",
   CAPTURE: "c",
   BIG_PAWN: "b",
@@ -2947,7 +2921,7 @@ const D = -1, Y = {
   0,
   0,
   -17
-], kt = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 }, Tt = "pnbrqkPNBRQK", Ye = [Le, _e, he, Q], It = 7, Rt = 6, At = 1, Ot = 0, pe = {
+], kt = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 }, Tt = "pnbrqkPNBRQK", Ye = [Le, _e, he, Q], At = 7, It = 6, Rt = 1, Ot = 0, pe = {
   [M]: _.KSIDE_CASTLE,
   [Q]: _.QSIDE_CASTLE
 }, K = {
@@ -2959,7 +2933,7 @@ const D = -1, Y = {
     { square: v.a8, flag: _.QSIDE_CASTLE },
     { square: v.h8, flag: _.KSIDE_CASTLE }
   ]
-}, qt = { b: At, w: Rt }, Dt = ["1-0", "0-1", "1/2-1/2", "*"];
+}, Dt = { b: Rt, w: It }, qt = ["1-0", "0-1", "1/2-1/2", "*"];
 function X(a) {
   return a >> 4;
 }
@@ -2969,12 +2943,12 @@ function le(a) {
 function tt(a) {
   return "0123456789".indexOf(a) !== -1;
 }
-function A(a) {
+function R(a) {
   const e = le(a), t = X(a);
   return "abcdefgh".substring(e, e + 1) + "87654321".substring(t, t + 1);
 }
 function ae(a) {
-  return a === R ? x : R;
+  return a === I ? x : I;
 }
 function it(a) {
   const e = a.split(/\s+/);
@@ -3055,11 +3029,11 @@ function Lt(a, e) {
     const l = e[c].from, d = e[c].to, u = e[c].piece;
     s === u && t !== l && i === d && (n++, X(t) === X(l) && r++, le(t) === le(l) && o++);
   }
-  return n > 0 ? r > 0 && o > 0 ? A(t) : o > 0 ? A(t).charAt(1) : A(t).charAt(0) : "";
+  return n > 0 ? r > 0 && o > 0 ? R(t) : o > 0 ? R(t).charAt(1) : R(t).charAt(0) : "";
 }
 function W(a, e, t, i, s, n = void 0, r = _.NORMAL) {
   const o = X(i);
-  if (s === T && (o === It || o === Ot))
+  if (s === T && (o === At || o === Ot))
     for (let c = 0; c < Ye.length; c++) {
       const h = Ye[c];
       a.push({
@@ -3086,18 +3060,18 @@ function Je(a) {
   let e = a.charAt(0);
   return e >= "a" && e <= "h" ? a.match(/[a-h]\d.*[a-h]\d/) ? void 0 : T : (e = e.toLowerCase(), e === "o" ? M : e);
 }
-function Ie(a) {
+function Ae(a) {
   return a.replace(/=/, "").replace(/[+#]?[?!]*$/, "");
 }
-function Re(a) {
+function Ie(a) {
   return a.split(" ").slice(0, 4).join(" ");
 }
 class Nt {
   constructor(e = ke) {
     y(this, "_board", new Array(128));
-    y(this, "_turn", R);
+    y(this, "_turn", I);
     y(this, "_header", {});
-    y(this, "_kings", { w: D, b: D });
+    y(this, "_kings", { w: q, b: q });
     y(this, "_epSquare", -1);
     y(this, "_halfMoves", 0);
     y(this, "_moveNumber", 0);
@@ -3109,7 +3083,7 @@ class Nt {
     this.load(e);
   }
   clear({ preserveHeaders: e = !1 } = {}) {
-    this._board = new Array(128), this._kings = { w: D, b: D }, this._turn = R, this._castling = { w: 0, b: 0 }, this._epSquare = D, this._halfMoves = 0, this._moveNumber = 1, this._history = [], this._comments = {}, this._header = e ? this._header : {}, this._positionCount = {}, delete this._header.SetUp, delete this._header.FEN;
+    this._board = new Array(128), this._kings = { w: q, b: q }, this._turn = I, this._castling = { w: 0, b: 0 }, this._epSquare = q, this._halfMoves = 0, this._moveNumber = 1, this._history = [], this._comments = {}, this._header = e ? this._header : {}, this._positionCount = {}, delete this._header.SetUp, delete this._header.FEN;
   }
   load(e, { skipValidation: t = !1, preserveHeaders: i = !1 } = {}) {
     let s = e.split(/\s+/);
@@ -3132,11 +3106,11 @@ class Nt {
       else if (tt(c))
         r += parseInt(c, 10);
       else {
-        const h = c < "a" ? R : x;
-        this._put({ type: c.toLowerCase(), color: h }, A(r)), r++;
+        const h = c < "a" ? I : x;
+        this._put({ type: c.toLowerCase(), color: h }, R(r)), r++;
       }
     }
-    this._turn = s[1], s[2].indexOf("K") > -1 && (this._castling.w |= _.KSIDE_CASTLE), s[2].indexOf("Q") > -1 && (this._castling.w |= _.QSIDE_CASTLE), s[2].indexOf("k") > -1 && (this._castling.b |= _.KSIDE_CASTLE), s[2].indexOf("q") > -1 && (this._castling.b |= _.QSIDE_CASTLE), this._epSquare = s[3] === "-" ? D : v[s[3]], this._halfMoves = parseInt(s[4], 10), this._moveNumber = parseInt(s[5], 10), this._updateSetup(e), this._incPositionCount(e);
+    this._turn = s[1], s[2].indexOf("K") > -1 && (this._castling.w |= _.KSIDE_CASTLE), s[2].indexOf("Q") > -1 && (this._castling.w |= _.QSIDE_CASTLE), s[2].indexOf("k") > -1 && (this._castling.b |= _.KSIDE_CASTLE), s[2].indexOf("q") > -1 && (this._castling.b |= _.QSIDE_CASTLE), this._epSquare = s[3] === "-" ? q : v[s[3]], this._halfMoves = parseInt(s[4], 10), this._moveNumber = parseInt(s[5], 10), this._updateSetup(e), this._incPositionCount(e);
   }
   fen() {
     var n, r;
@@ -3145,16 +3119,16 @@ class Nt {
       if (this._board[o]) {
         e > 0 && (t += e, e = 0);
         const { color: c, type: h } = this._board[o];
-        t += c === R ? h.toUpperCase() : h.toLowerCase();
+        t += c === I ? h.toUpperCase() : h.toLowerCase();
       } else
         e++;
       o + 1 & 136 && (e > 0 && (t += e), o !== v.h1 && (t += "/"), e = 0, o += 8);
     }
     let i = "";
-    this._castling[R] & _.KSIDE_CASTLE && (i += "K"), this._castling[R] & _.QSIDE_CASTLE && (i += "Q"), this._castling[x] & _.KSIDE_CASTLE && (i += "k"), this._castling[x] & _.QSIDE_CASTLE && (i += "q"), i = i || "-";
+    this._castling[I] & _.KSIDE_CASTLE && (i += "K"), this._castling[I] & _.QSIDE_CASTLE && (i += "Q"), this._castling[x] & _.KSIDE_CASTLE && (i += "k"), this._castling[x] & _.QSIDE_CASTLE && (i += "q"), i = i || "-";
     let s = "-";
-    if (this._epSquare !== D) {
-      const o = this._epSquare + (this._turn === R ? 16 : -16), c = [o + 1, o - 1];
+    if (this._epSquare !== q) {
+      const o = this._epSquare + (this._turn === I ? 16 : -16), c = [o + 1, o - 1];
       for (const h of c) {
         if (h & 136)
           continue;
@@ -3170,7 +3144,7 @@ class Nt {
           });
           const d = !this._isKingAttacked(l);
           if (this._undoMove(), d) {
-            s = A(this._epSquare);
+            s = R(this._epSquare);
             break;
           }
         }
@@ -3200,34 +3174,34 @@ class Nt {
     if (Tt.indexOf(e.toLowerCase()) === -1 || !(i in v))
       return !1;
     const s = v[i];
-    if (e === M && !(this._kings[t] === D || this._kings[t] === s))
+    if (e === M && !(this._kings[t] === q || this._kings[t] === s))
       return !1;
     const n = this._board[s];
-    return n && n.type === M && (this._kings[n.color] = D), this._board[s] = { type: e, color: t }, e === M && (this._kings[t] = s), !0;
+    return n && n.type === M && (this._kings[n.color] = q), this._board[s] = { type: e, color: t }, e === M && (this._kings[t] = s), !0;
   }
   remove(e) {
     const t = this.get(e);
-    return delete this._board[v[e]], t && t.type === M && (this._kings[t.color] = D), this._updateCastlingRights(), this._updateEnPassantSquare(), this._updateSetup(this.fen()), t;
+    return delete this._board[v[e]], t && t.type === M && (this._kings[t.color] = q), this._updateCastlingRights(), this._updateEnPassantSquare(), this._updateSetup(this.fen()), t;
   }
   _updateCastlingRights() {
-    var i, s, n, r, o, c, h, l, d, u, m, f;
-    const e = ((i = this._board[v.e1]) == null ? void 0 : i.type) === M && ((s = this._board[v.e1]) == null ? void 0 : s.color) === R, t = ((n = this._board[v.e8]) == null ? void 0 : n.type) === M && ((r = this._board[v.e8]) == null ? void 0 : r.color) === x;
-    (!e || ((o = this._board[v.a1]) == null ? void 0 : o.type) !== he || ((c = this._board[v.a1]) == null ? void 0 : c.color) !== R) && (this._castling.w &= -65), (!e || ((h = this._board[v.h1]) == null ? void 0 : h.type) !== he || ((l = this._board[v.h1]) == null ? void 0 : l.color) !== R) && (this._castling.w &= -33), (!t || ((d = this._board[v.a8]) == null ? void 0 : d.type) !== he || ((u = this._board[v.a8]) == null ? void 0 : u.color) !== x) && (this._castling.b &= -65), (!t || ((m = this._board[v.h8]) == null ? void 0 : m.type) !== he || ((f = this._board[v.h8]) == null ? void 0 : f.color) !== x) && (this._castling.b &= -33);
+    var i, s, n, r, o, c, h, l, d, u, g, f;
+    const e = ((i = this._board[v.e1]) == null ? void 0 : i.type) === M && ((s = this._board[v.e1]) == null ? void 0 : s.color) === I, t = ((n = this._board[v.e8]) == null ? void 0 : n.type) === M && ((r = this._board[v.e8]) == null ? void 0 : r.color) === x;
+    (!e || ((o = this._board[v.a1]) == null ? void 0 : o.type) !== he || ((c = this._board[v.a1]) == null ? void 0 : c.color) !== I) && (this._castling.w &= -65), (!e || ((h = this._board[v.h1]) == null ? void 0 : h.type) !== he || ((l = this._board[v.h1]) == null ? void 0 : l.color) !== I) && (this._castling.w &= -33), (!t || ((d = this._board[v.a8]) == null ? void 0 : d.type) !== he || ((u = this._board[v.a8]) == null ? void 0 : u.color) !== x) && (this._castling.b &= -65), (!t || ((g = this._board[v.h8]) == null ? void 0 : g.type) !== he || ((f = this._board[v.h8]) == null ? void 0 : f.color) !== x) && (this._castling.b &= -33);
   }
   _updateEnPassantSquare() {
     var n, r;
-    if (this._epSquare === D)
+    if (this._epSquare === q)
       return;
-    const e = this._epSquare + (this._turn === R ? -16 : 16), t = this._epSquare + (this._turn === R ? 16 : -16), i = [t + 1, t - 1];
+    const e = this._epSquare + (this._turn === I ? -16 : 16), t = this._epSquare + (this._turn === I ? 16 : -16), i = [t + 1, t - 1];
     if (this._board[e] !== null || this._board[this._epSquare] !== null || ((n = this._board[t]) == null ? void 0 : n.color) !== ae(this._turn) || ((r = this._board[t]) == null ? void 0 : r.type) !== T) {
-      this._epSquare = D;
+      this._epSquare = q;
       return;
     }
     const s = (o) => {
       var c, h;
       return !(o & 136) && ((c = this._board[o]) == null ? void 0 : c.color) === this._turn && ((h = this._board[o]) == null ? void 0 : h.type) === T;
     };
-    i.some(s) || (this._epSquare = D);
+    i.some(s) || (this._epSquare = q);
   }
   _attacked(e, t, i) {
     const s = [];
@@ -3244,17 +3218,17 @@ class Nt {
       const c = o + 119;
       if (Ct[c] & kt[r.type]) {
         if (r.type === T) {
-          if (o > 0 && r.color === R || o <= 0 && r.color === x) {
+          if (o > 0 && r.color === I || o <= 0 && r.color === x) {
             if (!i)
               return !0;
-            s.push(A(n));
+            s.push(R(n));
           }
           continue;
         }
         if (r.type === "n" || r.type === "k") {
           if (!i)
             return !0;
-          s.push(A(n));
+          s.push(R(n));
           continue;
         }
         const h = Mt[c];
@@ -3269,7 +3243,7 @@ class Nt {
         if (!d) {
           if (!i)
             return !0;
-          s.push(A(n));
+          s.push(R(n));
           continue;
         }
       }
@@ -3350,7 +3324,7 @@ class Nt {
     return e ? s.map((n) => new ge(this, n)) : s.map((n) => this._moveToSan(n, s));
   }
   _moves({ legal: e = !0, piece: t = void 0, square: i = void 0 } = {}) {
-    var m;
+    var g;
     const s = i ? i.toLowerCase() : void 0, n = t == null ? void 0 : t.toLowerCase(), r = [], o = this._turn, c = ae(o);
     let h = v.a8, l = v.h1, d = !1;
     if (s) {
@@ -3369,14 +3343,14 @@ class Nt {
       let b;
       if (p === T) {
         if (n && n !== p) continue;
-        b = f + Te[o][0], this._board[b] || (W(r, o, f, b, T), b = f + Te[o][1], qt[o] === X(f) && !this._board[b] && W(r, o, f, b, T, void 0, _.BIG_PAWN));
+        b = f + Te[o][0], this._board[b] || (W(r, o, f, b, T), b = f + Te[o][1], Dt[o] === X(f) && !this._board[b] && W(r, o, f, b, T, void 0, _.BIG_PAWN));
         for (let w = 2; w < 4; w++)
-          b = f + Te[o][w], !(b & 136) && (((m = this._board[b]) == null ? void 0 : m.color) === c ? W(r, o, f, b, T, this._board[b].type, _.CAPTURE) : b === this._epSquare && W(r, o, f, b, T, T, _.EP_CAPTURE));
+          b = f + Te[o][w], !(b & 136) && (((g = this._board[b]) == null ? void 0 : g.color) === c ? W(r, o, f, b, T, this._board[b].type, _.CAPTURE) : b === this._epSquare && W(r, o, f, b, T, T, _.EP_CAPTURE));
       } else {
         if (n && n !== p) continue;
         for (let w = 0, S = Qe[p].length; w < S; w++) {
-          const g = Qe[p][w];
-          for (b = f; b += g, !(b & 136); ) {
+          const m = Qe[p][w];
+          for (b = f; b += m, !(b & 136); ) {
             if (!this._board[b])
               W(r, o, f, b, p);
             else {
@@ -3413,7 +3387,7 @@ class Nt {
     else if (typeof e == "object") {
       const n = this._moves();
       for (let r = 0, o = n.length; r < o; r++)
-        if (e.from === A(n[r].from) && e.to === A(n[r].to) && (!("promotion" in n[r]) || e.promotion === n[r].promotion)) {
+        if (e.from === R(n[r].from) && e.to === R(n[r].to) && (!("promotion" in n[r]) || e.promotion === n[r].promotion)) {
           i = n[r];
           break;
         }
@@ -3460,7 +3434,7 @@ class Nt {
           break;
         }
     }
-    e.flags & _.BIG_PAWN ? t === x ? this._epSquare = e.to - 16 : this._epSquare = e.to + 16 : this._epSquare = D, e.piece === T ? this._halfMoves = 0 : e.flags & (_.CAPTURE | _.EP_CAPTURE) ? this._halfMoves = 0 : this._halfMoves++, t === x && this._moveNumber++, this._turn = i;
+    e.flags & _.BIG_PAWN ? t === x ? this._epSquare = e.to - 16 : this._epSquare = e.to + 16 : this._epSquare = q, e.piece === T ? this._halfMoves = 0 : e.flags & (_.CAPTURE | _.EP_CAPTURE) ? this._halfMoves = 0 : this._halfMoves++, t === x && this._moveNumber++, this._turn = i;
   }
   undo() {
     const e = this._undoMove();
@@ -3497,10 +3471,10 @@ class Nt {
       i.push(`[${u} "${this._header[u]}"]${e}`), s = !0;
     s && this._history.length && i.push(e);
     const n = (u) => {
-      const m = this._comments[this.fen()];
-      if (typeof m < "u") {
+      const g = this._comments[this.fen()];
+      if (typeof g < "u") {
         const f = u.length > 0 ? " " : "";
-        u = `${u}${f}{${m}}`;
+        u = `${u}${f}{${g}}`;
       }
       return u;
     }, r = [];
@@ -3514,8 +3488,8 @@ class Nt {
       if (!u)
         break;
       if (!this._history.length && u.color === "b") {
-        const m = `${this._moveNumber}. ...`;
-        c = c ? `${c} ${m}` : m;
+        const g = `${this._moveNumber}. ...`;
+        c = c ? `${c} ${g}` : g;
       } else u.color === "w" && (c.length && o.push(c), c = `${this._moveNumber}.`);
       c = `${c} ${this._moveToSan(u, this._moves({ legal: !0 }))}`, this._makeMove(u);
     }
@@ -3523,8 +3497,8 @@ class Nt {
       return i.join("") + o.join(" ");
     const h = function() {
       return i.length > 0 && i[i.length - 1] === " " ? (i.pop(), !0) : !1;
-    }, l = function(u, m) {
-      for (const f of m.split(" "))
+    }, l = function(u, g) {
+      for (const f of g.split(" "))
         if (f) {
           if (u + f.length > t) {
             for (; h(); )
@@ -3564,11 +3538,11 @@ class Nt {
   }
   loadPgn(e, { strict: t = !1, newlineChar: i = `\r?
 ` } = {}) {
-    function s(g) {
-      return g.replace(/\\/g, "\\");
+    function s(m) {
+      return m.replace(/\\/g, "\\");
     }
-    function n(g) {
-      const E = {}, k = g.split(new RegExp(s(i)));
+    function n(m) {
+      const E = {}, k = m.split(new RegExp(s(i)));
       let L = "", N = "";
       for (let F = 0; F < k.length; F++) {
         const H = /^\s*\[\s*([A-Za-z]+)\s*"(.*)"\s*\]\s*$/;
@@ -3583,8 +3557,8 @@ class Nt {
     this.reset();
     const h = n(c);
     let l = "";
-    for (const g in h)
-      g.toLowerCase() === "fen" && (l = h[g]), this.header(g, h[g]);
+    for (const m in h)
+      m.toLowerCase() === "fen" && (l = h[m]), this.header(m, h[m]);
     if (!t)
       l && this.load(l, { preserveHeaders: !0 });
     else if (h.SetUp === "1") {
@@ -3592,42 +3566,42 @@ class Nt {
         throw new Error("Invalid PGN: FEN tag must be supplied with SetUp tag");
       this.load(h.FEN, { preserveHeaders: !0 });
     }
-    function d(g) {
-      return Array.from(g).map((E) => E.charCodeAt(0) < 128 ? E.charCodeAt(0).toString(16) : encodeURIComponent(E).replace(/%/g, "").toLowerCase()).join("");
+    function d(m) {
+      return Array.from(m).map((E) => E.charCodeAt(0) < 128 ? E.charCodeAt(0).toString(16) : encodeURIComponent(E).replace(/%/g, "").toLowerCase()).join("");
     }
-    function u(g) {
-      return g.length === 0 ? "" : decodeURIComponent(`%${(g.match(/.{1,2}/g) || []).join("%")}`);
+    function u(m) {
+      return m.length === 0 ? "" : decodeURIComponent(`%${(m.match(/.{1,2}/g) || []).join("%")}`);
     }
-    const m = function(g) {
-      return g = g.replace(new RegExp(s(i), "g"), " "), `{${d(g.slice(1, g.length - 1))}}`;
-    }, f = function(g) {
-      if (g.startsWith("{") && g.endsWith("}"))
-        return u(g.slice(1, g.length - 1));
+    const g = function(m) {
+      return m = m.replace(new RegExp(s(i), "g"), " "), `{${d(m.slice(1, m.length - 1))}}`;
+    }, f = function(m) {
+      if (m.startsWith("{") && m.endsWith("}"))
+        return u(m.slice(1, m.length - 1));
     };
     let p = e.replace(c, "").replace(
       // encode comments so they don't get deleted below
       new RegExp(`({[^}]*})+?|;([^${s(i)}]*)`, "g"),
-      (g, E, k) => E !== void 0 ? m(E) : ` ${m(`{${k.slice(1)}}`)}`
+      (m, E, k) => E !== void 0 ? g(E) : ` ${g(`{${k.slice(1)}}`)}`
     ).replace(new RegExp(s(i), "g"), " ");
     const b = /(\([^()]+\))+?/g;
     for (; b.test(p); )
       p = p.replace(b, "");
     p = p.replace(/\d+\.(\.\.)?/g, ""), p = p.replace(/\.\.\./g, ""), p = p.replace(/\$\d+/g, "");
     let w = p.trim().split(new RegExp(/\s+/));
-    w = w.filter((g) => g !== "");
+    w = w.filter((m) => m !== "");
     let S = "";
-    for (let g = 0; g < w.length; g++) {
-      const E = f(w[g]);
+    for (let m = 0; m < w.length; m++) {
+      const E = f(w[m]);
       if (E !== void 0) {
         this._comments[this.fen()] = E;
         continue;
       }
-      const k = this._moveFromSan(w[g], t);
+      const k = this._moveFromSan(w[m], t);
       if (k == null)
-        if (Dt.indexOf(w[g]) > -1)
-          S = w[g];
+        if (qt.indexOf(w[m]) > -1)
+          S = w[m];
         else
-          throw new Error(`Invalid move in PGN: ${w[g]}`);
+          throw new Error(`Invalid move in PGN: ${w[m]}`);
       else
         S = "", this._makeMove(k), this._incPositionCount(this.fen());
     }
@@ -3655,16 +3629,16 @@ class Nt {
         const s = Lt(e, t);
         i += e.piece.toUpperCase() + s;
       }
-      e.flags & (_.CAPTURE | _.EP_CAPTURE) && (e.piece === T && (i += A(e.from)[0]), i += "x"), i += A(e.to), e.promotion && (i += `=${e.promotion.toUpperCase()}`);
+      e.flags & (_.CAPTURE | _.EP_CAPTURE) && (e.piece === T && (i += R(e.from)[0]), i += "x"), i += R(e.to), e.promotion && (i += `=${e.promotion.toUpperCase()}`);
     }
     return this._makeMove(e), this.isCheck() && (this.isCheckmate() ? i += "#" : i += "+"), this._undoMove(), i;
   }
   // convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
   _moveFromSan(e, t = !1) {
-    const i = Ie(e);
+    const i = Ae(e);
     let s = Je(i), n = this._moves({ legal: !0, piece: s });
-    for (let u = 0, m = n.length; u < m; u++)
-      if (i === Ie(this._moveToSan(n[u], n)))
+    for (let u = 0, g = n.length; u < g; u++)
+      if (i === Ae(this._moveToSan(n[u], n)))
         return n[u];
     if (t)
       return null;
@@ -3674,16 +3648,16 @@ class Nt {
       piece: r || s
     }), !h)
       return null;
-    for (let u = 0, m = n.length; u < m; u++)
+    for (let u = 0, g = n.length; u < g; u++)
       if (c) {
         if ((!r || r.toLowerCase() === n[u].piece) && v[c] === n[u].from && v[h] === n[u].to && (!l || l.toLowerCase() === n[u].promotion))
           return n[u];
         if (d) {
-          const f = A(n[u].from);
+          const f = R(n[u].from);
           if ((!r || r.toLowerCase() === n[u].piece) && v[h] === n[u].to && (c === f[0] || c === f[1]) && (!l || l.toLowerCase() === n[u].promotion))
             return n[u];
         }
-      } else if (i === Ie(this._moveToSan(n[u], n)).replace("x", ""))
+      } else if (i === Ae(this._moveToSan(n[u], n)).replace("x", ""))
         return n[u];
     return null;
   }
@@ -3692,7 +3666,7 @@ class Nt {
 `;
     for (let t = v.a8; t <= v.h1; t++) {
       if (le(t) === 0 && (e += ` ${"87654321"[X(t)]} |`), this._board[t]) {
-        const i = this._board[t].type, n = this._board[t].color === R ? i.toUpperCase() : i.toLowerCase();
+        const i = this._board[t].type, n = this._board[t].color === I ? i.toUpperCase() : i.toLowerCase();
         e += ` ${n} `;
       } else
         e += " . ";
@@ -3718,7 +3692,7 @@ class Nt {
     let t = [];
     for (let i = v.a8; i <= v.h1; i++)
       this._board[i] == null ? t.push(null) : t.push({
-        square: A(i),
+        square: R(i),
         type: this._board[i].type,
         color: this._board[i].color
       }), i + 1 & 136 && (e.push(t), t = [], i += 8);
@@ -3750,15 +3724,15 @@ class Nt {
    * removing old positions from the record if their counts are reduced to 0.
    */
   _getPositionCount(e) {
-    const t = Re(e);
+    const t = Ie(e);
     return this._positionCount[t] || 0;
   }
   _incPositionCount(e) {
-    const t = Re(e);
+    const t = Ie(e);
     this._positionCount[t] === void 0 && (this._positionCount[t] = 0), this._positionCount[t] += 1;
   }
   _decPositionCount(e) {
-    const t = Re(e);
+    const t = Ie(e);
     this._positionCount[t] === 1 ? delete this._positionCount[t] : this._positionCount[t] -= 1;
   }
   _pruneComments() {
@@ -5149,7 +5123,7 @@ const ce = {
   // After 1.d4
   rnbqkbnr_pppppppp_8_8_3P4_8_PPP1PPPP_RNBQKBNR: ["d7d5", "g8f6", "e7e6"]
 };
-class Ae {
+class Re {
   /**
    * @param {Object} game - Chess.js game instance
    * @param {AIConfig} [config={}] - AI configuration
@@ -5468,7 +5442,7 @@ const te = class te extends ue {
       console.error("[VsBotMode] Cannot initialize AI: no game instance");
       return;
     }
-    this.ai = new Ae(e, {
+    this.ai = new Re(e, {
       difficulty: this.config.botDifficulty
     });
   }
@@ -5690,7 +5664,7 @@ const te = class te extends ue {
     if (!e) {
       const i = (t = this.chessboard.positionService) == null ? void 0 : t.getGame();
       if (!i) return null;
-      e = new Ae(i, { difficulty: 8 }).getBestMove(), e && (e.source = "builtin");
+      e = new Re(i, { difficulty: 8 }).getBestMove(), e && (e.source = "builtin");
     }
     return e && (this.hintsUsed++, this._emit("hintUsed", { hint: e, totalHints: this.hintsUsed })), e;
   }
@@ -5772,7 +5746,7 @@ const te = class te extends ue {
         console.warn("[VsBotMode] Engine analysis failed:", c);
       }
     if (!t && this.ai) {
-      const c = new Ae(e, { difficulty: 10 });
+      const c = new Re(e, { difficulty: 10 });
       t = c.getBestMove(), i = c.getStats();
     }
     const n = e.moves({ verbose: !0 });
@@ -6290,34 +6264,43 @@ let xe = Pe, ye = class {
     }
     this.boardService.applyToAllSquares("unmoved"), e.from.moved(), e.to.moved();
     const n = this.moveService.isCastle(s), r = this.moveService.isEnPassant(s);
-    t && e.from.piece ? n ? (this.pieceService.translatePiece(
-      e,
-      !!e.to.piece,
-      t,
-      this._createDragFunction.bind(this),
-      () => {
-        this._updateBoardPieces(!1), this.config.onMoveEnd(s);
-      }
-    ), setTimeout(() => {
-      this._handleCastleMove(s, !0, !1);
-    }, 20)) : r ? this.pieceService.translatePiece(
-      e,
-      !1,
-      // Don't remove target - en passant captures on different square
-      t,
-      this._createDragFunction.bind(this),
-      () => {
-        this._handleEnPassantMove(s, !0), this.config.onMoveEnd(s), this._updateBoardPieces(!1);
-      }
-    ) : this.pieceService.translatePiece(
-      e,
-      !!e.to.piece,
-      t,
-      this._createDragFunction.bind(this),
-      () => {
-        this.config.onMoveEnd(s), this._updateBoardPieces(!1);
-      }
-    ) : (n ? this._handleSpecialMove(s) : r && this._handleSpecialMove(s), this._updateBoardPieces(!1), this.config.onMoveEnd(s));
+    if (t && e.from.piece)
+      if (n) {
+        let o = !1, c = !1;
+        const h = () => {
+          o && c && (this._updateBoardPieces(!1), this.config.onMoveEnd(s));
+        };
+        this.pieceService.translatePiece(
+          e,
+          !!e.to.piece,
+          t,
+          this._createDragFunction.bind(this),
+          () => {
+            o = !0, h();
+          }
+        ), this._handleCastleMove(s, !0, !1, () => {
+          c = !0, h();
+        });
+      } else r ? this.pieceService.translatePiece(
+        e,
+        !1,
+        // Don't remove target - en passant captures on different square
+        t,
+        this._createDragFunction.bind(this),
+        () => {
+          this._handleEnPassantMove(s, !0), this.config.onMoveEnd(s), this._updateBoardPieces(!1);
+        }
+      ) : this.pieceService.translatePiece(
+        e,
+        !!e.to.piece,
+        t,
+        this._createDragFunction.bind(this),
+        () => {
+          this.config.onMoveEnd(s), this._updateBoardPieces(!1);
+        }
+      );
+    else
+      n ? this._handleSpecialMove(s) : r && this._handleSpecialMove(s), this._updateBoardPieces(!1), this.config.onMoveEnd(s);
   }
   /**
    * Handles special moves (castle, en passant) without animation
@@ -6341,30 +6324,33 @@ let xe = Pe, ye = class {
    * @param {Object} gameMove - Game move object
    * @param {boolean} animate - Whether to animate
    * @param {boolean} [updateBoard=true] - Whether to update board after animation
+   * @param {Function} [onComplete] - Callback when animation completes
    */
-  _handleCastleMove(e, t, i = !0) {
-    const s = this.moveService.getCastleRookMove(e);
-    if (!s) return;
-    const n = this.boardService.getSquare(s.from), r = this.boardService.getSquare(s.to);
-    if (!n || !r) {
-      console.warn("Castle rook move failed - squares not found");
+  _handleCastleMove(e, t, i = !0, s = null) {
+    const n = this.moveService.getCastleRookMove(e);
+    if (!n) {
+      s && s();
       return;
     }
-    const o = n.piece;
-    if (!o) {
-      console.warn("Castle rook move failed - rook piece not found on", s.from), i && this._updateBoardPieces(!1);
+    const r = this.boardService.getSquare(n.from), o = this.boardService.getSquare(n.to);
+    if (!r || !o) {
+      s && s();
+      return;
+    }
+    const c = r.piece;
+    if (!c) {
+      i && this._updateBoardPieces(!1), s && s();
       return;
     }
     t ? this.pieceService.translatePiece(
-      { from: n, to: r, piece: o },
+      { from: r, to: o, piece: c },
       !1,
-      // No capture for rook in castle
       !0,
       this._createDragFunction.bind(this),
       () => {
-        i && this._updateBoardPieces(!1);
+        i && this._updateBoardPieces(!1), s && s();
       }
-    ) : i && this._updateBoardPieces(!1);
+    ) : (i && this._updateBoardPieces(!1), s && s());
   }
   /**
    * Handles en passant move by removing the captured pawn
@@ -6463,13 +6449,13 @@ let xe = Pe, ye = class {
   _doSimultaneousUpdate(e, t, i = !1) {
     const s = {}, n = {};
     Object.values(e).forEach((d) => {
-      const u = d.piece, m = this.positionService.getGamePieceId(d.id);
+      const u = d.piece, g = this.positionService.getGamePieceId(d.id);
       if (u) {
         const f = (u.color + u.type).toLowerCase();
         s[f] || (s[f] = []), s[f].push({ square: d, id: d.id });
       }
-      if (m) {
-        const f = m.toLowerCase();
+      if (g) {
+        const f = g.toLowerCase();
         n[f] || (n[f] = []), n[f].push({ square: d, id: d.id });
       }
     });
@@ -6492,40 +6478,40 @@ let xe = Pe, ye = class {
       }
     };
     Object.keys(n).forEach((d) => {
-      const u = (s[d] || []).slice(), m = n[d].slice(), f = [];
+      const u = (s[d] || []).slice(), g = n[d].slice(), f = [];
       for (let S = 0; S < u.length; S++) {
         f[S] = [];
-        for (let g = 0; g < m.length; g++)
-          f[S][g] = Math.abs(u[S].square.row - m[g].square.row) + Math.abs(u[S].square.col - m[g].square.col);
+        for (let m = 0; m < g.length; m++)
+          f[S][m] = Math.abs(u[S].square.row - g[m].square.row) + Math.abs(u[S].square.col - g[m].square.col);
       }
-      const p = new Array(u.length).fill(!1), b = new Array(m.length).fill(!1), w = [];
+      const p = new Array(u.length).fill(!1), b = new Array(g.length).fill(!1), w = [];
       for (; ; ) {
-        let S = 1 / 0, g = -1, E = -1;
+        let S = 1 / 0, m = -1, E = -1;
         for (let k = 0; k < u.length; k++)
           if (!p[k])
-            for (let L = 0; L < m.length; L++)
-              b[L] || f[k][L] < S && (S = f[k][L], g = k, E = L);
-        if (g === -1 || E === -1) break;
-        if (u[g].square === m[E].square) {
-          p[g] = !0, b[E] = !0;
+            for (let L = 0; L < g.length; L++)
+              b[L] || f[k][L] < S && (S = f[k][L], m = k, E = L);
+        if (m === -1 || E === -1) break;
+        if (u[m].square === g[E].square) {
+          p[m] = !0, b[E] = !0;
           continue;
         }
         w.push({
-          from: u[g].square,
-          to: m[E].square,
-          piece: u[g].square.piece
-        }), p[g] = !0, b[E] = !0;
+          from: u[m].square,
+          to: g[E].square,
+          piece: u[m].square.piece
+        }), p[m] = !0, b[E] = !0;
       }
       for (let S = 0; S < u.length; S++)
         p[S] || (setTimeout(() => {
           this.pieceService.removePieceFromSquare(u[S].square, !0, l);
         }, h * c), h++);
-      for (let S = 0; S < m.length; S++)
+      for (let S = 0; S < g.length; S++)
         b[S] || (setTimeout(() => {
-          const g = this.pieceService.convertPiece(d);
+          const m = this.pieceService.convertPiece(d);
           this.pieceService.addPieceOnSquare(
-            m[S].square,
-            g,
+            g[S].square,
+            m,
             !0,
             this._createDragFunction.bind(this),
             l
@@ -6567,7 +6553,7 @@ let xe = Pe, ye = class {
       if (c.has(l))
         return;
       const d = Array.from(i.entries()).find(
-        ([u, m]) => m === h && !c.has(u)
+        ([u, g]) => g === h && !c.has(u)
       );
       if (d) {
         const [u] = d;
@@ -6624,20 +6610,20 @@ let xe = Pe, ye = class {
     }, l = i ? 0 : this.config.simultaneousAnimationDelay;
     let d = 0;
     s.forEach((u) => {
-      const m = d * l;
+      const g = d * l;
       setTimeout(() => {
         this._animatePieceMove(u, h);
-      }, m), d++;
+      }, g), d++;
     }), n.forEach((u) => {
-      const m = d * l;
+      const g = d * l;
       setTimeout(() => {
         this._animatePieceRemoval(u, h);
-      }, m), d++;
+      }, g), d++;
     }), r.forEach((u) => {
-      const m = d * l;
+      const g = d * l;
       setTimeout(() => {
         this._animatePieceAddition(u, h);
-      }, m), d++;
+      }, g), d++;
     });
   }
   /**
@@ -6832,11 +6818,11 @@ let xe = Pe, ye = class {
     if (typeof e == "object" && e.type && e.color)
       n = (e.color + e.type).toLowerCase();
     else if (typeof e == "string" && e.length === 2) {
-      const m = e[0].toLowerCase(), f = e[1].toLowerCase(), p = "kqrbnp", b = "wb";
-      if (p.includes(m) && b.includes(f))
-        n = f + m;
-      else if (b.includes(m) && p.includes(f))
-        n = m + f;
+      const g = e[0].toLowerCase(), f = e[1].toLowerCase(), p = "kqrbnp", b = "wb";
+      if (p.includes(g) && b.includes(f))
+        n = f + g;
+      else if (b.includes(g) && p.includes(f))
+        n = g + f;
       else
         throw new Error(`[putPiece] Invalid piece: ${e}`);
     }
@@ -7941,7 +7927,7 @@ function jt(a, e = {}, t = null) {
 function zt(a, e, t = {}) {
   return $.createFromTemplate(a, e, t);
 }
-function q(a, e = {}) {
+function D(a, e = {}) {
   const t = je.child("ChessboardFactory");
   try {
     if (typeof a == "object" && a !== null)
@@ -7978,22 +7964,22 @@ class rt extends ye {
     }
   }
 }
-q.create = jt;
-q.fromTemplate = zt;
-q.factory = $;
-q.getInstance = (a) => $.getInstance(a);
-q.destroyInstance = (a) => $.destroy(a);
-q.destroyAll = () => $.destroyAll();
-q.listInstances = () => $.listInstances();
-q.registerTemplate = (a, e) => $.registerTemplate(a, e);
-q.removeTemplate = (a) => $.removeTemplate(a);
-q.getTemplate = (a) => $.getTemplate(a);
-q.listTemplates = () => $.listTemplates();
-q.getStats = () => $.getStats();
-q.Class = rt;
-q.Chessboard = rt;
-q.Config = et;
-q.Factory = nt;
+D.create = jt;
+D.fromTemplate = zt;
+D.factory = $;
+D.getInstance = (a) => $.getInstance(a);
+D.destroyInstance = (a) => $.destroy(a);
+D.destroyAll = () => $.destroyAll();
+D.listInstances = () => $.listInstances();
+D.registerTemplate = (a, e) => $.registerTemplate(a, e);
+D.removeTemplate = (a) => $.removeTemplate(a);
+D.getTemplate = (a) => $.getTemplate(a);
+D.listTemplates = () => $.listTemplates();
+D.getStats = () => $.getStats();
+D.Class = rt;
+D.Chessboard = rt;
+D.Config = et;
+D.Factory = nt;
 function Vt(a) {
   const e = a.charCodeAt(0) - 97;
   return { row: 7 - (parseInt(a[1]) - 1), col: e };
@@ -9710,8 +9696,8 @@ export {
   ue as BaseMode,
   bt as BoardService,
   Nt as Chess,
-  Ae as ChessAI,
-  q as Chessboard,
+  Re as ChessAI,
+  D as Chessboard,
   et as ChessboardConfig,
   U as ChessboardError,
   nt as ChessboardFactory,
@@ -9739,7 +9725,7 @@ export {
   Bt as PositionService,
   xt as PvPMode,
   Ve as STANDARD_POSITIONS,
-  qe as Square,
+  De as Square,
   $e as StockfishEngine,
   ei as UCIEngine,
   C as ValidationError,
@@ -9758,7 +9744,7 @@ export {
   zt as createChessboardFromTemplate,
   gi as createLogger,
   ai as debounce,
-  q as default,
+  D as default,
   fi as getMemoryUsage,
   vi as getSquareColor,
   yi as getValidationCacheStats,

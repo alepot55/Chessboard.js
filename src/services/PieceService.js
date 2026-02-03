@@ -109,14 +109,14 @@ export class PieceService {
     }
 
     /**
-     * Removes a piece from a square with optional fade-out animation
+     * Removes a piece from a square with configurable capture animation
      * @param {Square} square - Source square
-     * @param {boolean} [fade=true] - Whether to fade out the piece
+     * @param {boolean} [animate=true] - Whether to animate the removal
      * @param {Function} [callback] - Callback when animation completes
      * @returns {Piece} The removed piece
      * @throws {PieceError} When square has no piece to remove
      */
-    removePieceFromSquare(square, fade = true, callback) {
+    removePieceFromSquare(square, animate = true, callback) {
         console.debug(`[PieceService] removePieceFromSquare: ${square.id}`);
         square.check();
 
@@ -126,18 +126,20 @@ export class PieceService {
             throw new PieceError(ERROR_MESSAGES.square_no_piece, null, square.getId());
         }
 
-        if (fade && this.config.fadeTime > 0) {
-            piece.fadeOut(
-                this.config.fadeTime,
-                this.config.fadeAnimation,
-                this._getTransitionTimingFunction(),
-                callback
-            );
+        const captureStyle = this.config.captureStyle || 'fade';
+        const duration = this.config.captureTime || this.config.fadeTime || 200;
+
+        if (animate && duration > 0) {
+            // Apply capture animation based on style
+            piece.captureAnimate(captureStyle, duration, () => {
+                square.removePiece();
+                if (callback) callback();
+            });
         } else {
+            square.removePiece();
             if (callback) callback();
         }
 
-        square.removePiece();
         return piece;
     }
 
@@ -156,12 +158,22 @@ export class PieceService {
             return;
         }
 
+        // Build movement options from config
+        const moveOptions = {
+            style: this.config.moveStyle || 'slide',
+            easing: this.config.moveEasing || this.config.moveAnimation || 'ease',
+            arcHeight: this.config.moveArcHeight || 0.3,
+            landingEffect: this.config.landingEffect || 'none',
+            landingDuration: this.config.landingDuration || 150
+        };
+
         piece.translate(
             targetSquare,
             duration,
             this._getTransitionTimingFunction(),
             this.config.moveAnimation,
-            callback
+            callback,
+            moveOptions
         );
     }
 

@@ -34,7 +34,7 @@ describe('Chessboard User Functions', () => {
     });
 
     test('getPiece() should return the piece on the given square', () => {
-        expect(chessboard.getPiece('e2')).toBe('pw');
+        expect(chessboard.getPiece('e2')).toBe('wp');
     });
 
     test('setPosition() should set the board to the given position', () => {
@@ -58,8 +58,8 @@ describe('Chessboard User Functions', () => {
     });
 
     test('putPiece() should insert a piece on the given square', () => {
-        chessboard.putPiece('qw', 'e4');
-        expect(chessboard.getPiece('e4')).toBe('qw');
+        chessboard.putPiece('wq', 'e4');
+        expect(chessboard.getPiece('e4')).toBe('wq');
     });
 
     // isGameOver() returns boolean, not 'w', so adapt the test
@@ -99,7 +99,7 @@ describe('Chessboard User Functions', () => {
 
     // piece() is deprecated, use getPiece()
     test('getPiece() alias should return the piece on the given square', () => {
-        expect(chessboard.getPiece('e2')).toBe('pw');
+        expect(chessboard.getPiece('e2')).toBe('wp');
     });
 
     // highlight/dehighlight tests depend on implementation details

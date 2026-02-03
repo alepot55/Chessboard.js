@@ -1,7 +1,3 @@
-/* Main stylesheet for Chessboard.js */
-@import './board.css';
-@import './pieces.css';
-@import './animations.css';
 :root {
     --dimBoard: 600px;
     --pieceRatio: 0.9;
@@ -20,13 +16,19 @@
 }
 
 .board {
-    display: grid;
-    grid-template: repeat(8, 1fr) / repeat(8, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     width: var(--dimBoard);
     height: var(--dimBoard);
     /* Enable hardware acceleration for better performance */
     transform: translateZ(0);
     will-change: auto;
+}
+
+/* Flipped board - reverse visual order using flexbox */
+.board.flipped {
+    flex-direction: row-reverse;
+    flex-wrap: wrap-reverse;
 }
 
 .square {
@@ -52,6 +54,16 @@
     /* IE10+/Edge */
     user-select: none;
     /* Standard */
+
+    /* Animation optimization */
+    transform-origin: center center;
+    backface-visibility: hidden;
+}
+
+/* During drag, enable GPU acceleration */
+.piece.dragging {
+    will-change: transform;
+    z-index: 100;
 }
 
 .choicable {
@@ -110,7 +122,10 @@
 
 .highlighted {
     box-shadow: inset 0 0 10px var(--highlightSquare);
-}/* Piece-specific styles */
+}
+
+/* Note: Flexbox-based flip is instant by design for best UX.
+   No CSS transform on board means pieces can animate freely without conflict. *//* Piece-specific styles */
 .piece {
   position: absolute;
   cursor: pointer;

@@ -1068,11 +1068,71 @@ const TRANSITION_FUNCTIONS = Object.freeze({
  * @constant
  * @type {Object}
  */
+/**
+ * Flip mode options
+ * @constant
+ * @type {Object}
+ */
+const FLIP_MODES = Object.freeze({
+    visual: 'visual',      // CSS flexbox visual flip (instant, no piece animation)
+    animate: 'animate',    // Animate pieces to mirrored positions (smooth animation)
+    none: 'none'           // No visual change, only internal orientation
+});
+
+/**
+ * Movement style options - how pieces travel from source to destination
+ * @constant
+ * @type {Object}
+ */
+const MOVE_STYLES = Object.freeze({
+    slide: 'slide',        // Linear movement (default) - piece slides in straight line
+    arc: 'arc',            // Arc trajectory - piece lifts up then comes down
+    hop: 'hop',            // Parabolic jump - like a knight hopping
+    teleport: 'teleport',  // Instant - no animation, piece appears at destination
+    fade: 'fade'           // Crossfade - fades out at source, fades in at destination
+});
+
+/**
+ * Capture animation options - what happens to captured pieces
+ * @constant
+ * @type {Object}
+ */
+const CAPTURE_STYLES = Object.freeze({
+    fade: 'fade',          // Fade out (default)
+    shrink: 'shrink',      // Shrink then fade
+    instant: 'instant',    // Disappears immediately
+    explode: 'explode'     // Scale up and fade (dramatic effect)
+});
+
+/**
+ * Landing effect options - what happens when piece reaches destination
+ * @constant
+ * @type {Object}
+ */
+const LANDING_EFFECTS = Object.freeze({
+    none: 'none',          // No effect (default)
+    bounce: 'bounce',      // Slight bounce on landing
+    pulse: 'pulse',        // Quick scale pulse
+    settle: 'settle'       // Subtle settling animation
+});
+
+/**
+ * Drag style options - how pieces behave during drag
+ * @constant
+ * @type {Object}
+ */
+const DRAG_STYLES = Object.freeze({
+    smooth: 'smooth',      // Piece follows cursor smoothly (default)
+    snap: 'snap',          // Piece snaps to cursor position
+    elastic: 'elastic'     // Slight elastic lag behind cursor
+});
+
 const DEFAULT_CONFIG$1 = Object.freeze({
     id: 'board',
     position: 'start',
     orientation: 'w',
     mode: 'normal',
+    flipMode: 'visual',    // 'visual', 'animate', or 'none'
     size: 'auto',
     draggable: true,
     hints: true,
@@ -1080,15 +1140,41 @@ const DEFAULT_CONFIG$1 = Object.freeze({
     movableColors: 'both',
     moveHighlight: true,
     overHighlight: true,
-    moveAnimation: 'ease',
-    moveTime: 'fast',
-    dropOffBoard: 'snapback',
+
+    // Movement configuration
+    moveStyle: 'slide',          // 'slide', 'arc', 'hop', 'teleport', 'fade'
+    moveEasing: 'ease',          // CSS easing function
+    moveTime: 'fast',            // Duration: 'instant', 'veryFast', 'fast', 'normal', 'slow', 'verySlow' or ms
+    moveArcHeight: 0.3,          // Arc height as ratio of distance (for 'arc' and 'hop' styles)
+
+    // Capture configuration
+    captureStyle: 'fade',        // 'fade', 'shrink', 'instant', 'explode'
+    captureTime: 'fast',         // Duration for capture animation
+
+    // Landing effect configuration
+    landingEffect: 'none',       // 'none', 'bounce', 'pulse', 'settle'
+    landingDuration: 150,        // Duration for landing effect in ms
+
+    // Drag configuration
+    dragStyle: 'smooth',         // 'smooth', 'snap', 'elastic'
+    dragScale: 1.05,             // Scale factor while dragging (1.0 = no scale)
+    dragOpacity: 0.9,            // Opacity while dragging
+
+    // Snapback configuration
     snapbackTime: 'fast',
-    snapbackAnimation: 'ease',
+    snapbackEasing: 'ease',
+
+    // Other timing
+    dropOffBoard: 'snapback',
     dropCenterTime: 'veryFast',
     dropCenterAnimation: 'ease',
     fadeTime: 'fast',
     fadeAnimation: 'ease',
+
+    // Legacy compatibility
+    moveAnimation: 'ease',
+    snapbackAnimation: 'ease',
+
     ratio: 0.9,
     piecesPath: '../assets/themes/default',
     animationStyle: 'simultaneous',
@@ -1183,6 +1269,7 @@ class ChessboardConfig {
         this.position = config.position;
         this.orientation = config.orientation;
         this.mode = config.mode;
+        this.flipMode = this._validateFlipMode(config.flipMode);
         this.dropOffBoard = config.dropOffBoard;
         this.size = config.size;
         this.movableColors = config.movableColors;
@@ -1197,11 +1284,24 @@ class ChessboardConfig {
         this.onDrop = this._validateCallback(config.onDrop);
         this.onSnapbackEnd = this._validateCallback(config.onSnapbackEnd);
 
-        // Animation properties
+        // Animation properties (legacy)
         this.moveAnimation = this._setTransitionFunction(config.moveAnimation);
         this.snapbackAnimation = this._setTransitionFunction(config.snapbackAnimation);
         this.dropCenterAnimation = this._setTransitionFunction(config.dropCenterAnimation);
         this.fadeAnimation = this._setTransitionFunction(config.fadeAnimation);
+
+        // Movement configuration (new system)
+        this.moveStyle = this._validateMoveStyle(config.moveStyle);
+        this.moveEasing = this._setTransitionFunction(config.moveEasing);
+        this.moveArcHeight = this._validateNumber(config.moveArcHeight, 0, 1, 'moveArcHeight');
+        this.captureStyle = this._validateCaptureStyle(config.captureStyle);
+        this.captureTime = this._setTime(config.captureTime);
+        this.landingEffect = this._validateLandingEffect(config.landingEffect);
+        this.landingDuration = this._validateNumber(config.landingDuration, 0, 2000, 'landingDuration');
+        this.dragStyle = this._validateDragStyle(config.dragStyle);
+        this.dragScale = this._validateNumber(config.dragScale, 0.5, 2, 'dragScale');
+        this.dragOpacity = this._validateNumber(config.dragOpacity, 0.1, 1, 'dragOpacity');
+        this.snapbackEasing = this._setTransitionFunction(config.snapbackEasing);
 
         // Boolean properties
         this.hints = this._setBoolean(config.hints);
@@ -1304,6 +1404,97 @@ class ChessboardConfig {
             throw new ConfigurationError('Invalid animation delay', 'simultaneousAnimationDelay', delay);
         }
         return delay;
+    }
+
+    /**
+     * Validates flip mode
+     * @private
+     * @param {string} mode - Flip mode
+     * @returns {string} Validated mode
+     * @throws {ConfigurationError} If mode is invalid
+     */
+    _validateFlipMode(mode) {
+        if (!mode || !FLIP_MODES[mode]) {
+            throw new ConfigurationError(
+                `Invalid flip mode: ${mode}. Valid options: ${Object.keys(FLIP_MODES).join(', ')}`,
+                'flipMode',
+                mode
+            );
+        }
+        return mode;
+    }
+
+    /**
+     * Validates move style
+     * @private
+     * @param {string} style - Move style
+     * @returns {string} Validated style
+     */
+    _validateMoveStyle(style) {
+        if (!style || !MOVE_STYLES[style]) {
+            console.warn(`Invalid move style: ${style}. Using 'slide'. Valid: ${Object.keys(MOVE_STYLES).join(', ')}`);
+            return 'slide';
+        }
+        return style;
+    }
+
+    /**
+     * Validates capture style
+     * @private
+     * @param {string} style - Capture style
+     * @returns {string} Validated style
+     */
+    _validateCaptureStyle(style) {
+        if (!style || !CAPTURE_STYLES[style]) {
+            console.warn(`Invalid capture style: ${style}. Using 'fade'. Valid: ${Object.keys(CAPTURE_STYLES).join(', ')}`);
+            return 'fade';
+        }
+        return style;
+    }
+
+    /**
+     * Validates landing effect
+     * @private
+     * @param {string} effect - Landing effect
+     * @returns {string} Validated effect
+     */
+    _validateLandingEffect(effect) {
+        if (!effect || !LANDING_EFFECTS[effect]) {
+            console.warn(`Invalid landing effect: ${effect}. Using 'none'. Valid: ${Object.keys(LANDING_EFFECTS).join(', ')}`);
+            return 'none';
+        }
+        return effect;
+    }
+
+    /**
+     * Validates drag style
+     * @private
+     * @param {string} style - Drag style
+     * @returns {string} Validated style
+     */
+    _validateDragStyle(style) {
+        if (!style || !DRAG_STYLES[style]) {
+            console.warn(`Invalid drag style: ${style}. Using 'smooth'. Valid: ${Object.keys(DRAG_STYLES).join(', ')}`);
+            return 'smooth';
+        }
+        return style;
+    }
+
+    /**
+     * Validates a number within a range
+     * @private
+     * @param {number} value - Value to validate
+     * @param {number} min - Minimum value
+     * @param {number} max - Maximum value
+     * @param {string} name - Property name for error message
+     * @returns {number} Validated value
+     */
+    _validateNumber(value, min, max, name) {
+        if (typeof value !== 'number' || value < min || value > max) {
+            console.warn(`Invalid ${name}: ${value}. Must be between ${min} and ${max}.`);
+            return (min + max) / 2; // Return middle value as default
+        }
+        return value;
     }
 
     /**
@@ -1411,6 +1602,7 @@ class ChessboardConfig {
             position: this.position,
             orientation: this.orientation,
             mode: this.mode,
+            flipMode: this.flipMode,
             size: this.size,
             draggable: this.draggable,
             hints: this.hints,
@@ -1418,11 +1610,24 @@ class ChessboardConfig {
             movableColors: this.movableColors,
             moveHighlight: this.moveHighlight,
             overHighlight: this.overHighlight,
-            moveAnimation: this.moveAnimation,
+            // Movement configuration
+            moveStyle: this.moveStyle,
+            moveEasing: this.moveEasing,
             moveTime: this.moveTime,
-            dropOffBoard: this.dropOffBoard,
+            moveArcHeight: this.moveArcHeight,
+            captureStyle: this.captureStyle,
+            captureTime: this.captureTime,
+            landingEffect: this.landingEffect,
+            landingDuration: this.landingDuration,
+            dragStyle: this.dragStyle,
+            dragScale: this.dragScale,
+            dragOpacity: this.dragOpacity,
             snapbackTime: this.snapbackTime,
+            snapbackEasing: this.snapbackEasing,
+            // Legacy
+            moveAnimation: this.moveAnimation,
             snapbackAnimation: this.snapbackAnimation,
+            dropOffBoard: this.dropOffBoard,
             dropCenterTime: this.dropCenterTime,
             dropCenterAnimation: this.dropCenterAnimation,
             fadeTime: this.fadeTime,
@@ -1660,13 +1865,103 @@ class Piece {
             if (elapsed < duration) {
                 requestAnimationFrame(fade);
             } else {
-                if (!piece.element) { console.debug(`[Piece] fadeOut: ${piece.id} - element is null (end)`); if (callback) callback(); return; }
+                if (!piece.element) { if (callback) callback(); return; }
                 piece.element.style.opacity = 0;
-                console.debug(`[Piece] fadeOut complete: ${piece.id}`);
+                // Remove element from DOM after fade completes
+                if (piece.element.parentNode) {
+                    piece.element.parentNode.removeChild(piece.element);
+                }
                 if (callback) callback();
             }
         };
         fade();
+    }
+
+    /**
+     * Animate piece capture with configurable style
+     * Uses fluid easing for smooth, connected animations
+     * @param {string} style - Capture style: 'fade', 'shrink', 'instant', 'explode'
+     * @param {number} duration - Animation duration in ms
+     * @param {Function} callback - Callback when complete
+     */
+    captureAnimate(style, duration, callback) {
+        if (!this.element) {
+            if (callback) callback();
+            return;
+        }
+
+        const element = this.element;
+        const cleanup = () => {
+            if (element && element.parentNode) {
+                element.parentNode.removeChild(element);
+            }
+            if (callback) callback();
+        };
+
+        // Fluid easing functions
+        const smoothDecel = 'cubic-bezier(0.33, 1, 0.68, 1)';
+        const smoothAccel = 'cubic-bezier(0.32, 0, 0.67, 0)';
+
+        switch (style) {
+            case 'instant':
+                cleanup();
+                break;
+
+            case 'fade':
+                if (element.animate) {
+                    // Smooth fade with subtle scale down
+                    const anim = element.animate([
+                        { opacity: 1, transform: 'scale(1)' },
+                        { opacity: 0, transform: 'scale(0.9)' }
+                    ], { duration, easing: smoothDecel, fill: 'forwards' });
+                    anim.onfinish = cleanup;
+                } else {
+                    element.style.transition = `opacity ${duration}ms ease-out, transform ${duration}ms ease-out`;
+                    element.style.opacity = '0';
+                    element.style.transform = 'scale(0.9)';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            case 'shrink':
+                if (element.animate) {
+                    // Smooth shrink with accelerating easing for "sucked in" feel
+                    const anim = element.animate([
+                        { transform: 'scale(1)', opacity: 1, offset: 0 },
+                        { transform: 'scale(0.7)', opacity: 0.6, offset: 0.6 },
+                        { transform: 'scale(0)', opacity: 0, offset: 1 }
+                    ], { duration, easing: smoothAccel, fill: 'forwards' });
+                    anim.onfinish = cleanup;
+                } else {
+                    element.style.transition = `transform ${duration}ms ease-in, opacity ${duration}ms ease-in`;
+                    element.style.transform = 'scale(0)';
+                    element.style.opacity = '0';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            case 'explode':
+                if (element.animate) {
+                    // Subtle expand with smooth deceleration - less dramatic
+                    const anim = element.animate([
+                        { transform: 'scale(1)', opacity: 1, offset: 0 },
+                        { transform: 'scale(1.15)', opacity: 0.5, offset: 0.5 },
+                        { transform: 'scale(1.25)', opacity: 0, offset: 1 }
+                    ], { duration, easing: smoothDecel, fill: 'forwards' });
+                    anim.onfinish = cleanup;
+                } else {
+                    element.style.transition = `transform ${duration}ms ease-out, opacity ${duration}ms ease-out`;
+                    element.style.transform = 'scale(1.25)';
+                    element.style.opacity = '0';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            default:
+                // Default to fade
+                this.captureAnimate('fade', duration, callback);
+                return;
+        }
     }
 
     setDrag(f) {
@@ -1708,41 +2003,319 @@ class Piece {
         }
     }
 
-    translate(to, duration, transition_f, speed, callback = null) {
-        if (!this.element) { console.debug(`[Piece] translate: ${this.id} - element is null`); if (callback) callback(); return; }
-        let sourceRect = this.element.getBoundingClientRect();
-        let targetRect = to.getBoundingClientRect();
-        let x_start = sourceRect.left + sourceRect.width / 2;
-        let y_start = sourceRect.top + sourceRect.height / 2;
-        let x_end = targetRect.left + targetRect.width / 2;
-        let y_end = targetRect.top + targetRect.height / 2;
-        let dx = x_end - x_start;
-        let dy = y_end - y_start;
+    /**
+     * Translate piece to target position with configurable movement style
+     * Uses Chessground-style cubic easing for fluid, natural movement
+     * @param {HTMLElement} to - Target element
+     * @param {number} duration - Animation duration in ms
+     * @param {Function} transition_f - Transition function (unused, for compatibility)
+     * @param {number} speed - Speed factor (unused, for compatibility)
+     * @param {Function} callback - Callback when complete
+     * @param {Object} options - Movement options
+     * @param {string} options.style - Movement style: 'slide', 'arc', 'hop', 'teleport', 'fade'
+     * @param {string} options.easing - CSS easing function
+     * @param {number} options.arcHeight - Arc height ratio (for arc/hop styles)
+     * @param {string} options.landingEffect - Landing effect: 'none', 'bounce', 'pulse', 'settle'
+     * @param {number} options.landingDuration - Landing effect duration in ms
+     */
+    translate(to, duration, transition_f, speed, callback = null, options = {}) {
+        if (!this.element) {
+            console.debug(`[Piece] translate: ${this.id} - element is null`);
+            if (callback) callback();
+            return;
+        }
 
-        let keyframes = [
-            { transform: 'translate(0, 0)' },
-            { transform: `translate(${dx}px, ${dy}px)` }
-        ];
+        const style = options.style || 'slide';
+        const arcHeight = options.arcHeight || 0.3;
+        const landingEffect = options.landingEffect || 'none';
+        const landingDuration = options.landingDuration || 150;
 
+        // Map easing names to Chessground-style fluid cubic-bezier curves
+        // Default: smooth deceleration like Lichess/Chessground
+        const easingMap = {
+            'ease': 'cubic-bezier(0.33, 1, 0.68, 1)',           // Chessground default - smooth decel
+            'linear': 'linear',
+            'ease-in': 'cubic-bezier(0.32, 0, 0.67, 0)',       // Smooth acceleration
+            'ease-out': 'cubic-bezier(0.33, 1, 0.68, 1)',      // Smooth deceleration (same as default)
+            'ease-in-out': 'cubic-bezier(0.65, 0, 0.35, 1)'    // Smooth both ways
+        };
+        const easing = easingMap[options.easing] || easingMap['ease'];
+
+        // Handle teleport (instant)
+        if (style === 'teleport' || duration === 0) {
+            if (callback) callback();
+            return;
+        }
+
+        // Handle fade style
+        if (style === 'fade') {
+            this._translateFade(to, duration, easing, landingEffect, landingDuration, callback);
+            return;
+        }
+
+        // Calculate movement vectors
+        const sourceRect = this.element.getBoundingClientRect();
+        const targetRect = to.getBoundingClientRect();
+        const dx = (targetRect.left + targetRect.width / 2) - (sourceRect.left + sourceRect.width / 2);
+        const dy = (targetRect.top + targetRect.height / 2) - (sourceRect.top + sourceRect.height / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Build keyframes based on style
+        let keyframes;
+        let animationEasing = easing;
+
+        switch (style) {
+            case 'arc':
+                keyframes = this._buildArcKeyframes(dx, dy, distance, arcHeight);
+                // Arc uses linear easing because the curve is in the keyframes
+                animationEasing = 'linear';
+                break;
+            case 'hop':
+                keyframes = this._buildHopKeyframes(dx, dy, distance, arcHeight);
+                // Hop uses ease-out for natural landing feel
+                animationEasing = 'cubic-bezier(0.33, 1, 0.68, 1)';
+                break;
+            case 'slide':
+            default:
+                keyframes = [
+                    { transform: 'translate(0, 0)' },
+                    { transform: `translate(${dx}px, ${dy}px)` }
+                ];
+        }
+
+        // Animate
         if (this.element.animate) {
-            let animation = this.element.animate(keyframes, {
+            const animation = this.element.animate(keyframes, {
                 duration: duration,
-                easing: 'ease',
-                fill: 'none'
+                easing: animationEasing,
+                fill: 'forwards'
             });
 
             animation.onfinish = () => {
-                if (!this.element) { console.debug(`[Piece] translate.onfinish: ${this.id} - element is null`); if (callback) callback(); return; }
-                if (callback) callback();
+                if (!this.element) {
+                    if (callback) callback();
+                    return;
+                }
+
+                // Cancel animation and move piece in DOM first
+                animation.cancel();
                 if (this.element) this.element.style = '';
-                console.debug(`[Piece] translate complete: ${this.id}`);
+
+                // Callback moves piece to new square in DOM
+                if (callback) callback();
+
+                // Apply landing effect AFTER piece is in new position
+                if (landingEffect !== 'none') {
+                    // Small delay to ensure DOM is updated
+                    requestAnimationFrame(() => {
+                        this._applyLandingEffect(landingEffect, landingDuration);
+                    });
+                }
             };
         } else {
-            this.element.style.transition = `transform ${duration}ms ease`;
+            // Fallback for browsers without Web Animations API
+            this.element.style.transition = `transform ${duration}ms ${animationEasing}`;
             this.element.style.transform = `translate(${dx}px, ${dy}px)`;
+            setTimeout(() => {
+                if (!this.element) {
+                    if (callback) callback();
+                    return;
+                }
+                if (this.element) this.element.style = '';
+                if (callback) callback();
+
+                // Apply landing effect after DOM update
+                if (landingEffect !== 'none') {
+                    requestAnimationFrame(() => {
+                        this._applyLandingEffect(landingEffect, landingDuration);
+                    });
+                }
+            }, duration);
+        }
+    }
+
+    /**
+     * Build arc-shaped keyframes (smooth parabolic curve)
+     * Uses many keyframes for fluid motion without relying on easing
+     * @private
+     */
+    _buildArcKeyframes(dx, dy, distance, arcHeight) {
+        const lift = distance * arcHeight;
+        const steps = 10;
+        const keyframes = [];
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            // Smooth easing for horizontal movement (Chessground-style cubic)
+            const easedT = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            // Parabolic arc for vertical lift: peaks at t=0.5
+            const arcT = 4 * t * (1 - t); // Parabola: 0 at t=0, 1 at t=0.5, 0 at t=1
+
+            const x = dx * easedT;
+            const y = dy * easedT - lift * arcT;
+
+            keyframes.push({
+                transform: `translate(${x}px, ${y}px)`,
+                offset: t
+            });
+        }
+        return keyframes;
+    }
+
+    /**
+     * Build hop-shaped keyframes (knight-like jump with subtle scale)
+     * More aggressive vertical movement, subtle scale for emphasis
+     * @private
+     */
+    _buildHopKeyframes(dx, dy, distance, arcHeight) {
+        const lift = distance * arcHeight * 1.2;
+        const steps = 12;
+        const keyframes = [];
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            // Chessground-style cubic easing for smooth acceleration/deceleration
+            const easedT = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            // Sharp parabolic hop - peaks earlier for snappier feel
+            const hopT = Math.sin(t * Math.PI); // Sine for smooth hop curve
+            // Subtle scale: peaks at 1.03 at the top of the hop
+            const scale = 1 + 0.03 * hopT;
+
+            const x = dx * easedT;
+            const y = dy * easedT - lift * hopT;
+
+            keyframes.push({
+                transform: `translate(${x}px, ${y}px) scale(${scale})`,
+                offset: t
+            });
+        }
+        return keyframes;
+    }
+
+    /**
+     * Translate using fade effect (smooth crossfade with scale)
+     * @private
+     */
+    _translateFade(to, duration, easing, landingEffect, landingDuration, callback) {
+        const halfDuration = duration / 2;
+        // Use smooth deceleration for fade
+        const fadeEasing = 'cubic-bezier(0.33, 1, 0.68, 1)';
+
+        // Fade out with subtle scale down
+        if (this.element.animate) {
+            const fadeOut = this.element.animate([
+                { opacity: 1, transform: 'scale(1)' },
+                { opacity: 0, transform: 'scale(0.95)' }
+            ], { duration: halfDuration, easing: fadeEasing, fill: 'forwards' });
+
+            fadeOut.onfinish = () => {
+                if (!this.element) {
+                    if (callback) callback();
+                    return;
+                }
+                // Move instantly (hidden)
+                fadeOut.cancel();
+                this.element.style.opacity = '0';
+                this.element.style.transform = 'scale(0.95)';
+
+                // Let parent move the piece in DOM, then fade in
+                if (callback) callback();
+
+                // Fade in at new position with subtle scale up
+                requestAnimationFrame(() => {
+                    if (!this.element) return;
+                    const fadeIn = this.element.animate([
+                        { opacity: 0, transform: 'scale(0.95)' },
+                        { opacity: 1, transform: 'scale(1)' }
+                    ], { duration: halfDuration, easing: fadeEasing, fill: 'forwards' });
+
+                    fadeIn.onfinish = () => {
+                        if (this.element) {
+                            fadeIn.cancel();
+                            this.element.style.opacity = '';
+                            this.element.style.transform = '';
+                            this._applyLandingEffect(landingEffect, landingDuration);
+                        }
+                    };
+                });
+            };
+        } else {
+            // Fallback
+            this.element.style.transition = `opacity ${halfDuration}ms ease, transform ${halfDuration}ms ease`;
+            this.element.style.opacity = '0';
+            this.element.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                if (callback) callback();
+                if (this.element) {
+                    this.element.style.opacity = '1';
+                    this.element.style.transform = 'scale(1)';
+                    setTimeout(() => {
+                        if (this.element) this.element.style = '';
+                    }, halfDuration);
+                }
+            }, halfDuration);
+        }
+    }
+
+    /**
+     * Apply landing effect after movement completes
+     * Uses spring-like overshoot easing for natural, connected feel
+     * @private
+     */
+    _applyLandingEffect(effect, duration, callback) {
+        if (!this.element || effect === 'none') {
             if (callback) callback();
-            if (this.element) this.element.style = '';
-            console.debug(`[Piece] translate complete (no animate): ${this.id}`);
+            return;
+        }
+
+        let keyframes;
+        // Overshoot easing for spring-like natural feel
+        let effectEasing = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+        switch (effect) {
+            case 'bounce':
+                // Subtle bounce using spring easing - single smooth bounce
+                keyframes = [
+                    { transform: 'translateY(0)', offset: 0 },
+                    { transform: 'translateY(-5px)', offset: 0.4 },
+                    { transform: 'translateY(0)', offset: 1 }
+                ];
+                // Use ease-out for natural deceleration
+                effectEasing = 'cubic-bezier(0.33, 1, 0.68, 1)';
+                break;
+            case 'pulse':
+                // Subtle scale pulse - less aggressive, more refined
+                keyframes = [
+                    { transform: 'scale(1)', offset: 0 },
+                    { transform: 'scale(1.08)', offset: 0.5 },
+                    { transform: 'scale(1)', offset: 1 }
+                ];
+                break;
+            case 'settle':
+                // Minimal settle - piece "clicks" into place
+                keyframes = [
+                    { transform: 'scale(1.02)', offset: 0 },
+                    { transform: 'scale(1)', offset: 1 }
+                ];
+                effectEasing = 'cubic-bezier(0.33, 1, 0.68, 1)';
+                break;
+            default:
+                if (callback) callback();
+                return;
+        }
+
+        if (this.element.animate) {
+            const animation = this.element.animate(keyframes, {
+                duration: duration,
+                easing: effectEasing,
+                fill: 'forwards'
+            });
+            animation.onfinish = () => {
+                if (this.element) animation.cancel();
+                if (callback) callback();
+            };
+        } else {
+            if (callback) callback();
         }
     }
 
@@ -1977,7 +2550,7 @@ class Square {
     }
 
     getColor() {
-        return this.piece.getColor();
+        return this.piece ? this.piece.getColor() : null;
     }
 
     check() {
@@ -4635,25 +5208,11 @@ class MoveService {
             to: move.to.id
         };
         
-        console.log('executeMove - move.promotion:', move.promotion);
-        console.log('executeMove - move.hasPromotion():', move.hasPromotion());
-        
         if (move.hasPromotion()) {
             moveOptions.promotion = move.promotion;
         }
-        
-        console.log('executeMove - moveOptions:', moveOptions);
-        
-        const result = game.move(moveOptions);
-        console.log('executeMove - result:', result);
-        
-        // Check what's actually on the board after the move
-        if (result) {
-            const pieceOnDestination = game.get(move.to.id);
-            console.log('executeMove - piece on destination after move:', pieceOnDestination);
-        }
-        
-        return result;
+
+        return game.move(moveOptions);
     }
 
     /**
@@ -4663,27 +5222,19 @@ class MoveService {
      */
     requiresPromotion(move) {
         const moveKey = `${move.from.id}->${move.to.id}`;
-        console.log('Checking if move requires promotion:', moveKey);
-        
-        // Get detailed stack trace
-        const stack = new Error().stack.split('\n');
-        console.log('Call stack:', stack[1]);
-        console.log('Caller:', stack[2]);
-        console.log('Caller 2:', stack[3]);
-        console.log('Caller 3:', stack[4]);
-        
-        // Track recently processed moves to prevent processing the same move multiple times
+
+        // Track recently processed moves - return cached result for duplicates
         const now = Date.now();
-        if (this._recentMoves.has(moveKey)) {
-            console.log('Move recently processed, skipping duplicate check');
-            return false; // Conservative: assume no promotion needed for duplicates
+        if (this._recentMoves.has(moveKey) &&
+            this._lastPromotionCheck === moveKey &&
+            this._lastPromotionResult !== null) {
+            return this._lastPromotionResult;
         }
-        
+
         // Debounce identical promotion checks within 100ms
-        if (this._lastPromotionCheck === moveKey && 
+        if (this._lastPromotionCheck === moveKey &&
             this._lastPromotionResult !== null &&
             now - this._lastPromotionTime < 100) {
-            console.log('Using cached promotion result:', this._lastPromotionResult);
             return this._lastPromotionResult;
         }
         
@@ -4724,53 +5275,41 @@ class MoveService {
      */
     _doRequiresPromotion(move) {
         if (!this.config.onlyLegalMoves) {
-            console.log('Not in legal moves mode, no promotion required');
             return false;
         }
-        
+
         const game = this.positionService.getGame();
         if (!game) {
-            console.log('No game instance available');
             return false;
         }
-        
+
         const piece = game.get(move.from.id);
         if (!piece || piece.type !== 'p') {
-            console.log('Not a pawn move, no promotion required');
             return false;
         }
-        
+
         const targetRank = move.to.row;
         if (targetRank !== 1 && targetRank !== 8) {
-            console.log('Not reaching promotion rank, no promotion required');
             return false;
         }
-        
-        console.log('Pawn reaching promotion rank - promotion required');
-        
-        // Additional validation: check if the pawn can actually reach this square
+
+        // Validate pawn move
         if (!this._isPawnMoveValid(move.from, move.to, piece.color)) {
-            console.log('Pawn move not valid, no promotion required');
             return false;
         }
-        
-        // If we get here, it's a pawn move to the promotion rank
-        // Check if it's a legal move by using the game's moves() method
+
+        // Check if it's a legal move
         const legalMoves = game.moves({ square: move.from.id, verbose: true });
         const matchingMove = legalMoves.find(m => m.to === move.to.id);
-        
+
         if (!matchingMove) {
-            console.log('Move not in legal moves list, no promotion required');
             return false;
         }
-        
-        // If the legal move has a promotion flag or is to a promotion rank, promotion is required
-        const requiresPromotion = matchingMove.flags.includes('p') || 
-                                (piece.color === 'w' && targetRank === 8) || 
-                                (piece.color === 'b' && targetRank === 1);
-        
-        console.log('Promotion required:', requiresPromotion);
-        return requiresPromotion;
+
+        // Promotion is required if move has promotion flag or reaches promotion rank
+        return matchingMove.flags.includes('p') ||
+               (piece.color === 'w' && targetRank === 8) ||
+               (piece.color === 'b' && targetRank === 1);
     }
 
     /**
@@ -4786,43 +5325,34 @@ class MoveService {
         const toRank = to.row;
         const fromFile = from.col;
         const toFile = to.col;
-        
-        console.log(`Validating pawn move: ${from.id} -> ${to.id} (${color})`);
-        console.log(`Ranks: ${fromRank} -> ${toRank}, Files: ${fromFile} -> ${toFile}`);
-        
-        // Direction of pawn movement
+
         const direction = color === 'w' ? 1 : -1;
         const rankDiff = toRank - fromRank;
         const fileDiff = Math.abs(toFile - fromFile);
-        
+
         // Pawn can only move forward
         if (rankDiff * direction <= 0) {
-            console.log('Invalid: Pawn cannot move backward or stay in place');
             return false;
         }
-        
-        // Pawn can only move 1 rank at a time (except for double move from starting position)
+
+        // Pawn can only move 1-2 ranks
         if (Math.abs(rankDiff) > 2) {
-            console.log('Invalid: Pawn cannot move more than 2 ranks');
             return false;
         }
-        
+
         // If moving 2 ranks, must be from starting position
         if (Math.abs(rankDiff) === 2) {
             const startingRank = color === 'w' ? 2 : 7;
             if (fromRank !== startingRank) {
-                console.log(`Invalid: Pawn cannot move 2 ranks from rank ${fromRank}`);
                 return false;
             }
         }
-        
-        // Pawn can only move to adjacent files (diagonal capture) or same file (forward move)
+
+        // Pawn can only move to adjacent files or same file
         if (fileDiff > 1) {
-            console.log('Invalid: Pawn cannot move more than 1 file');
             return false;
         }
-        
-        console.log('Pawn move validation passed');
+
         return true;
     }
 
@@ -4863,24 +5393,17 @@ class MoveService {
      * @private
      */
     _showPromotionInColumn(targetSquare, piece, squares, onPromotionSelect, onPromotionCancel) {
-        console.log('Setting up promotion for', targetSquare.id, 'piece color:', piece.color);
-        
         // Set up promotion choices starting from border row
         PROMOTION_PIECES.forEach((pieceType, index) => {
             const choiceSquare = this._findPromotionSquare(targetSquare, index, squares);
-            
+
             if (choiceSquare) {
                 const pieceId = pieceType + piece.color;
                 const piecePath = this._getPiecePathForPromotion(pieceId);
-                
-                console.log('Setting up promotion choice:', pieceType, 'on square:', choiceSquare.id);
-                
+
                 choiceSquare.putPromotion(piecePath, () => {
-                    console.log('Promotion choice selected:', pieceType);
                     onPromotionSelect(pieceType);
                 });
-            } else {
-                console.log('Could not find square for promotion choice:', pieceType, 'index:', index);
             }
         });
         
@@ -4907,40 +5430,28 @@ class MoveService {
     _findPromotionSquare(targetSquare, index, squares) {
         const col = targetSquare.col;
         const baseRow = targetSquare.row;
-        
-        console.log('Looking for promotion square - target:', targetSquare.id, 'index:', index, 'col:', col, 'baseRow:', baseRow);
-        
+
         // Calculate row based on index and promotion direction
-        // Start from the border row (1 or 8) and go inward
         let row;
         if (baseRow === 8) {
-            // White promotion: start from row 8 and go down
             row = 8 - index;
         } else if (baseRow === 1) {
-            // Black promotion: start from row 1 and go up
             row = 1 + index;
         } else {
-            console.log('Invalid promotion row:', baseRow);
             return null;
         }
-        
-        console.log('Calculated row:', row);
-        
-        // Ensure row is within bounds
+
         if (row < 1 || row > 8) {
-            console.log('Row out of bounds:', row);
             return null;
         }
-        
+
         // Find square by row/col
         for (const square of Object.values(squares)) {
             if (square.col === col && square.row === row) {
-                console.log('Found promotion square:', square.id);
                 return square;
             }
         }
-        
-        console.log('No square found for col:', col, 'row:', row);
+
         return null;
     }
 
@@ -5191,14 +5702,14 @@ class PieceService {
     }
 
     /**
-     * Removes a piece from a square with optional fade-out animation
+     * Removes a piece from a square with configurable capture animation
      * @param {Square} square - Source square
-     * @param {boolean} [fade=true] - Whether to fade out the piece
+     * @param {boolean} [animate=true] - Whether to animate the removal
      * @param {Function} [callback] - Callback when animation completes
      * @returns {Piece} The removed piece
      * @throws {PieceError} When square has no piece to remove
      */
-    removePieceFromSquare(square, fade = true, callback) {
+    removePieceFromSquare(square, animate = true, callback) {
         console.debug(`[PieceService] removePieceFromSquare: ${square.id}`);
         square.check();
 
@@ -5208,18 +5719,20 @@ class PieceService {
             throw new PieceError(ERROR_MESSAGES.square_no_piece, null, square.getId());
         }
 
-        if (fade && this.config.fadeTime > 0) {
-            piece.fadeOut(
-                this.config.fadeTime,
-                this.config.fadeAnimation,
-                this._getTransitionTimingFunction(),
-                callback
-            );
+        const captureStyle = this.config.captureStyle || 'fade';
+        const duration = this.config.captureTime || this.config.fadeTime || 200;
+
+        if (animate && duration > 0) {
+            // Apply capture animation based on style
+            piece.captureAnimate(captureStyle, duration, () => {
+                square.removePiece();
+                if (callback) callback();
+            });
         } else {
+            square.removePiece();
             if (callback) callback();
         }
 
-        square.removePiece();
         return piece;
     }
 
@@ -5238,12 +5751,22 @@ class PieceService {
             return;
         }
 
+        // Build movement options from config
+        const moveOptions = {
+            style: this.config.moveStyle || 'slide',
+            easing: this.config.moveEasing || this.config.moveAnimation || 'ease',
+            arcHeight: this.config.moveArcHeight || 0.3,
+            landingEffect: this.config.landingEffect || 'none',
+            landingDuration: this.config.landingDuration || 150
+        };
+
         piece.translate(
             targetSquare,
             duration,
             this._getTransitionTimingFunction(),
             this.config.moveAnimation,
-            callback
+            callback,
+            moveOptions
         );
     }
 
@@ -7760,6 +8283,11 @@ let Chessboard$1 = class Chessboard {
         this._buildSquares();
         this._addListeners();
         this._updateBoardPieces(true, true); // Initial position load
+
+        // Apply flipped class if initial orientation is black
+        if (this.coordinateService.getOrientation() === 'b' && this.boardService.element) {
+            this.boardService.element.classList.add('flipped');
+        }
     }
 
     /**
@@ -7788,9 +8316,7 @@ let Chessboard$1 = class Chessboard {
      * Best practice: always remove squares (destroy JS/DOM) before clearing the board container.
      */
     _buildBoard() {
-        console.log('CHIAMATO: _buildBoard');
         if (this._isUndoRedo) {
-            console.log('SKIP _buildBoard per undo/redo');
             return;
         }
         // Forza la pulizia completa del contenitore board (DOM)
@@ -7810,9 +8336,7 @@ let Chessboard$1 = class Chessboard {
      * @private
      */
     _buildSquares() {
-        console.log('CHIAMATO: _buildSquares');
         if (this._isUndoRedo) {
-            console.log('SKIP _buildSquares per undo/redo');
             return;
         }
         if (this.boardService && this.boardService.removeSquares) {
@@ -8025,6 +8549,14 @@ let Chessboard$1 = class Chessboard {
         const isEnPassant = this.moveService.isEnPassant(gameMove);
 
         if (animate && move.from.piece) {
+            // For simultaneous castle, start rook animation alongside the king
+            const isSimultaneousCastle = isCastle && this.config.animationStyle === 'simultaneous';
+            if (isSimultaneousCastle) {
+                setTimeout(() => {
+                    this._handleCastleMove(gameMove, true);
+                }, this.config.simultaneousAnimationDelay);
+            }
+
             this.pieceService.translatePiece(
                 move,
                 !!move.to.piece, // was there a capture?
@@ -8032,24 +8564,22 @@ let Chessboard$1 = class Chessboard {
                 this._createDragFunction.bind(this),
                 () => {
                     // After the main piece animation completes...
-                    if (isCastle) {
+                    // For sequential castle, animate rook AFTER king finishes
+                    // For simultaneous, rook was already animated above - don't animate again
+                    if (isCastle && !isSimultaneousCastle) {
                         this._handleSpecialMoveAnimation(gameMove);
                     } else if (isEnPassant) {
                         this._handleSpecialMoveAnimation(gameMove);
                     }
                     // Notify user that the move is fully complete
                     this.config.onMoveEnd(gameMove);
-                    // A final sync to ensure board is perfect
-                    this._updateBoardPieces(false);
+                    // For simultaneous castle, the rook callback will handle the final sync
+                    // to avoid interfering with the ongoing rook animation
+                    if (!isSimultaneousCastle) {
+                        this._updateBoardPieces(false);
+                    }
                 }
             );
-
-            // For simultaneous castle, animate the rook alongside the king
-            if (isCastle && this.config.animationStyle === 'simultaneous') {
-                setTimeout(() => {
-                    this._handleCastleMove(gameMove, true);
-                }, this.config.simultaneousAnimationDelay);
-            }
         } else {
             // If not animating, handle special moves immediately and update the board
             if (isCastle) {
@@ -8102,11 +8632,8 @@ let Chessboard$1 = class Chessboard {
         const rookToSquare = this.boardService.getSquare(rookMove.to);
 
         if (!rookFromSquare || !rookToSquare || !rookFromSquare.piece) {
-            console.warn('Castle rook move failed - squares or piece not found');
             return;
         }
-
-        console.log(`Castle: moving rook from ${rookMove.from} to ${rookMove.to}`);
 
         if (animate) {
             // Always use translatePiece for smooth sliding animation
@@ -8139,11 +8666,8 @@ let Chessboard$1 = class Chessboard {
 
         const capturedSquareObj = this.boardService.getSquare(capturedSquare);
         if (!capturedSquareObj || !capturedSquareObj.piece) {
-            console.warn('En passant captured square not found or empty');
             return;
         }
-
-        console.log(`En passant: removing captured pawn from ${capturedSquare}`);
 
         if (animate) {
             // Animate the captured pawn removal
@@ -8165,10 +8689,8 @@ let Chessboard$1 = class Chessboard {
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load
      */
     _updateBoardPieces(animation = false, isPositionLoad = false) {
-        console.log('CHIAMATO: _updateBoardPieces', { animation, isPositionLoad, isUndoRedo: this._isUndoRedo });
         // Check if services are available
         if (!this.positionService || !this.moveService || !this.eventService) {
-            console.log('Cannot update board pieces - services not available');
             return;
         }
 
@@ -8233,31 +8755,21 @@ let Chessboard$1 = class Chessboard {
     _doUpdateBoardPieces(animation = false, isPositionLoad = false) {
         // Skip update if we're in the middle of a promotion
         if (this._isPromoting) {
-            console.log('Skipping board update during promotion');
             return;
         }
 
         // Check if services are available
         if (!this.positionService || !this.positionService.getGame()) {
-            console.log('Cannot update board pieces - position service not available');
             return;
         }
 
         const squares = this.boardService.getAllSquares();
         const gameStateBefore = this.positionService.getGame().fen();
-
-        console.log('_doUpdateBoardPieces - current FEN:', gameStateBefore);
-        console.log('_doUpdateBoardPieces - animation:', animation, 'style:', this.config.animationStyle, 'isPositionLoad:', isPositionLoad);
-
-        // Determine which animation style to use
         const useSimultaneous = this.config.animationStyle === 'simultaneous';
-        console.log('_doUpdateBoardPieces - useSimultaneous:', useSimultaneous);
 
         if (useSimultaneous) {
-            console.log('Using simultaneous animation');
             this._doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad);
         } else {
-            console.log('Using sequential animation');
             this._doSequentialUpdate(squares, gameStateBefore, animation);
         }
     }
@@ -8480,10 +8992,6 @@ let Chessboard$1 = class Chessboard {
             }
         });
 
-        console.log('Position Analysis:');
-        console.log('Current pieces:', Array.from(currentPieces.entries()));
-        console.log('Expected pieces:', Array.from(expectedPieces.entries()));
-
         // Identify different types of changes
         const moves = []; // Pieces that can slide to new positions
         const removes = []; // Pieces that need to be removed
@@ -8497,8 +9005,6 @@ let Chessboard$1 = class Chessboard {
             const expectedPieceId = expectedPieces.get(square);
 
             if (currentPieceId === expectedPieceId) {
-                // Same piece type on same square - no movement needed
-                console.log(`UNCHANGED: ${currentPieceId} stays on ${square}`);
                 unchanged.push({
                     piece: currentPieceId,
                     square: square
@@ -8520,7 +9026,6 @@ let Chessboard$1 = class Chessboard {
 
             if (availableDestination) {
                 const [toSquare, expectedId] = availableDestination;
-                console.log(`MOVE: ${currentPieceId} from ${fromSquare} to ${toSquare}`);
                 moves.push({
                     piece: currentPieceId,
                     from: fromSquare,
@@ -8530,8 +9035,6 @@ let Chessboard$1 = class Chessboard {
                 });
                 processedSquares.add(toSquare);
             } else {
-                // This piece needs to be removed
-                console.log(`REMOVE: ${currentPieceId} from ${fromSquare}`);
                 removes.push({
                     piece: currentPieceId,
                     square: fromSquare,
@@ -8543,7 +9046,6 @@ let Chessboard$1 = class Chessboard {
         // Third pass: handle pieces that need to be added
         expectedPieces.forEach((expectedPieceId, toSquare) => {
             if (!processedSquares.has(toSquare)) {
-                console.log(`ADD: ${expectedPieceId} to ${toSquare}`);
                 adds.push({
                     piece: expectedPieceId,
                     square: toSquare,
@@ -8569,26 +9071,13 @@ let Chessboard$1 = class Chessboard {
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load
      */
     _executeSimultaneousChanges(changeAnalysis, gameStateBefore, isPositionLoad = false) {
-        const { moves, removes, adds, unchanged } = changeAnalysis;
-
-        console.log(`Position changes analysis:`, {
-            moves: moves.length,
-            removes: removes.length,
-            adds: adds.length,
-            unchanged: unchanged.length
-        });
-
-        // Log unchanged pieces for debugging
-        if (unchanged.length > 0) {
-            console.log('Pieces staying in place:', unchanged.map(u => `${u.piece} on ${u.square}`));
-        }
+        const { moves, removes, adds } = changeAnalysis;
 
         let animationsCompleted = 0;
         const totalAnimations = moves.length + removes.length + adds.length;
 
         // If no animations are needed, complete immediately
         if (totalAnimations === 0) {
-            console.log('No animations needed, completing immediately');
             this._addListeners();
 
             // Trigger change event if position changed
@@ -8601,9 +9090,7 @@ let Chessboard$1 = class Chessboard {
 
         const onAnimationComplete = () => {
             animationsCompleted++;
-            console.log(`Animation completed: ${animationsCompleted}/${totalAnimations}`);
             if (animationsCompleted === totalAnimations) {
-                console.log('All simultaneous animations completed');
                 this._addListeners();
 
                 // Trigger change event if position changed
@@ -8614,45 +9101,33 @@ let Chessboard$1 = class Chessboard {
             }
         };
 
-        // Determine delay: 0 for position loads, configured delay for normal moves
         const animationDelay = isPositionLoad ? 0 : this.config.simultaneousAnimationDelay;
-        console.log(`Using animation delay: ${animationDelay}ms (position load: ${isPositionLoad})`);
-
         let animationIndex = 0;
 
-        // Process moves (pieces sliding to new positions)
+        // Process moves
         moves.forEach(move => {
             const delay = animationIndex * animationDelay;
-            console.log(`Scheduling move ${move.piece} from ${move.from} to ${move.to} with delay ${delay}ms`);
-
             setTimeout(() => {
                 this._animatePieceMove(move, onAnimationComplete);
             }, delay);
-
             animationIndex++;
         });
 
-        // Process removes (pieces disappearing)
+        // Process removes
         removes.forEach(remove => {
             const delay = animationIndex * animationDelay;
-            console.log(`Scheduling removal of ${remove.piece} from ${remove.square} with delay ${delay}ms`);
-
             setTimeout(() => {
                 this._animatePieceRemoval(remove, onAnimationComplete);
             }, delay);
-
             animationIndex++;
         });
 
-        // Process adds (pieces appearing)
+        // Process adds
         adds.forEach(add => {
             const delay = animationIndex * animationDelay;
-            console.log(`Scheduling addition of ${add.piece} to ${add.square} with delay ${delay}ms`);
-
             setTimeout(() => {
                 this._animatePieceAddition(add, onAnimationComplete);
             }, delay);
-
             animationIndex++;
         });
     }
@@ -8668,23 +9143,16 @@ let Chessboard$1 = class Chessboard {
         const piece = fromSquare.piece;
 
         if (!piece) {
-            console.warn(`No piece found on ${move.from} for move animation`);
             onComplete();
             return;
         }
 
-        console.log(`Animating piece move: ${move.piece} from ${move.from} to ${move.to}`);
-
-        // Use translatePiece for smooth sliding animation
         this.pieceService.translatePiece(
             { from: fromSquare, to: toSquare, piece: piece },
-            false, // Assume no capture for now
-            true, // Always animate
+            false,
+            true,
             this._createDragFunction.bind(this),
-            () => {
-                console.log(`Piece move animation completed: ${move.piece} to ${move.to}`);
-                onComplete();
-            }
+            onComplete
         );
     }
 
@@ -8695,12 +9163,7 @@ let Chessboard$1 = class Chessboard {
      * @param {Function} onComplete - Callback when animation completes
      */
     _animatePieceRemoval(remove, onComplete) {
-        console.log(`Animating piece removal: ${remove.piece} from ${remove.square}`);
-
-        this.pieceService.removePieceFromSquare(remove.squareObj, true, () => {
-            console.log(`Piece removal animation completed: ${remove.piece} from ${remove.square}`);
-            onComplete();
-        });
+        this.pieceService.removePieceFromSquare(remove.squareObj, true, onComplete);
     }
 
     /**
@@ -8710,18 +9173,13 @@ let Chessboard$1 = class Chessboard {
      * @param {Function} onComplete - Callback when animation completes
      */
     _animatePieceAddition(add, onComplete) {
-        console.log(`Animating piece addition: ${add.piece} to ${add.square}`);
-
         const newPiece = this.pieceService.convertPiece(add.piece);
         this.pieceService.addPieceOnSquare(
             add.squareObj,
             newPiece,
             true,
             this._createDragFunction.bind(this),
-            () => {
-                console.log(`Piece addition animation completed: ${add.piece} to ${add.square}`);
-                onComplete();
-            }
+            onComplete
         );
     }
 
@@ -8821,7 +9279,7 @@ let Chessboard$1 = class Chessboard {
         const animate = opts.animate !== undefined ? opts.animate : true;
         // Use the default starting position from config or fallback
         const startPosition = this.config && this.config.position ? this.config.position : 'start';
-        this._updateBoardPieces(animate);
+        // setPosition already calls _updateBoardPieces, don't call it twice
         return this.setPosition(startPosition, { animate });
     }
     /**
@@ -8836,10 +9294,26 @@ let Chessboard$1 = class Chessboard {
             return false;
         }
         if (this._clearVisualState) this._clearVisualState();
+
+        // Clear the game state
         this.positionService.getGame().clear();
-        if (this._updateBoardPieces) {
-            this._updateBoardPieces(animate, true);
+
+        // Force remove all pieces from all squares (both DOM and state)
+        if (this.boardService && this.boardService.squares) {
+            Object.values(this.boardService.squares).forEach(square => {
+                if (square && square.piece) {
+                    if (animate && this.pieceService) {
+                        this.pieceService.removePieceFromSquare(square, true);
+                    } else {
+                        square.forceRemoveAllPieces();
+                    }
+                }
+            });
         }
+
+        // Trigger onChange callback to update UI
+        this._updateBoardPieces(animate);
+
         return true;
     }
 
@@ -8877,6 +9351,32 @@ let Chessboard$1 = class Chessboard {
         return false;
     }
     /**
+     * Move a piece from one square to another
+     * @param {string} moveStr - Move in format 'e2e4' or 'e7e8q' (with promotion)
+     * @param {Object} [opts]
+     * @param {boolean} [opts.animate=true]
+     * @returns {Object|boolean} Move result or false if invalid
+     */
+    movePiece(moveStr, opts = {}) {
+        const animate = opts.animate !== false;
+        if (typeof moveStr !== 'string' || moveStr.length < 4) {
+            return false;
+        }
+        const from = moveStr.slice(0, 2);
+        const to = moveStr.slice(2, 4);
+        const promotion = moveStr.length > 4 ? moveStr[4].toLowerCase() : undefined;
+
+        const moveObj = { from, to };
+        if (promotion) moveObj.promotion = promotion;
+
+        const result = this.positionService.getGame().move(moveObj);
+        if (result) {
+            this._updateBoardPieces(animate);
+        }
+        return result || false;
+    }
+
+    /**
      * Get legal moves for a square
      * @param {string} square
      * @returns {Array}
@@ -8890,10 +9390,10 @@ let Chessboard$1 = class Chessboard {
      * @returns {string|null}
      */
     getPiece(square) {
-        // Restituisce sempre 'wq' (colore prima, tipo dopo, lowercase) o null
-        const sq = this.boardService.getSquare(square);
-        if (!sq) return null;
-        const piece = sq.piece;
+        // Use game state as source of truth
+        // Returns piece in format 'wq' (color + type)
+        if (!this.positionService || !this.positionService.getGame()) return null;
+        const piece = this.positionService.getGame().get(square);
         if (!piece) return null;
         return (piece.color + piece.type).toLowerCase();
     }
@@ -8954,45 +9454,289 @@ let Chessboard$1 = class Chessboard {
         if (!this.validationService.isValidSquare(square)) {
             throw new Error(`[removePiece] Invalid square: ${square}`);
         }
-        const squareObj = this.boardService.getSquare(square);
-        if (!squareObj) return true;
-        if (!squareObj.piece) return true;
-        squareObj.piece = null;
+        if (!this.positionService || !this.positionService.getGame()) {
+            return false;
+        }
         const game = this.positionService.getGame();
-        game.remove(square);
+        // Remove from game state first (source of truth)
+        const removed = game.remove(square);
+        // Then update the board visually
+        const squareObj = this.boardService.getSquare(square);
+        if (squareObj) {
+            squareObj.piece = null;
+        }
         this._updateBoardPieces(animate);
-        return true;
+        return removed !== null;
     }
 
     // --- BOARD CONTROL ---
     /**
      * Flip the board orientation
      * @param {Object} [opts]
-     * @param {boolean} [opts.animate=true]
+     * @param {boolean} [opts.animate=true] - Enable animation (for 'animate' mode)
+     * @param {string} [opts.mode] - Override flip mode ('visual', 'animate', 'none')
      */
     flipBoard(opts = {}) {
+        const flipMode = opts.mode || this.config.flipMode || 'visual';
+
+        // Update internal orientation state
         if (this.coordinateService && this.coordinateService.flipOrientation) {
             this.coordinateService.flipOrientation();
         }
-        if (this._buildBoard) this._buildBoard();
-        if (this._buildSquares) this._buildSquares();
-        if (this._addListeners) this._addListeners();
-        if (this._updateBoardPieces) this._updateBoardPieces(opts.animate !== false);
-        console.log('FEN dopo flip:', this.fen(), 'Orientamento:', this.coordinateService.getOrientation());
+
+        const boardElement = this.boardService.element;
+        const isFlipped = this.coordinateService.getOrientation() === 'b';
+
+        switch (flipMode) {
+            case 'visual':
+                // CSS flexbox flip - instant, no piece animation needed
+                this._flipVisual(boardElement, isFlipped);
+                break;
+
+            case 'animate':
+                // Animate pieces to mirrored positions
+                this._flipAnimate(opts.animate !== false);
+                break;
+
+            case 'none':
+                // No visual change - only internal orientation updated
+                // Useful for programmatic orientation without visual feedback
+                break;
+
+            default:
+                this._flipVisual(boardElement, isFlipped);
+        }
     }
+
+    /**
+     * Visual flip using CSS flexbox (instant)
+     * @private
+     * @param {HTMLElement} boardElement - Board DOM element
+     * @param {boolean} isFlipped - Whether board should be flipped
+     */
+    _flipVisual(boardElement, isFlipped) {
+        if (!boardElement) return;
+
+        if (isFlipped) {
+            boardElement.classList.add('flipped');
+        } else {
+            boardElement.classList.remove('flipped');
+        }
+    }
+
+    /**
+     * Animate flip - moves pieces to mirrored positions with animation
+     * @private
+     * @param {boolean} animate - Whether to animate the movement
+     */
+    _flipAnimate(animate) {
+        // Get current position as object (not FEN)
+        const position = this.positionService.getPosition();
+        const mirroredPosition = {};
+
+        // Mirror each piece position
+        for (const [square, piece] of Object.entries(position)) {
+            const file = square[0];
+            const rank = parseInt(square[1]);
+            // Mirror: a1 <-> a8, e2 <-> e7, etc.
+            const mirroredRank = 9 - rank;
+            const mirroredSquare = file + mirroredRank;
+            mirroredPosition[mirroredSquare] = piece;
+        }
+
+        // Set the new position with animation
+        this.setPosition(mirroredPosition, { animate });
+    }
+
+    /**
+     * Set the flip mode at runtime
+     * @param {'visual'|'animate'|'none'} mode - The flip mode to use
+     */
+    setFlipMode(mode) {
+        const validModes = ['visual', 'animate', 'none'];
+        if (!validModes.includes(mode)) {
+            console.warn(`Invalid flip mode: ${mode}. Valid options: ${validModes.join(', ')}`);
+            return;
+        }
+        this.config.flipMode = mode;
+    }
+
+    /**
+     * Get the current flip mode
+     * @returns {string} Current flip mode
+     */
+    getFlipMode() {
+        return this.config.flipMode || 'visual';
+    }
+
+    // --- MOVEMENT CONFIGURATION ---
+
+    /**
+     * Set the movement style
+     * @param {'slide'|'arc'|'hop'|'teleport'|'fade'} style - Movement style
+     */
+    setMoveStyle(style) {
+        const validStyles = ['slide', 'arc', 'hop', 'teleport', 'fade'];
+        if (!validStyles.includes(style)) {
+            console.warn(`Invalid move style: ${style}. Valid: ${validStyles.join(', ')}`);
+            return;
+        }
+        this.config.moveStyle = style;
+    }
+
+    /**
+     * Get the current movement style
+     * @returns {string} Current movement style
+     */
+    getMoveStyle() {
+        return this.config.moveStyle || 'slide';
+    }
+
+    /**
+     * Set the capture animation style
+     * @param {'fade'|'shrink'|'instant'|'explode'} style - Capture style
+     */
+    setCaptureStyle(style) {
+        const validStyles = ['fade', 'shrink', 'instant', 'explode'];
+        if (!validStyles.includes(style)) {
+            console.warn(`Invalid capture style: ${style}. Valid: ${validStyles.join(', ')}`);
+            return;
+        }
+        this.config.captureStyle = style;
+    }
+
+    /**
+     * Get the current capture style
+     * @returns {string} Current capture style
+     */
+    getCaptureStyle() {
+        return this.config.captureStyle || 'fade';
+    }
+
+    /**
+     * Set the landing effect
+     * @param {'none'|'bounce'|'pulse'|'settle'} effect - Landing effect
+     */
+    setLandingEffect(effect) {
+        const validEffects = ['none', 'bounce', 'pulse', 'settle'];
+        if (!validEffects.includes(effect)) {
+            console.warn(`Invalid landing effect: ${effect}. Valid: ${validEffects.join(', ')}`);
+            return;
+        }
+        this.config.landingEffect = effect;
+    }
+
+    /**
+     * Get the current landing effect
+     * @returns {string} Current landing effect
+     */
+    getLandingEffect() {
+        return this.config.landingEffect || 'none';
+    }
+
+    /**
+     * Set the movement duration
+     * @param {number|string} duration - Duration in ms or preset name ('instant', 'veryFast', 'fast', 'normal', 'slow', 'verySlow')
+     */
+    setMoveTime(duration) {
+        const presets = { instant: 0, veryFast: 100, fast: 200, normal: 400, slow: 600, verySlow: 1000 };
+        if (typeof duration === 'string' && presets[duration] !== undefined) {
+            this.config.moveTime = presets[duration];
+        } else if (typeof duration === 'number' && duration >= 0) {
+            this.config.moveTime = duration;
+        } else {
+            console.warn(`Invalid move time: ${duration}`);
+        }
+    }
+
+    /**
+     * Get the current movement duration
+     * @returns {number} Duration in ms
+     */
+    getMoveTime() {
+        return this.config.moveTime;
+    }
+
+    /**
+     * Set the easing function for movements
+     * @param {string} easing - CSS easing function
+     */
+    setMoveEasing(easing) {
+        const validEasings = ['ease', 'linear', 'ease-in', 'ease-out', 'ease-in-out'];
+        if (!validEasings.includes(easing)) {
+            console.warn(`Invalid easing: ${easing}. Valid: ${validEasings.join(', ')}`);
+            return;
+        }
+        this.config.moveEasing = easing;
+    }
+
+    /**
+     * Configure multiple movement settings at once
+     * @param {Object} options - Movement configuration
+     * @param {string} [options.style] - Movement style
+     * @param {string} [options.captureStyle] - Capture animation style
+     * @param {string} [options.landingEffect] - Landing effect
+     * @param {number|string} [options.duration] - Movement duration
+     * @param {string} [options.easing] - Easing function
+     * @param {number} [options.arcHeight] - Arc height for arc/hop styles (0-1)
+     */
+    configureMovement(options) {
+        if (options.style) this.setMoveStyle(options.style);
+        if (options.captureStyle) this.setCaptureStyle(options.captureStyle);
+        if (options.landingEffect) this.setLandingEffect(options.landingEffect);
+        if (options.duration !== undefined) this.setMoveTime(options.duration);
+        if (options.easing) this.setMoveEasing(options.easing);
+        if (options.arcHeight !== undefined) {
+            this.config.moveArcHeight = Math.max(0, Math.min(1, options.arcHeight));
+        }
+    }
+
+    /**
+     * Get all movement configuration
+     * @returns {Object} Current movement configuration
+     */
+    getMovementConfig() {
+        return {
+            style: this.config.moveStyle || 'slide',
+            captureStyle: this.config.captureStyle || 'fade',
+            landingEffect: this.config.landingEffect || 'none',
+            duration: this.config.moveTime,
+            easing: this.config.moveEasing || 'ease',
+            arcHeight: this.config.moveArcHeight || 0.3
+        };
+    }
+
     /**
      * Set the board orientation
      * @param {'w'|'b'} color
      * @param {Object} [opts]
-     * @param {boolean} [opts.animate=true]
+     * @param {boolean} [opts.animate=true] - Enable animation (for 'animate' mode)
+     * @param {string} [opts.mode] - Override flip mode ('visual', 'animate', 'none')
      */
     setOrientation(color, opts = {}) {
         if (this.validationService.isValidOrientation(color)) {
-            this.coordinateService.setOrientation(color);
-            if (this._buildBoard) this._buildBoard();
-            if (this._buildSquares) this._buildSquares();
-            if (this._addListeners) this._addListeners();
-            if (this._updateBoardPieces) this._updateBoardPieces(opts.animate !== false);
+            const currentOrientation = this.coordinateService.getOrientation();
+            if (currentOrientation !== color) {
+                this.coordinateService.setOrientation(color);
+
+                const flipMode = opts.mode || this.config.flipMode || 'visual';
+                const boardElement = this.boardService.element;
+                const isFlipped = color === 'b';
+
+                switch (flipMode) {
+                    case 'visual':
+                        this._flipVisual(boardElement, isFlipped);
+                        break;
+                    case 'animate':
+                        this._flipAnimate(opts.animate !== false);
+                        break;
+                    case 'none':
+                        // No visual change
+                        break;
+                    default:
+                        this._flipVisual(boardElement, isFlipped);
+                }
+            }
         }
         return this.coordinateService.getOrientation();
     }
@@ -9110,7 +9854,32 @@ let Chessboard$1 = class Chessboard {
     /**
      * Destroy the board and cleanup
      */
-    destroy() { /* TODO: robust destroy logic */ }
+    destroy() {
+        // Remove all event listeners
+        if (this.eventService) {
+            this.eventService.removeAllListeners();
+            this.eventService.destroy();
+        }
+
+        // Clear all timeouts
+        if (this._updateTimeout) {
+            clearTimeout(this._updateTimeout);
+            this._updateTimeout = null;
+        }
+
+        // Destroy services
+        if (this.moveService) this.moveService.destroy();
+        if (this.animationService && this.animationService.destroy) this.animationService.destroy();
+        if (this.pieceService && this.pieceService.destroy) this.pieceService.destroy();
+        if (this.boardService && this.boardService.destroy) this.boardService.destroy();
+        if (this.positionService && this.positionService.destroy) this.positionService.destroy();
+        if (this.coordinateService && this.coordinateService.destroy) this.coordinateService.destroy();
+        if (this.validationService) this.validationService.destroy();
+        if (this.config && this.config.destroy) this.config.destroy();
+
+        // Clear references
+        this._cleanup();
+    }
     /**
      * Rebuild the board
      */
@@ -9126,7 +9895,11 @@ let Chessboard$1 = class Chessboard {
      * Set new config
      * @param {Object} newConfig
      */
-    setConfig(newConfig) { this.setConfig(newConfig); }
+    setConfig(newConfig) {
+        if (this.config && typeof this.config.update === 'function') {
+            this.config.update(newConfig);
+        }
+    }
 
     // --- ALIASES/DEPRECATED ---
     /**
@@ -9161,17 +9934,10 @@ let Chessboard$1 = class Chessboard {
     }
 
     /**
-     * Gets the current position as an object
-     * @returns {Object} Position object
-     */
-    position() {
-        return this.positionService.getPosition();
-    }
-
-    /**
-     * Sets a new position
-     * @param {string|Object} position - New position
-     * @param {boolean} [animate=true] - Whether to animate
+     * Gets or sets the current position
+     * @param {string|Object} [position] - Position to set (FEN or object). If omitted, returns current position.
+     * @param {boolean} [animate=true] - Whether to animate when setting
+     * @returns {Object} Current position object (when getting)
      */
     position(position, animate = true) {
         if (position === undefined) {
@@ -9434,10 +10200,7 @@ let Chessboard$1 = class Chessboard {
     // Ensure all public API methods from README are present and routed
     insert(square, piece) { return this.putPiece(piece, square); }
     get(square) { return this.getPiece(square); }
-    position(position, color) {
-        if (color) this.setOrientation(color);
-        return this.setPosition(position);
-    }
+    // Note: position() is defined above at line ~1684 with getter/setter functionality
     flip(animation = true) { return this.flipBoard({ animate: animation }); }
     build() { return this._initialize(); }
     resize(value) { return this.resizeBoard(value); }

@@ -220,7 +220,7 @@ class Square {
     }
 
     getColor() {
-        return this.piece.getColor();
+        return this.piece ? this.piece.getColor() : null;
     }
 
     check() {

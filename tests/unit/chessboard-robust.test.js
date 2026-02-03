@@ -97,7 +97,7 @@ describe('Chessboard Robustness & Edge Cases', () => {
             chessboard.redoMove();
             chessboard.forceSync();
             await new Promise(r => setTimeout(r, 10));
-            expect(chessboard.getPiece('e5')).toBe('pb');
+            expect(chessboard.getPiece('e5')).toBe('bp');
         });
         test('undo/redo after clear', () => {
             chessboard.movePiece('e2e4');
@@ -130,12 +130,12 @@ describe('Chessboard Robustness & Edge Cases', () => {
         test('alias get', async () => {
             chessboard.forceSync();
             await new Promise(r => setTimeout(r, 10));
-            expect(chessboard.get('e2')).toBe('pw');
+            expect(chessboard.get('e2')).toBe('wp');
         });
         test('alias piece', async () => {
             chessboard.forceSync();
             await new Promise(r => setTimeout(r, 10));
-            expect(chessboard.piece('e2')).toBe('pw');
+            expect(chessboard.piece('e2')).toBe('wp');
         });
     });
 

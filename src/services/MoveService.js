@@ -178,25 +178,11 @@ export class MoveService {
             to: move.to.id
         };
         
-        console.log('executeMove - move.promotion:', move.promotion);
-        console.log('executeMove - move.hasPromotion():', move.hasPromotion());
-        
         if (move.hasPromotion()) {
             moveOptions.promotion = move.promotion;
         }
-        
-        console.log('executeMove - moveOptions:', moveOptions);
-        
-        const result = game.move(moveOptions);
-        console.log('executeMove - result:', result);
-        
-        // Check what's actually on the board after the move
-        if (result) {
-            const pieceOnDestination = game.get(move.to.id);
-            console.log('executeMove - piece on destination after move:', pieceOnDestination);
-        }
-        
-        return result;
+
+        return game.move(moveOptions);
     }
 
     /**
@@ -206,27 +192,19 @@ export class MoveService {
      */
     requiresPromotion(move) {
         const moveKey = `${move.from.id}->${move.to.id}`;
-        console.log('Checking if move requires promotion:', moveKey);
-        
-        // Get detailed stack trace
-        const stack = new Error().stack.split('\n');
-        console.log('Call stack:', stack[1]);
-        console.log('Caller:', stack[2]);
-        console.log('Caller 2:', stack[3]);
-        console.log('Caller 3:', stack[4]);
-        
-        // Track recently processed moves to prevent processing the same move multiple times
+
+        // Track recently processed moves - return cached result for duplicates
         const now = Date.now();
-        if (this._recentMoves.has(moveKey)) {
-            console.log('Move recently processed, skipping duplicate check');
-            return false; // Conservative: assume no promotion needed for duplicates
+        if (this._recentMoves.has(moveKey) &&
+            this._lastPromotionCheck === moveKey &&
+            this._lastPromotionResult !== null) {
+            return this._lastPromotionResult;
         }
-        
+
         // Debounce identical promotion checks within 100ms
-        if (this._lastPromotionCheck === moveKey && 
+        if (this._lastPromotionCheck === moveKey &&
             this._lastPromotionResult !== null &&
             now - this._lastPromotionTime < 100) {
-            console.log('Using cached promotion result:', this._lastPromotionResult);
             return this._lastPromotionResult;
         }
         
@@ -267,53 +245,41 @@ export class MoveService {
      */
     _doRequiresPromotion(move) {
         if (!this.config.onlyLegalMoves) {
-            console.log('Not in legal moves mode, no promotion required');
             return false;
         }
-        
+
         const game = this.positionService.getGame();
         if (!game) {
-            console.log('No game instance available');
             return false;
         }
-        
+
         const piece = game.get(move.from.id);
         if (!piece || piece.type !== 'p') {
-            console.log('Not a pawn move, no promotion required');
             return false;
         }
-        
+
         const targetRank = move.to.row;
         if (targetRank !== 1 && targetRank !== 8) {
-            console.log('Not reaching promotion rank, no promotion required');
             return false;
         }
-        
-        console.log('Pawn reaching promotion rank - promotion required');
-        
-        // Additional validation: check if the pawn can actually reach this square
+
+        // Validate pawn move
         if (!this._isPawnMoveValid(move.from, move.to, piece.color)) {
-            console.log('Pawn move not valid, no promotion required');
             return false;
         }
-        
-        // If we get here, it's a pawn move to the promotion rank
-        // Check if it's a legal move by using the game's moves() method
+
+        // Check if it's a legal move
         const legalMoves = game.moves({ square: move.from.id, verbose: true });
         const matchingMove = legalMoves.find(m => m.to === move.to.id);
-        
+
         if (!matchingMove) {
-            console.log('Move not in legal moves list, no promotion required');
             return false;
         }
-        
-        // If the legal move has a promotion flag or is to a promotion rank, promotion is required
-        const requiresPromotion = matchingMove.flags.includes('p') || 
-                                (piece.color === 'w' && targetRank === 8) || 
-                                (piece.color === 'b' && targetRank === 1);
-        
-        console.log('Promotion required:', requiresPromotion);
-        return requiresPromotion;
+
+        // Promotion is required if move has promotion flag or reaches promotion rank
+        return matchingMove.flags.includes('p') ||
+               (piece.color === 'w' && targetRank === 8) ||
+               (piece.color === 'b' && targetRank === 1);
     }
 
     /**
@@ -329,43 +295,34 @@ export class MoveService {
         const toRank = to.row;
         const fromFile = from.col;
         const toFile = to.col;
-        
-        console.log(`Validating pawn move: ${from.id} -> ${to.id} (${color})`);
-        console.log(`Ranks: ${fromRank} -> ${toRank}, Files: ${fromFile} -> ${toFile}`);
-        
-        // Direction of pawn movement
+
         const direction = color === 'w' ? 1 : -1;
         const rankDiff = toRank - fromRank;
         const fileDiff = Math.abs(toFile - fromFile);
-        
+
         // Pawn can only move forward
         if (rankDiff * direction <= 0) {
-            console.log('Invalid: Pawn cannot move backward or stay in place');
             return false;
         }
-        
-        // Pawn can only move 1 rank at a time (except for double move from starting position)
+
+        // Pawn can only move 1-2 ranks
         if (Math.abs(rankDiff) > 2) {
-            console.log('Invalid: Pawn cannot move more than 2 ranks');
             return false;
         }
-        
+
         // If moving 2 ranks, must be from starting position
         if (Math.abs(rankDiff) === 2) {
             const startingRank = color === 'w' ? 2 : 7;
             if (fromRank !== startingRank) {
-                console.log(`Invalid: Pawn cannot move 2 ranks from rank ${fromRank}`);
                 return false;
             }
         }
-        
-        // Pawn can only move to adjacent files (diagonal capture) or same file (forward move)
+
+        // Pawn can only move to adjacent files or same file
         if (fileDiff > 1) {
-            console.log('Invalid: Pawn cannot move more than 1 file');
             return false;
         }
-        
-        console.log('Pawn move validation passed');
+
         return true;
     }
 
@@ -406,24 +363,17 @@ export class MoveService {
      * @private
      */
     _showPromotionInColumn(targetSquare, piece, squares, onPromotionSelect, onPromotionCancel) {
-        console.log('Setting up promotion for', targetSquare.id, 'piece color:', piece.color);
-        
         // Set up promotion choices starting from border row
         PROMOTION_PIECES.forEach((pieceType, index) => {
             const choiceSquare = this._findPromotionSquare(targetSquare, index, squares);
-            
+
             if (choiceSquare) {
                 const pieceId = pieceType + piece.color;
                 const piecePath = this._getPiecePathForPromotion(pieceId);
-                
-                console.log('Setting up promotion choice:', pieceType, 'on square:', choiceSquare.id);
-                
+
                 choiceSquare.putPromotion(piecePath, () => {
-                    console.log('Promotion choice selected:', pieceType);
                     onPromotionSelect(pieceType);
                 });
-            } else {
-                console.log('Could not find square for promotion choice:', pieceType, 'index:', index);
             }
         });
         
@@ -450,40 +400,28 @@ export class MoveService {
     _findPromotionSquare(targetSquare, index, squares) {
         const col = targetSquare.col;
         const baseRow = targetSquare.row;
-        
-        console.log('Looking for promotion square - target:', targetSquare.id, 'index:', index, 'col:', col, 'baseRow:', baseRow);
-        
+
         // Calculate row based on index and promotion direction
-        // Start from the border row (1 or 8) and go inward
         let row;
         if (baseRow === 8) {
-            // White promotion: start from row 8 and go down
             row = 8 - index;
         } else if (baseRow === 1) {
-            // Black promotion: start from row 1 and go up
             row = 1 + index;
         } else {
-            console.log('Invalid promotion row:', baseRow);
             return null;
         }
-        
-        console.log('Calculated row:', row);
-        
-        // Ensure row is within bounds
+
         if (row < 1 || row > 8) {
-            console.log('Row out of bounds:', row);
             return null;
         }
-        
+
         // Find square by row/col
         for (const square of Object.values(squares)) {
             if (square.col === col && square.row === row) {
-                console.log('Found promotion square:', square.id);
                 return square;
             }
         }
-        
-        console.log('No square found for col:', col, 'row:', row);
+
         return null;
     }
 

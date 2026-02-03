@@ -52,11 +52,71 @@ const TRANSITION_FUNCTIONS = Object.freeze({
  * @constant
  * @type {Object}
  */
+/**
+ * Flip mode options
+ * @constant
+ * @type {Object}
+ */
+const FLIP_MODES = Object.freeze({
+    visual: 'visual',      // CSS flexbox visual flip (instant, no piece animation)
+    animate: 'animate',    // Animate pieces to mirrored positions (smooth animation)
+    none: 'none'           // No visual change, only internal orientation
+});
+
+/**
+ * Movement style options - how pieces travel from source to destination
+ * @constant
+ * @type {Object}
+ */
+const MOVE_STYLES = Object.freeze({
+    slide: 'slide',        // Linear movement (default) - piece slides in straight line
+    arc: 'arc',            // Arc trajectory - piece lifts up then comes down
+    hop: 'hop',            // Parabolic jump - like a knight hopping
+    teleport: 'teleport',  // Instant - no animation, piece appears at destination
+    fade: 'fade'           // Crossfade - fades out at source, fades in at destination
+});
+
+/**
+ * Capture animation options - what happens to captured pieces
+ * @constant
+ * @type {Object}
+ */
+const CAPTURE_STYLES = Object.freeze({
+    fade: 'fade',          // Fade out (default)
+    shrink: 'shrink',      // Shrink then fade
+    instant: 'instant',    // Disappears immediately
+    explode: 'explode'     // Scale up and fade (dramatic effect)
+});
+
+/**
+ * Landing effect options - what happens when piece reaches destination
+ * @constant
+ * @type {Object}
+ */
+const LANDING_EFFECTS = Object.freeze({
+    none: 'none',          // No effect (default)
+    bounce: 'bounce',      // Slight bounce on landing
+    pulse: 'pulse',        // Quick scale pulse
+    settle: 'settle'       // Subtle settling animation
+});
+
+/**
+ * Drag style options - how pieces behave during drag
+ * @constant
+ * @type {Object}
+ */
+const DRAG_STYLES = Object.freeze({
+    smooth: 'smooth',      // Piece follows cursor smoothly (default)
+    snap: 'snap',          // Piece snaps to cursor position
+    elastic: 'elastic'     // Slight elastic lag behind cursor
+});
+
 const DEFAULT_CONFIG = Object.freeze({
     id: 'board',
     position: 'start',
     orientation: 'w',
     mode: 'normal',
+    flipMode: 'visual',    // 'visual', 'animate', or 'none'
     size: 'auto',
     draggable: true,
     hints: true,
@@ -64,15 +124,41 @@ const DEFAULT_CONFIG = Object.freeze({
     movableColors: 'both',
     moveHighlight: true,
     overHighlight: true,
-    moveAnimation: 'ease',
-    moveTime: 'fast',
-    dropOffBoard: 'snapback',
+
+    // Movement configuration
+    moveStyle: 'slide',          // 'slide', 'arc', 'hop', 'teleport', 'fade'
+    moveEasing: 'ease',          // CSS easing function
+    moveTime: 'fast',            // Duration: 'instant', 'veryFast', 'fast', 'normal', 'slow', 'verySlow' or ms
+    moveArcHeight: 0.3,          // Arc height as ratio of distance (for 'arc' and 'hop' styles)
+
+    // Capture configuration
+    captureStyle: 'fade',        // 'fade', 'shrink', 'instant', 'explode'
+    captureTime: 'fast',         // Duration for capture animation
+
+    // Landing effect configuration
+    landingEffect: 'none',       // 'none', 'bounce', 'pulse', 'settle'
+    landingDuration: 150,        // Duration for landing effect in ms
+
+    // Drag configuration
+    dragStyle: 'smooth',         // 'smooth', 'snap', 'elastic'
+    dragScale: 1.05,             // Scale factor while dragging (1.0 = no scale)
+    dragOpacity: 0.9,            // Opacity while dragging
+
+    // Snapback configuration
     snapbackTime: 'fast',
-    snapbackAnimation: 'ease',
+    snapbackEasing: 'ease',
+
+    // Other timing
+    dropOffBoard: 'snapback',
     dropCenterTime: 'veryFast',
     dropCenterAnimation: 'ease',
     fadeTime: 'fast',
     fadeAnimation: 'ease',
+
+    // Legacy compatibility
+    moveAnimation: 'ease',
+    snapbackAnimation: 'ease',
+
     ratio: 0.9,
     piecesPath: '../assets/themes/default',
     animationStyle: 'simultaneous',
@@ -167,6 +253,7 @@ class ChessboardConfig {
         this.position = config.position;
         this.orientation = config.orientation;
         this.mode = config.mode;
+        this.flipMode = this._validateFlipMode(config.flipMode);
         this.dropOffBoard = config.dropOffBoard;
         this.size = config.size;
         this.movableColors = config.movableColors;
@@ -181,11 +268,24 @@ class ChessboardConfig {
         this.onDrop = this._validateCallback(config.onDrop);
         this.onSnapbackEnd = this._validateCallback(config.onSnapbackEnd);
 
-        // Animation properties
+        // Animation properties (legacy)
         this.moveAnimation = this._setTransitionFunction(config.moveAnimation);
         this.snapbackAnimation = this._setTransitionFunction(config.snapbackAnimation);
         this.dropCenterAnimation = this._setTransitionFunction(config.dropCenterAnimation);
         this.fadeAnimation = this._setTransitionFunction(config.fadeAnimation);
+
+        // Movement configuration (new system)
+        this.moveStyle = this._validateMoveStyle(config.moveStyle);
+        this.moveEasing = this._setTransitionFunction(config.moveEasing);
+        this.moveArcHeight = this._validateNumber(config.moveArcHeight, 0, 1, 'moveArcHeight');
+        this.captureStyle = this._validateCaptureStyle(config.captureStyle);
+        this.captureTime = this._setTime(config.captureTime);
+        this.landingEffect = this._validateLandingEffect(config.landingEffect);
+        this.landingDuration = this._validateNumber(config.landingDuration, 0, 2000, 'landingDuration');
+        this.dragStyle = this._validateDragStyle(config.dragStyle);
+        this.dragScale = this._validateNumber(config.dragScale, 0.5, 2, 'dragScale');
+        this.dragOpacity = this._validateNumber(config.dragOpacity, 0.1, 1, 'dragOpacity');
+        this.snapbackEasing = this._setTransitionFunction(config.snapbackEasing);
 
         // Boolean properties
         this.hints = this._setBoolean(config.hints);
@@ -288,6 +388,97 @@ class ChessboardConfig {
             throw new ConfigurationError('Invalid animation delay', 'simultaneousAnimationDelay', delay);
         }
         return delay;
+    }
+
+    /**
+     * Validates flip mode
+     * @private
+     * @param {string} mode - Flip mode
+     * @returns {string} Validated mode
+     * @throws {ConfigurationError} If mode is invalid
+     */
+    _validateFlipMode(mode) {
+        if (!mode || !FLIP_MODES[mode]) {
+            throw new ConfigurationError(
+                `Invalid flip mode: ${mode}. Valid options: ${Object.keys(FLIP_MODES).join(', ')}`,
+                'flipMode',
+                mode
+            );
+        }
+        return mode;
+    }
+
+    /**
+     * Validates move style
+     * @private
+     * @param {string} style - Move style
+     * @returns {string} Validated style
+     */
+    _validateMoveStyle(style) {
+        if (!style || !MOVE_STYLES[style]) {
+            console.warn(`Invalid move style: ${style}. Using 'slide'. Valid: ${Object.keys(MOVE_STYLES).join(', ')}`);
+            return 'slide';
+        }
+        return style;
+    }
+
+    /**
+     * Validates capture style
+     * @private
+     * @param {string} style - Capture style
+     * @returns {string} Validated style
+     */
+    _validateCaptureStyle(style) {
+        if (!style || !CAPTURE_STYLES[style]) {
+            console.warn(`Invalid capture style: ${style}. Using 'fade'. Valid: ${Object.keys(CAPTURE_STYLES).join(', ')}`);
+            return 'fade';
+        }
+        return style;
+    }
+
+    /**
+     * Validates landing effect
+     * @private
+     * @param {string} effect - Landing effect
+     * @returns {string} Validated effect
+     */
+    _validateLandingEffect(effect) {
+        if (!effect || !LANDING_EFFECTS[effect]) {
+            console.warn(`Invalid landing effect: ${effect}. Using 'none'. Valid: ${Object.keys(LANDING_EFFECTS).join(', ')}`);
+            return 'none';
+        }
+        return effect;
+    }
+
+    /**
+     * Validates drag style
+     * @private
+     * @param {string} style - Drag style
+     * @returns {string} Validated style
+     */
+    _validateDragStyle(style) {
+        if (!style || !DRAG_STYLES[style]) {
+            console.warn(`Invalid drag style: ${style}. Using 'smooth'. Valid: ${Object.keys(DRAG_STYLES).join(', ')}`);
+            return 'smooth';
+        }
+        return style;
+    }
+
+    /**
+     * Validates a number within a range
+     * @private
+     * @param {number} value - Value to validate
+     * @param {number} min - Minimum value
+     * @param {number} max - Maximum value
+     * @param {string} name - Property name for error message
+     * @returns {number} Validated value
+     */
+    _validateNumber(value, min, max, name) {
+        if (typeof value !== 'number' || value < min || value > max) {
+            console.warn(`Invalid ${name}: ${value}. Must be between ${min} and ${max}.`);
+            return (min + max) / 2; // Return middle value as default
+        }
+        return value;
     }
 
     /**
@@ -395,6 +586,7 @@ class ChessboardConfig {
             position: this.position,
             orientation: this.orientation,
             mode: this.mode,
+            flipMode: this.flipMode,
             size: this.size,
             draggable: this.draggable,
             hints: this.hints,
@@ -402,11 +594,24 @@ class ChessboardConfig {
             movableColors: this.movableColors,
             moveHighlight: this.moveHighlight,
             overHighlight: this.overHighlight,
-            moveAnimation: this.moveAnimation,
+            // Movement configuration
+            moveStyle: this.moveStyle,
+            moveEasing: this.moveEasing,
             moveTime: this.moveTime,
-            dropOffBoard: this.dropOffBoard,
+            moveArcHeight: this.moveArcHeight,
+            captureStyle: this.captureStyle,
+            captureTime: this.captureTime,
+            landingEffect: this.landingEffect,
+            landingDuration: this.landingDuration,
+            dragStyle: this.dragStyle,
+            dragScale: this.dragScale,
+            dragOpacity: this.dragOpacity,
             snapbackTime: this.snapbackTime,
+            snapbackEasing: this.snapbackEasing,
+            // Legacy
+            moveAnimation: this.moveAnimation,
             snapbackAnimation: this.snapbackAnimation,
+            dropOffBoard: this.dropOffBoard,
             dropCenterTime: this.dropCenterTime,
             dropCenterAnimation: this.dropCenterAnimation,
             fadeTime: this.fadeTime,
@@ -454,5 +659,13 @@ class ChessboardConfig {
     }
 }
 
-export { ChessboardConfig };
+export {
+    ChessboardConfig,
+    FLIP_MODES,
+    MOVE_STYLES,
+    CAPTURE_STYLES,
+    LANDING_EFFECTS,
+    DRAG_STYLES,
+    ANIMATION_TIMES
+};
 export default ChessboardConfig;

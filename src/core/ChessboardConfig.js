@@ -89,6 +89,19 @@ const CAPTURE_STYLES = Object.freeze({
 });
 
 /**
+ * Appearance animation options - how new pieces appear on the board
+ * @constant
+ * @type {Object}
+ */
+const APPEARANCE_STYLES = Object.freeze({
+    fade: 'fade',          // Opacity + subtle scale (default)
+    pulse: 'pulse',        // Double pulse scale bounce
+    pop: 'pop',            // Scale 0→1.15→1 with spring easing
+    drop: 'drop',          // Drops from above with bounce
+    instant: 'instant'     // No animation
+});
+
+/**
  * Landing effect options - what happens when piece reaches destination
  * @constant
  * @type {Object}
@@ -134,6 +147,10 @@ const DEFAULT_CONFIG = Object.freeze({
     // Capture configuration
     captureStyle: 'fade',        // 'fade', 'shrink', 'instant', 'explode'
     captureTime: 'fast',         // Duration for capture animation
+
+    // Appearance configuration
+    appearanceStyle: 'fade',     // 'fade', 'pulse', 'pop', 'drop', 'instant'
+    appearanceTime: 'fast',      // Duration for appearance animation
 
     // Landing effect configuration
     landingEffect: 'none',       // 'none', 'bounce', 'pulse', 'settle'
@@ -280,6 +297,8 @@ class ChessboardConfig {
         this.moveArcHeight = this._validateNumber(config.moveArcHeight, 0, 1, 'moveArcHeight');
         this.captureStyle = this._validateCaptureStyle(config.captureStyle);
         this.captureTime = this._setTime(config.captureTime);
+        this.appearanceStyle = this._validateAppearanceStyle(config.appearanceStyle);
+        this.appearanceTime = this._setTime(config.appearanceTime);
         this.landingEffect = this._validateLandingEffect(config.landingEffect);
         this.landingDuration = this._validateNumber(config.landingDuration, 0, 2000, 'landingDuration');
         this.dragStyle = this._validateDragStyle(config.dragStyle);
@@ -431,6 +450,20 @@ class ChessboardConfig {
     _validateCaptureStyle(style) {
         if (!style || !CAPTURE_STYLES[style]) {
             console.warn(`Invalid capture style: ${style}. Using 'fade'. Valid: ${Object.keys(CAPTURE_STYLES).join(', ')}`);
+            return 'fade';
+        }
+        return style;
+    }
+
+    /**
+     * Validates appearance style
+     * @private
+     * @param {string} style - Appearance style
+     * @returns {string} Validated style
+     */
+    _validateAppearanceStyle(style) {
+        if (!style || !APPEARANCE_STYLES[style]) {
+            console.warn(`Invalid appearance style: ${style}. Using 'fade'. Valid: ${Object.keys(APPEARANCE_STYLES).join(', ')}`);
             return 'fade';
         }
         return style;
@@ -601,6 +634,8 @@ class ChessboardConfig {
             moveArcHeight: this.moveArcHeight,
             captureStyle: this.captureStyle,
             captureTime: this.captureTime,
+            appearanceStyle: this.appearanceStyle,
+            appearanceTime: this.appearanceTime,
             landingEffect: this.landingEffect,
             landingDuration: this.landingDuration,
             dragStyle: this.dragStyle,
@@ -664,6 +699,7 @@ export {
     FLIP_MODES,
     MOVE_STYLES,
     CAPTURE_STYLES,
+    APPEARANCE_STYLES,
     LANDING_EFFECTS,
     DRAG_STYLES,
     ANIMATION_TIMES

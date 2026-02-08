@@ -94,18 +94,23 @@ export class PieceService {
             piece.setDrag(dragFunction(square, piece));
         }
 
-        if (fade && this.config.fadeTime > 0) {
-            piece.fadeIn(
-                this.config.fadeTime,
-                this.config.fadeAnimation,
-                this._getTransitionTimingFunction(),
-                callback
-            );
+        if (fade) {
+            const appearanceStyle = this.config.appearanceStyle || 'fade';
+            const duration = this.config.appearanceTime || this.config.fadeTime || 200;
+
+            if (duration > 0 && appearanceStyle !== 'instant') {
+                piece.appearAnimate(appearanceStyle, duration, () => {
+                    piece.visible();
+                    if (callback) callback();
+                });
+            } else {
+                piece.visible();
+                if (callback) callback();
+            }
         } else {
+            piece.visible();
             if (callback) callback();
         }
-
-        piece.visible();
     }
 
     /**
@@ -123,20 +128,24 @@ export class PieceService {
         const piece = square.piece;
         if (!piece) {
             if (callback) callback();
-            throw new PieceError(ERROR_MESSAGES.square_no_piece, null, square.getId());
+            return null;
         }
+
+        // Always remove piece reference synchronously to prevent stale state
+        // when a new update starts before the animation completes
+        square.piece = null;
 
         const captureStyle = this.config.captureStyle || 'fade';
         const duration = this.config.captureTime || this.config.fadeTime || 200;
 
         if (animate && duration > 0) {
-            // Apply capture animation based on style
+            // Animate visual element, then destroy
             piece.captureAnimate(captureStyle, duration, () => {
-                square.removePiece();
+                piece.destroy();
                 if (callback) callback();
             });
         } else {
-            square.removePiece();
+            piece.destroy();
             if (callback) callback();
         }
 
@@ -187,8 +196,8 @@ export class PieceService {
      */
     translatePiece(move, removeTarget, animate, dragFunction = null, callback = null) {
         console.debug(`[PieceService] translatePiece: ${move.piece.id} from ${move.from.id} to ${move.to.id}`);
-        if (!move.piece) {
-            console.warn('PieceService.translatePiece: move.piece is null, skipping translation');
+        if (!move.piece || !move.piece.element) {
+            console.warn('PieceService.translatePiece: move.piece or element is null, skipping translation');
             if (callback) callback();
             return;
         }
@@ -200,6 +209,12 @@ export class PieceService {
         }
 
         const changeSquareCallback = () => {
+            // If piece element was destroyed (e.g., by a newer update), skip
+            if (!move.piece.element || !move.piece.element.parentNode) {
+                if (callback) callback();
+                return;
+            }
+
             // Check if piece still exists and is on the source square
             if (move.from.piece === move.piece) {
                 move.from.removePiece(true); // Preserve the piece when moving

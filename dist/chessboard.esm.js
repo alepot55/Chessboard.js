@@ -1105,6 +1105,19 @@ const CAPTURE_STYLES = Object.freeze({
 });
 
 /**
+ * Appearance animation options - how new pieces appear on the board
+ * @constant
+ * @type {Object}
+ */
+const APPEARANCE_STYLES = Object.freeze({
+    fade: 'fade',          // Opacity + subtle scale (default)
+    pulse: 'pulse',        // Double pulse scale bounce
+    pop: 'pop',            // Scale 0→1.15→1 with spring easing
+    drop: 'drop',          // Drops from above with bounce
+    instant: 'instant'     // No animation
+});
+
+/**
  * Landing effect options - what happens when piece reaches destination
  * @constant
  * @type {Object}
@@ -1150,6 +1163,10 @@ const DEFAULT_CONFIG$1 = Object.freeze({
     // Capture configuration
     captureStyle: 'fade',        // 'fade', 'shrink', 'instant', 'explode'
     captureTime: 'fast',         // Duration for capture animation
+
+    // Appearance configuration
+    appearanceStyle: 'fade',     // 'fade', 'pulse', 'pop', 'drop', 'instant'
+    appearanceTime: 'fast',      // Duration for appearance animation
 
     // Landing effect configuration
     landingEffect: 'none',       // 'none', 'bounce', 'pulse', 'settle'
@@ -1296,6 +1313,8 @@ class ChessboardConfig {
         this.moveArcHeight = this._validateNumber(config.moveArcHeight, 0, 1, 'moveArcHeight');
         this.captureStyle = this._validateCaptureStyle(config.captureStyle);
         this.captureTime = this._setTime(config.captureTime);
+        this.appearanceStyle = this._validateAppearanceStyle(config.appearanceStyle);
+        this.appearanceTime = this._setTime(config.appearanceTime);
         this.landingEffect = this._validateLandingEffect(config.landingEffect);
         this.landingDuration = this._validateNumber(config.landingDuration, 0, 2000, 'landingDuration');
         this.dragStyle = this._validateDragStyle(config.dragStyle);
@@ -1447,6 +1466,20 @@ class ChessboardConfig {
     _validateCaptureStyle(style) {
         if (!style || !CAPTURE_STYLES[style]) {
             console.warn(`Invalid capture style: ${style}. Using 'fade'. Valid: ${Object.keys(CAPTURE_STYLES).join(', ')}`);
+            return 'fade';
+        }
+        return style;
+    }
+
+    /**
+     * Validates appearance style
+     * @private
+     * @param {string} style - Appearance style
+     * @returns {string} Validated style
+     */
+    _validateAppearanceStyle(style) {
+        if (!style || !APPEARANCE_STYLES[style]) {
+            console.warn(`Invalid appearance style: ${style}. Using 'fade'. Valid: ${Object.keys(APPEARANCE_STYLES).join(', ')}`);
             return 'fade';
         }
         return style;
@@ -1617,6 +1650,8 @@ class ChessboardConfig {
             moveArcHeight: this.moveArcHeight,
             captureStyle: this.captureStyle,
             captureTime: this.captureTime,
+            appearanceStyle: this.appearanceStyle,
+            appearanceTime: this.appearanceTime,
             landingEffect: this.landingEffect,
             landingDuration: this.landingDuration,
             dragStyle: this.dragStyle,
@@ -1832,6 +1867,121 @@ class Piece {
         }
     }
 
+    /**
+     * Animate piece appearance with configurable style
+     * @param {string} style - Appearance style: 'fade', 'pulse', 'pop', 'drop', 'instant'
+     * @param {number} duration - Animation duration in ms
+     * @param {Function} callback - Callback when complete
+     */
+    appearAnimate(style, duration, callback) {
+        if (!this.element) {
+            if (callback) callback();
+            return;
+        }
+
+        const element = this.element;
+        const cleanup = () => {
+            if (element) {
+                element.style.opacity = '1';
+                element.style.transform = '';
+            }
+            if (callback) callback();
+        };
+
+        const smoothDecel = 'cubic-bezier(0.33, 1, 0.68, 1)';
+        const springOvershoot = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+        switch (style) {
+            case 'instant':
+                element.style.opacity = '1';
+                cleanup();
+                break;
+
+            case 'fade':
+                if (element.animate) {
+                    element.style.opacity = '0';
+                    const anim = element.animate([
+                        { opacity: 0, transform: 'scale(0.95)' },
+                        { opacity: 1, transform: 'scale(1)' }
+                    ], { duration, easing: smoothDecel, fill: 'forwards' });
+                    anim.onfinish = () => {
+                        anim.cancel();
+                        cleanup();
+                    };
+                } else {
+                    element.style.opacity = '0';
+                    element.style.transform = 'scale(0.95)';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            case 'pulse':
+                if (element.animate) {
+                    element.style.opacity = '0';
+                    const anim = element.animate([
+                        { opacity: 0, transform: 'scale(0.6)', offset: 0 },
+                        { opacity: 1, transform: 'scale(1.12)', offset: 0.3 },
+                        { opacity: 1, transform: 'scale(0.92)', offset: 0.55 },
+                        { opacity: 1, transform: 'scale(1.06)', offset: 0.8 },
+                        { opacity: 1, transform: 'scale(1)', offset: 1 }
+                    ], { duration, easing: smoothDecel, fill: 'forwards' });
+                    anim.onfinish = () => {
+                        anim.cancel();
+                        cleanup();
+                    };
+                } else {
+                    element.style.opacity = '0';
+                    element.style.transform = 'scale(0.6)';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            case 'pop':
+                if (element.animate) {
+                    element.style.opacity = '0';
+                    const anim = element.animate([
+                        { opacity: 0, transform: 'scale(0)', offset: 0 },
+                        { opacity: 1, transform: 'scale(1.15)', offset: 0.6 },
+                        { opacity: 1, transform: 'scale(1)', offset: 1 }
+                    ], { duration, easing: springOvershoot, fill: 'forwards' });
+                    anim.onfinish = () => {
+                        anim.cancel();
+                        cleanup();
+                    };
+                } else {
+                    element.style.opacity = '0';
+                    element.style.transform = 'scale(0)';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            case 'drop':
+                if (element.animate) {
+                    element.style.opacity = '0';
+                    const anim = element.animate([
+                        { opacity: 0, transform: 'translateY(-15px) scale(0.95)', offset: 0 },
+                        { opacity: 1, transform: 'translateY(3px) scale(1.02)', offset: 0.5 },
+                        { opacity: 1, transform: 'translateY(-1px) scale(1)', offset: 0.75 },
+                        { opacity: 1, transform: 'translateY(0) scale(1)', offset: 1 }
+                    ], { duration, easing: smoothDecel, fill: 'forwards' });
+                    anim.onfinish = () => {
+                        anim.cancel();
+                        cleanup();
+                    };
+                } else {
+                    element.style.opacity = '0';
+                    element.style.transform = 'translateY(-15px) scale(0.95)';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            default:
+                this.appearAnimate('fade', duration, callback);
+                return;
+        }
+    }
+
+    /** @deprecated Use appearAnimate() instead */
     fadeIn(duration, speed, transition_f, callback) {
         let start = performance.now();
         let opacity = 0;
@@ -2436,9 +2586,9 @@ class Square {
     }
 
     putPiece(piece) {
-        // If there's already a piece, remove it first, but preserve if moving
+        // If there's already a piece, destroy it to avoid orphaned DOM elements
         if (this.piece) {
-            this.removePiece(true);
+            this.removePiece(false);
         }
         this.piece = piece;
         if (piece && piece.element) {
@@ -5687,18 +5837,23 @@ class PieceService {
             piece.setDrag(dragFunction(square, piece));
         }
 
-        if (fade && this.config.fadeTime > 0) {
-            piece.fadeIn(
-                this.config.fadeTime,
-                this.config.fadeAnimation,
-                this._getTransitionTimingFunction(),
-                callback
-            );
+        if (fade) {
+            const appearanceStyle = this.config.appearanceStyle || 'fade';
+            const duration = this.config.appearanceTime || this.config.fadeTime || 200;
+
+            if (duration > 0 && appearanceStyle !== 'instant') {
+                piece.appearAnimate(appearanceStyle, duration, () => {
+                    piece.visible();
+                    if (callback) callback();
+                });
+            } else {
+                piece.visible();
+                if (callback) callback();
+            }
         } else {
+            piece.visible();
             if (callback) callback();
         }
-
-        piece.visible();
     }
 
     /**
@@ -5716,20 +5871,24 @@ class PieceService {
         const piece = square.piece;
         if (!piece) {
             if (callback) callback();
-            throw new PieceError(ERROR_MESSAGES.square_no_piece, null, square.getId());
+            return null;
         }
+
+        // Always remove piece reference synchronously to prevent stale state
+        // when a new update starts before the animation completes
+        square.piece = null;
 
         const captureStyle = this.config.captureStyle || 'fade';
         const duration = this.config.captureTime || this.config.fadeTime || 200;
 
         if (animate && duration > 0) {
-            // Apply capture animation based on style
+            // Animate visual element, then destroy
             piece.captureAnimate(captureStyle, duration, () => {
-                square.removePiece();
+                piece.destroy();
                 if (callback) callback();
             });
         } else {
-            square.removePiece();
+            piece.destroy();
             if (callback) callback();
         }
 
@@ -5780,8 +5939,8 @@ class PieceService {
      */
     translatePiece(move, removeTarget, animate, dragFunction = null, callback = null) {
         console.debug(`[PieceService] translatePiece: ${move.piece.id} from ${move.from.id} to ${move.to.id}`);
-        if (!move.piece) {
-            console.warn('PieceService.translatePiece: move.piece is null, skipping translation');
+        if (!move.piece || !move.piece.element) {
+            console.warn('PieceService.translatePiece: move.piece or element is null, skipping translation');
             if (callback) callback();
             return;
         }
@@ -5793,6 +5952,12 @@ class PieceService {
         }
 
         const changeSquareCallback = () => {
+            // If piece element was destroyed (e.g., by a newer update), skip
+            if (!move.piece.element || !move.piece.element.parentNode) {
+                if (callback) callback();
+                return;
+            }
+
             // Check if piece still exists and is on the source square
             if (move.from.piece === move.piece) {
                 move.from.removePiece(true); // Preserve the piece when moving
@@ -8171,7 +8336,8 @@ let Chessboard$1 = class Chessboard {
             this._handleConstructorError(error);
         }
         this._undoneMoves = [];
-        this._updateBoardPieces(true, true); // Forza popolamento DOM subito
+        this._destroyed = false;
+        this._animationTimeouts = [];
     }
 
     /**
@@ -8689,6 +8855,7 @@ let Chessboard$1 = class Chessboard {
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load
      */
     _updateBoardPieces(animation = false, isPositionLoad = false) {
+        if (this._destroyed) return;
         // Check if services are available
         if (!this.positionService || !this.moveService || !this.eventService) {
             return;
@@ -8753,6 +8920,7 @@ let Chessboard$1 = class Chessboard {
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load (affects delay)
      */
     _doUpdateBoardPieces(animation = false, isPositionLoad = false) {
+        if (this._destroyed) return;
         // Skip update if we're in the middle of a promotion
         if (this._isPromoting) {
             return;
@@ -8768,7 +8936,7 @@ let Chessboard$1 = class Chessboard {
         const useSimultaneous = this.config.animationStyle === 'simultaneous';
 
         if (useSimultaneous) {
-            this._doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad);
+            this._doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad, animation);
         } else {
             this._doSequentialUpdate(squares, gameStateBefore, animation);
         }
@@ -8782,7 +8950,23 @@ let Chessboard$1 = class Chessboard {
      * @param {boolean} animation - Whether to animate
      */
     _doSequentialUpdate(squares, gameStateBefore, animation) {
-        // Mappa: squareId -> expectedPieceId
+        // Cancel running animations and clean orphaned elements
+        Object.values(squares).forEach(square => {
+            const imgs = square.element.querySelectorAll('img.piece');
+            imgs.forEach(img => {
+                if (img.getAnimations) {
+                    img.getAnimations().forEach(anim => anim.cancel());
+                }
+                if (!square.piece || img !== square.piece.element) {
+                    img.remove();
+                }
+            });
+            if (square.piece && square.piece.element) {
+                square.piece.element.style = '';
+                square.piece.element.style.opacity = '1';
+            }
+        });
+
         const expectedMap = {};
         Object.values(squares).forEach(square => {
             expectedMap[square.id] = this.positionService.getGamePieceId(square.id);
@@ -8798,12 +8982,13 @@ let Chessboard$1 = class Chessboard {
                 return;
             }
 
-            // Se c'è un pezzo attuale ma non è quello atteso, rimuovilo
+            // Remove current piece if it doesn't match expected
             if (currentPiece && currentPieceId !== expectedPieceId) {
-                this.pieceService.removePieceFromSquare(square, animation);
+                // Always remove synchronously to avoid race condition with addition
+                this.pieceService.removePieceFromSquare(square, false);
             }
 
-            // Se c'è un pezzo atteso ma non è quello attuale, aggiungilo
+            // Add expected piece if it doesn't match current
             if (expectedPieceId && currentPieceId !== expectedPieceId) {
                 const newPiece = this.pieceService.convertPiece(expectedPieceId);
                 this.pieceService.addPieceOnSquare(
@@ -8828,9 +9013,43 @@ let Chessboard$1 = class Chessboard {
      * @param {Object} squares - All squares
      * @param {string} gameStateBefore - Game state before update
      * @param {boolean} [isPositionLoad=false] - Whether this is a position load
+     * @param {boolean} [animation=true] - Whether to animate
      */
-    _doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad = false) {
-        // Matching greedy per distanza minima, robusto
+    _doSimultaneousUpdate(squares, gameStateBefore, isPositionLoad = false, animation = true) {
+        // Increment generation to invalidate stale animation callbacks
+        this._updateGeneration = (this._updateGeneration || 0) + 1;
+        const generation = this._updateGeneration;
+
+        // Cancel pending animation timeouts from previous update
+        if (this._animationTimeouts) {
+            this._animationTimeouts.forEach(tid => clearTimeout(tid));
+            this._animationTimeouts = [];
+        }
+
+        // Cancel all running animations and force-sync DOM state
+        Object.values(squares).forEach(square => {
+            const imgs = square.element.querySelectorAll('img.piece');
+            imgs.forEach(img => {
+                // Cancel all Web Animations on this element so onfinish callbacks don't fire
+                if (img.getAnimations) {
+                    img.getAnimations().forEach(anim => anim.cancel());
+                }
+                // Remove orphaned images not matching current piece
+                if (!square.piece || img !== square.piece.element) {
+                    img.remove();
+                }
+            });
+            // Reset current piece element to clean state (remove animation artifacts)
+            if (square.piece && square.piece.element) {
+                square.piece.element.style = '';
+                square.piece.element.style.opacity = '1';
+                // Ensure element is attached to correct square
+                if (!square.element.contains(square.piece.element)) {
+                    square.element.appendChild(square.piece.element);
+                }
+            }
+        });
+
         const currentMap = {};
         const expectedMap = {};
 
@@ -8856,35 +9075,16 @@ let Chessboard$1 = class Chessboard {
         const animationDelay = isPositionLoad ? 0 : this.config.simultaneousAnimationDelay;
         let animationIndex = 0;
 
-        Object.keys(expectedMap).forEach(key => {
-            totalAnimations += Math.max((currentMap[key] || []).length, expectedMap[key].length);
-        });
-
-        if (totalAnimations === 0) {
-            this._addListeners();
-            const gameStateAfter = this.positionService.getGame().fen();
-            if (gameStateBefore !== gameStateAfter) {
-                this.config.onChange(gameStateAfter);
-            }
-            return;
-        }
-
-        const onAnimationComplete = () => {
-            animationsCompleted++;
-            if (animationsCompleted === totalAnimations) {
-                this._addListeners();
-                const gameStateAfter = this.positionService.getGame().fen();
-                if (gameStateBefore !== gameStateAfter) {
-                    this.config.onChange(gameStateAfter);
-                }
-            }
-        };
+        // First pass: compute matching for all piece types
+        const allRemovals = [];
+        const allAdditions = [];
+        const allMoves = [];
 
         Object.keys(expectedMap).forEach(key => {
             const fromList = (currentMap[key] || []).slice();
             const toList = expectedMap[key].slice();
 
-            // 1. Costruisci matrice delle distanze
+            // Build distance matrix
             const distances = [];
             for (let i = 0; i < fromList.length; i++) {
                 distances[i] = [];
@@ -8894,10 +9094,9 @@ let Chessboard$1 = class Chessboard {
                 }
             }
 
-            // 2. Matching greedy: abbina i più vicini
+            // Greedy matching: pair closest pieces
             const fromMatched = new Array(fromList.length).fill(false);
             const toMatched = new Array(toList.length).fill(false);
-            const moves = [];
 
             while (true) {
                 let minDist = Infinity, minI = -1, minJ = -1;
@@ -8913,58 +9112,140 @@ let Chessboard$1 = class Chessboard {
                     }
                 }
                 if (minI === -1 || minJ === -1) break;
-                // Se la posizione è la stessa, non fare nulla (pezzo unchanged)
-                if (fromList[minI].square === toList[minJ].square) {
-                    fromMatched[minI] = true;
-                    toMatched[minJ] = true;
-                    continue;
-                }
-                // Altrimenti, sposta il pezzo
-                moves.push({ from: fromList[minI].square, to: toList[minJ].square, piece: fromList[minI].square.piece });
                 fromMatched[minI] = true;
                 toMatched[minJ] = true;
+                // Skip unchanged pieces (same square)
+                if (fromList[minI].square === toList[minJ].square) {
+                    continue;
+                }
+                allMoves.push({ from: fromList[minI].square, to: toList[minJ].square, piece: fromList[minI].square.piece });
             }
 
-            // 3. Rimuovi i pezzi non abbinati (presenti solo in fromList)
+            // Collect unmatched current pieces (to remove)
             for (let i = 0; i < fromList.length; i++) {
                 if (!fromMatched[i]) {
-                    setTimeout(() => {
-                        this.pieceService.removePieceFromSquare(fromList[i].square, true, onAnimationComplete);
-                    }, animationIndex * animationDelay);
-                    animationIndex++;
+                    allRemovals.push(fromList[i].square);
                 }
             }
 
-            // 4. Aggiungi i pezzi non abbinati (presenti solo in toList)
+            // Collect unmatched expected pieces (to add)
             for (let j = 0; j < toList.length; j++) {
                 if (!toMatched[j]) {
-                    setTimeout(() => {
-                        const newPiece = this.pieceService.convertPiece(key);
-                        this.pieceService.addPieceOnSquare(
-                            toList[j].square,
-                            newPiece,
-                            true,
-                            this._createDragFunction.bind(this),
-                            onAnimationComplete
-                        );
-                    }, animationIndex * animationDelay);
-                    animationIndex++;
+                    allAdditions.push({ square: toList[j].square, key });
                 }
             }
+        });
 
-            // 5. Anima i movimenti
-            moves.forEach(move => {
-                setTimeout(() => {
-                    this.pieceService.translatePiece(
-                        move,
-                        false,
-                        true,
-                        this._createDragFunction.bind(this),
-                        onAnimationComplete
-                    );
-                }, animationIndex * animationDelay);
-                animationIndex++;
+        // Also count removals for pieces whose type doesn't exist in expectedMap
+        Object.keys(currentMap).forEach(key => {
+            if (!expectedMap[key]) {
+                currentMap[key].forEach(entry => {
+                    allRemovals.push(entry.square);
+                });
+            }
+        });
+
+        // Count only actual animations
+        totalAnimations = allRemovals.length + allAdditions.length + allMoves.length;
+
+        if (totalAnimations === 0) {
+            this._addListeners();
+            const gameStateAfter = this.positionService.getGame().fen();
+            if (gameStateBefore !== gameStateAfter) {
+                this.config.onChange(gameStateAfter);
+            }
+            return;
+        }
+
+        // Detach moving pieces from source squares BEFORE any removals/additions
+        // This prevents additions to a move's source square from destroying the piece
+        allMoves.forEach(move => {
+            if (move.from.piece === move.piece) {
+                move.from.removePiece(true); // preserve element, just detach reference
+            }
+        });
+
+        // No animation: apply all changes synchronously
+        if (!animation) {
+            allRemovals.forEach(square => {
+                this.pieceService.removePieceFromSquare(square, false);
             });
+            allMoves.forEach(move => {
+                this.pieceService.translatePiece(
+                    move, false, false, this._createDragFunction.bind(this)
+                );
+            });
+            allAdditions.forEach(({ square, key }) => {
+                const newPiece = this.pieceService.convertPiece(key);
+                this.pieceService.addPieceOnSquare(
+                    square, newPiece, false, this._createDragFunction.bind(this)
+                );
+            });
+            this._addListeners();
+            const gameStateAfter = this.positionService.getGame().fen();
+            if (gameStateBefore !== gameStateAfter) {
+                this.config.onChange(gameStateAfter);
+            }
+            return;
+        }
+
+        // Animated path
+        if (!this._animationTimeouts) this._animationTimeouts = [];
+
+        const onAnimationComplete = () => {
+            // Ignore callbacks from stale/destroyed boards
+            if (this._destroyed || this._updateGeneration !== generation) return;
+            animationsCompleted++;
+            if (animationsCompleted === totalAnimations) {
+                this._addListeners();
+                const gameStateAfter = this.positionService.getGame().fen();
+                if (gameStateBefore !== gameStateAfter) {
+                    this.config.onChange(gameStateAfter);
+                }
+            }
+        };
+
+        // Dispatch moves first (pieces already detached from source)
+        allMoves.forEach(move => {
+            const tid = setTimeout(() => {
+                if (this._destroyed || this._updateGeneration !== generation) return;
+                this.pieceService.translatePiece(
+                    move,
+                    false,
+                    true,
+                    this._createDragFunction.bind(this),
+                    onAnimationComplete
+                );
+            }, animationIndex * animationDelay);
+            this._animationTimeouts.push(tid);
+            animationIndex++;
+        });
+
+        // Dispatch removals
+        allRemovals.forEach(square => {
+            const tid = setTimeout(() => {
+                if (this._destroyed || this._updateGeneration !== generation) return;
+                this.pieceService.removePieceFromSquare(square, true, onAnimationComplete);
+            }, animationIndex * animationDelay);
+            this._animationTimeouts.push(tid);
+            animationIndex++;
+        });
+
+        // Dispatch additions
+        allAdditions.forEach(({ square, key }) => {
+            const tid = setTimeout(() => {
+                if (this._destroyed || this._updateGeneration !== generation) return;
+                const newPiece = this.pieceService.convertPiece(key);
+                this.pieceService.addPieceOnSquare(
+                    square,
+                    newPiece,
+                    true,
+                    this._createDragFunction.bind(this),
+                    onAnimationComplete
+                );
+            }, animationIndex * animationDelay);
+            this._animationTimeouts.push(tid);
+            animationIndex++;
         });
     }
 
@@ -9298,21 +9579,8 @@ let Chessboard$1 = class Chessboard {
         // Clear the game state
         this.positionService.getGame().clear();
 
-        // Force remove all pieces from all squares (both DOM and state)
-        if (this.boardService && this.boardService.squares) {
-            Object.values(this.boardService.squares).forEach(square => {
-                if (square && square.piece) {
-                    if (animate && this.pieceService) {
-                        this.pieceService.removePieceFromSquare(square, true);
-                    } else {
-                        square.forceRemoveAllPieces();
-                    }
-                }
-            });
-        }
-
-        // Trigger onChange callback to update UI
-        this._updateBoardPieces(animate);
+        // Let _updateBoardPieces handle removal (no manual loop to avoid race conditions)
+        this._updateBoardPieces(animate, true);
 
         return true;
     }
@@ -9525,27 +9793,70 @@ let Chessboard$1 = class Chessboard {
     }
 
     /**
-     * Animate flip - moves pieces to mirrored positions with animation
+     * Animate flip using FLIP technique (First-Last-Invert-Play)
+     * Same end state as visual mode (CSS flip), but pieces animate smoothly.
      * @private
      * @param {boolean} animate - Whether to animate the movement
      */
     _flipAnimate(animate) {
-        // Get current position as object (not FEN)
-        const position = this.positionService.getPosition();
-        const mirroredPosition = {};
+        const boardElement = this.boardService.element;
+        if (!boardElement) return;
 
-        // Mirror each piece position
-        for (const [square, piece] of Object.entries(position)) {
-            const file = square[0];
-            const rank = parseInt(square[1]);
-            // Mirror: a1 <-> a8, e2 <-> e7, etc.
-            const mirroredRank = 9 - rank;
-            const mirroredSquare = file + mirroredRank;
-            mirroredPosition[mirroredSquare] = piece;
+        const squares = this.boardService.getAllSquares();
+
+        // FIRST: Record current visual position of every piece
+        const pieceRects = {};
+        for (const [id, square] of Object.entries(squares)) {
+            if (square.piece && square.piece.element) {
+                pieceRects[id] = square.piece.element.getBoundingClientRect();
+            }
         }
 
-        // Set the new position with animation
-        this.setPosition(mirroredPosition, { animate });
+        // LAST: Apply CSS flip (instant) - same as visual mode
+        const isFlipped = this.coordinateService.getOrientation() === 'b';
+        this._flipVisual(boardElement, isFlipped);
+
+        if (!animate || Object.keys(pieceRects).length === 0) return;
+
+        // INVERT + PLAY: Animate each piece from old position to new
+        const duration = this.config.moveTime || 200;
+        const easing = 'cubic-bezier(0.33, 1, 0.68, 1)';
+
+        for (const [id, oldRect] of Object.entries(pieceRects)) {
+            const square = squares[id];
+            if (!square || !square.piece || !square.piece.element) continue;
+
+            const piece = square.piece;
+            const newRect = piece.element.getBoundingClientRect();
+            const dx = oldRect.left - newRect.left;
+            const dy = oldRect.top - newRect.top;
+
+            if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+
+            if (piece.element.animate) {
+                const anim = piece.element.animate([
+                    { transform: `translate(${dx}px, ${dy}px)` },
+                    { transform: 'translate(0, 0)' }
+                ], { duration, easing, fill: 'forwards' });
+                anim.onfinish = () => {
+                    anim.cancel();
+                    if (piece.element) piece.element.style.transform = '';
+                };
+            } else {
+                // setTimeout fallback for jsdom / older browsers
+                piece.element.style.transform = `translate(${dx}px, ${dy}px)`;
+                setTimeout(() => {
+                    if (!piece.element) return;
+                    piece.element.style.transition = `transform ${duration}ms`;
+                    piece.element.style.transform = 'translate(0, 0)';
+                    setTimeout(() => {
+                        if (!piece.element) return;
+                        piece.element.style.transition = '';
+                        piece.element.style.transform = '';
+                    }, duration);
+                }, 0);
+            }
+        }
     }
 
     /**
@@ -9611,6 +9922,27 @@ let Chessboard$1 = class Chessboard {
      */
     getCaptureStyle() {
         return this.config.captureStyle || 'fade';
+    }
+
+    /**
+     * Set the appearance animation style
+     * @param {'fade'|'pulse'|'pop'|'drop'|'instant'} style - Appearance style
+     */
+    setAppearanceStyle(style) {
+        const validStyles = ['fade', 'pulse', 'pop', 'drop', 'instant'];
+        if (!validStyles.includes(style)) {
+            console.warn(`Invalid appearance style: ${style}. Valid: ${validStyles.join(', ')}`);
+            return;
+        }
+        this.config.appearanceStyle = style;
+    }
+
+    /**
+     * Get the current appearance style
+     * @returns {string} Current appearance style
+     */
+    getAppearanceStyle() {
+        return this.config.appearanceStyle || 'fade';
     }
 
     /**
@@ -9683,6 +10015,7 @@ let Chessboard$1 = class Chessboard {
     configureMovement(options) {
         if (options.style) this.setMoveStyle(options.style);
         if (options.captureStyle) this.setCaptureStyle(options.captureStyle);
+        if (options.appearanceStyle) this.setAppearanceStyle(options.appearanceStyle);
         if (options.landingEffect) this.setLandingEffect(options.landingEffect);
         if (options.duration !== undefined) this.setMoveTime(options.duration);
         if (options.easing) this.setMoveEasing(options.easing);
@@ -9699,6 +10032,7 @@ let Chessboard$1 = class Chessboard {
         return {
             style: this.config.moveStyle || 'slide',
             captureStyle: this.config.captureStyle || 'fade',
+            appearanceStyle: this.config.appearanceStyle || 'fade',
             landingEffect: this.config.landingEffect || 'none',
             duration: this.config.moveTime,
             easing: this.config.moveEasing || 'ease',
@@ -9855,6 +10189,8 @@ let Chessboard$1 = class Chessboard {
      * Destroy the board and cleanup
      */
     destroy() {
+        this._destroyed = true;
+
         // Remove all event listeners
         if (this.eventService) {
             this.eventService.removeAllListeners();
@@ -9865,6 +10201,12 @@ let Chessboard$1 = class Chessboard {
         if (this._updateTimeout) {
             clearTimeout(this._updateTimeout);
             this._updateTimeout = null;
+        }
+
+        // Clear all animation timeouts
+        if (this._animationTimeouts) {
+            this._animationTimeouts.forEach(tid => clearTimeout(tid));
+            this._animationTimeouts = [];
         }
 
         // Destroy services
@@ -10201,30 +10543,20 @@ let Chessboard$1 = class Chessboard {
     insert(square, piece) { return this.putPiece(piece, square); }
     get(square) { return this.getPiece(square); }
     // Note: position() is defined above at line ~1684 with getter/setter functionality
-    flip(animation = true) { return this.flipBoard({ animate: animation }); }
     build() { return this._initialize(); }
     resize(value) { return this.resizeBoard(value); }
-    destroy() { return this._cleanup(); }
     piece(square) { return this.getPiece(square); }
-    highlight(square) { return true; }
-    dehighlight(square) { return true; }
-    turn() { return this.positionService.getGame().turn(); }
     ascii() { return this.positionService.getGame().ascii(); }
     board() { return this.positionService.getGame().board(); }
     getCastlingRights(color) { return this.positionService.getGame().getCastlingRights(color); }
     getComment() { return this.positionService.getGame().getComment(); }
     getComments() { return this.positionService.getGame().getComments(); }
-    history(options = {}) { return this.positionService.getGame().history(options); }
     lastMove() { return this.positionService.getGame().lastMove(); }
     moveNumber() { return this.positionService.getGame().moveNumber(); }
     moves(options = {}) { return this.positionService.getGame().moves(options); }
-    pgn(options = {}) { return this.positionService.getGame().pgn(options); }
     squareColor(squareId) { return this.boardService.getSquare(squareId).isWhite() ? 'light' : 'dark'; }
-    isCheckmate() { return this.positionService.getGame().isCheckmate(); }
-    isDraw() { return this.positionService.getGame().isDraw(); }
     isDrawByFiftyMoves() { return this.positionService.getGame().isDrawByFiftyMoves(); }
     isInsufficientMaterial() { return this.positionService.getGame().isInsufficientMaterial(); }
-    isGameOver() { return this.positionService.getGame().isGameOver(); }
     isStalemate() { return this.positionService.getGame().isStalemate(); }
     isThreefoldRepetition() { return this.positionService.getGame().isThreefoldRepetition(); }
     load(fen, options = {}, animation = true) { return this.setPosition(fen, { ...options, animate: animation }); }

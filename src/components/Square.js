@@ -106,9 +106,9 @@ class Square {
     }
 
     putPiece(piece) {
-        // If there's already a piece, remove it first, but preserve if moving
+        // If there's already a piece, destroy it to avoid orphaned DOM elements
         if (this.piece) {
-            this.removePiece(true);
+            this.removePiece(false);
         }
         this.piece = piece;
         if (piece && piece.element) {

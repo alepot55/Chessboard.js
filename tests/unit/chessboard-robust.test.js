@@ -160,4 +160,67 @@ describe('Chessboard Robustness & Edge Cases', () => {
             expect(() => chessboard.resizeBoard('auto')).not.toThrow();
         });
     });
-}); 
+
+    describe('Flip Modes', () => {
+        test('visual flip toggles orientation and CSS class', () => {
+            chessboard.setFlipMode('visual');
+            const fenBefore = chessboard.fen();
+
+            chessboard.flipBoard();
+            expect(chessboard.getOrientation()).toBe('b');
+            expect(chessboard.fen()).toBe(fenBefore); // position unchanged
+
+            chessboard.flipBoard();
+            expect(chessboard.getOrientation()).toBe('w');
+            expect(chessboard.fen()).toBe(fenBefore);
+        });
+
+        test('animate flip toggles orientation and preserves position', () => {
+            chessboard.setFlipMode('animate');
+            const fenBefore = chessboard.fen();
+
+            chessboard.flipBoard();
+            expect(chessboard.getOrientation()).toBe('b');
+            expect(chessboard.fen()).toBe(fenBefore); // position must NOT change
+
+            chessboard.flipBoard();
+            expect(chessboard.getOrientation()).toBe('w');
+            expect(chessboard.fen()).toBe(fenBefore);
+        });
+
+        test('animate flip does not mutate game position', () => {
+            chessboard.setFlipMode('animate');
+            // Piece on e1 is white king
+            expect(chessboard.getPiece('e1')).toBe('wk');
+
+            chessboard.flipBoard();
+            // After flip, white king must still be on e1 (not on d8)
+            expect(chessboard.getPiece('e1')).toBe('wk');
+            expect(chessboard.getPiece('a1')).toBe('wr');
+            expect(chessboard.getPiece('a8')).toBe('br');
+        });
+
+        test('animate flip double-flip returns exact same state', () => {
+            chessboard.setFlipMode('animate');
+            const posBefore = chessboard.getPosition();
+            chessboard.flipBoard();
+            chessboard.flipBoard();
+            const posAfter = chessboard.getPosition();
+            expect(posAfter).toEqual(posBefore);
+        });
+
+        test('none flip changes orientation but not visual', () => {
+            chessboard.setFlipMode('none');
+            chessboard.flipBoard();
+            expect(chessboard.getOrientation()).toBe('b');
+        });
+
+        test('setOrientation with animate preserves position', () => {
+            chessboard.setFlipMode('animate');
+            const fenBefore = chessboard.fen();
+            chessboard.setOrientation('b', { mode: 'animate' });
+            expect(chessboard.getOrientation()).toBe('b');
+            expect(chessboard.fen()).toBe(fenBefore);
+        });
+    });
+});

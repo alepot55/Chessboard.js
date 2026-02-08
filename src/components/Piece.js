@@ -155,6 +155,121 @@ class Piece {
         }
     }
 
+    /**
+     * Animate piece appearance with configurable style
+     * @param {string} style - Appearance style: 'fade', 'pulse', 'pop', 'drop', 'instant'
+     * @param {number} duration - Animation duration in ms
+     * @param {Function} callback - Callback when complete
+     */
+    appearAnimate(style, duration, callback) {
+        if (!this.element) {
+            if (callback) callback();
+            return;
+        }
+
+        const element = this.element;
+        const cleanup = () => {
+            if (element) {
+                element.style.opacity = '1';
+                element.style.transform = '';
+            }
+            if (callback) callback();
+        };
+
+        const smoothDecel = 'cubic-bezier(0.33, 1, 0.68, 1)';
+        const springOvershoot = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+        switch (style) {
+            case 'instant':
+                element.style.opacity = '1';
+                cleanup();
+                break;
+
+            case 'fade':
+                if (element.animate) {
+                    element.style.opacity = '0';
+                    const anim = element.animate([
+                        { opacity: 0, transform: 'scale(0.95)' },
+                        { opacity: 1, transform: 'scale(1)' }
+                    ], { duration, easing: smoothDecel, fill: 'forwards' });
+                    anim.onfinish = () => {
+                        anim.cancel();
+                        cleanup();
+                    };
+                } else {
+                    element.style.opacity = '0';
+                    element.style.transform = 'scale(0.95)';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            case 'pulse':
+                if (element.animate) {
+                    element.style.opacity = '0';
+                    const anim = element.animate([
+                        { opacity: 0, transform: 'scale(0.6)', offset: 0 },
+                        { opacity: 1, transform: 'scale(1.12)', offset: 0.3 },
+                        { opacity: 1, transform: 'scale(0.92)', offset: 0.55 },
+                        { opacity: 1, transform: 'scale(1.06)', offset: 0.8 },
+                        { opacity: 1, transform: 'scale(1)', offset: 1 }
+                    ], { duration, easing: smoothDecel, fill: 'forwards' });
+                    anim.onfinish = () => {
+                        anim.cancel();
+                        cleanup();
+                    };
+                } else {
+                    element.style.opacity = '0';
+                    element.style.transform = 'scale(0.6)';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            case 'pop':
+                if (element.animate) {
+                    element.style.opacity = '0';
+                    const anim = element.animate([
+                        { opacity: 0, transform: 'scale(0)', offset: 0 },
+                        { opacity: 1, transform: 'scale(1.15)', offset: 0.6 },
+                        { opacity: 1, transform: 'scale(1)', offset: 1 }
+                    ], { duration, easing: springOvershoot, fill: 'forwards' });
+                    anim.onfinish = () => {
+                        anim.cancel();
+                        cleanup();
+                    };
+                } else {
+                    element.style.opacity = '0';
+                    element.style.transform = 'scale(0)';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            case 'drop':
+                if (element.animate) {
+                    element.style.opacity = '0';
+                    const anim = element.animate([
+                        { opacity: 0, transform: 'translateY(-15px) scale(0.95)', offset: 0 },
+                        { opacity: 1, transform: 'translateY(3px) scale(1.02)', offset: 0.5 },
+                        { opacity: 1, transform: 'translateY(-1px) scale(1)', offset: 0.75 },
+                        { opacity: 1, transform: 'translateY(0) scale(1)', offset: 1 }
+                    ], { duration, easing: smoothDecel, fill: 'forwards' });
+                    anim.onfinish = () => {
+                        anim.cancel();
+                        cleanup();
+                    };
+                } else {
+                    element.style.opacity = '0';
+                    element.style.transform = 'translateY(-15px) scale(0.95)';
+                    setTimeout(cleanup, duration);
+                }
+                break;
+
+            default:
+                this.appearAnimate('fade', duration, callback);
+                return;
+        }
+    }
+
+    /** @deprecated Use appearAnimate() instead */
     fadeIn(duration, speed, transition_f, callback) {
         let start = performance.now();
         let opacity = 0;

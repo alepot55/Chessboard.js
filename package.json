@@ -3,9 +3,24 @@
     "chess.js": "^1.0.0"
   },
   "name": "@alepot55/chessboardjs",
-  "version": "2.2.1",
-  "main": "src/index.js",
+  "version": "2.3.0",
+  "main": "dist/chessboard.cjs.js",
+  "module": "dist/chessboard.esm.js",
+  "browser": "dist/chessboard.iife.js",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/chessboard.esm.js",
+      "require": "./dist/chessboard.cjs.js",
+      "default": "./dist/chessboard.esm.js"
+    },
+    "./dist/*": "./dist/*"
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "assets/"
+  ],
   "scripts": {
     "dev": "rollup -c config/rollup.config.js --watch",
     "build": "rollup -c config/rollup.config.js",
